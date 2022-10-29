@@ -146,10 +146,10 @@
         <!-- Post Main Content -->
         <div class="entry-content has_line_number">
           <p>最近在开发环境中，频频出现服务不可用的问题。还遇到过一次Nacos客户端连接不上服务端，但是管理平台能正常登录的问题。遂决定研究一波，记录下来。</p>
-<h2 id="nacos不可用">Nacos不可用</h2>
-<h3 id="问题">问题</h3>
+<h2 id="nacos不可用"><a class="markdownIt-Anchor" href="#nacos不可用"></a> Nacos不可用</h2>
+<h3 id="问题"><a class="markdownIt-Anchor" href="#问题"></a> 问题</h3>
 <p>部分容器在启动时一直报错，连接不上Nacos服务端，但是Nacos管理界面能正常登录查看，后来经过排查是<strong>集群的某一个节点挂掉了</strong>导致的。但是这时候问题来了，Nacos作为服务发现和注册中心以及配置中心，集群模式下需要保证CP，并采用Raft算法进行选举，就算挂掉一台节点也不应该出现连接不上的问题。所以到底是为什么呢？这里先来简单看看CAP和Raft。</p>
-<h3 id="cap">CAP</h3>
+<h3 id="cap"><a class="markdownIt-Anchor" href="#cap"></a> CAP</h3>
 <blockquote>
 <p>可以戳这里☞ <a target="_blank" rel="noopener" href="http://www.ruanyifeng.com/blog/2018/07/cap.html">CAP定理</a></p>
 </blockquote>
@@ -160,7 +160,7 @@
 <li><strong>C</strong> - Consistency，数据一致性，实例之间的数据保持一致，一台实例更新数据，另一台实例必须同步更新完数据后才能够被访问，保证读取的数据始终是最新的。</li>
 </ul>
 <p>从上面可以看出<strong>A</strong>和<strong>C</strong>之间也是互相矛盾的。所以，要在它们之间寻求平衡，根据不同的场景选取合适的保证。而Nacos作为服务发现与注册中心以及配置中心使用时，必须得保证CP。但是并不是严格的CP，因为在leader节点进行写操作和同步数据时，其它节点是可以提供查询的。而且在Leader节点宕机重新选举时，集群对外无法提供服务。当然，作为一个通用的解决方案，这种情况对于绝大部分系统是可以接受的。</p>
-<h3 id="raft">Raft</h3>
+<h3 id="raft"><a class="markdownIt-Anchor" href="#raft"></a> Raft</h3>
 <p>作为目前比较流行的分布式一致性协议，它的实现和理解起来的难度相对较简单，像Nacos、Redis等都采用了它，先来简单了解下。</p>
 <p>三种状态（角色）：</p>
 <ul>
@@ -182,13 +182,13 @@
 <li>如果出现日志数据不一致的情况，Leader会强制覆盖Follower的日志数据；</li>
 <li>Leader会维护每次同步日志的一个索引，每次同步时Follower会验证这个索引是否和自己本地的日志索引一致，不一致则Leader会在下一次推送日志时缩小这个索引，直到验证通过。</li>
 </ul>
-<h3 id="解决">解决</h3>
+<h3 id="解决"><a class="markdownIt-Anchor" href="#解决"></a> 解决</h3>
 <p>Nacos集群在如上所述的理论支持下，就算Leader宕机，那么也应该是可以继续访问的。这点从我们能正常登录Nacos管理平台且能从控制台的节点列表看到有一台节点处于<code>DOWN</code>的状态而其它都是<code>UP</code>得以验证。那么问题可能就不是出在服务端了，应该是客户端的问题，虽然把DOWN掉的Nacos节点重启后，客户端的访问就正常了。最后，经过和运维的一番排查，发现是<u><strong>yml配置文件中连接Nacos的地址是集群内部访问域名地址，并不是对外的VIP（Virtual IP Address）地址</strong></u>。</p>
 <figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="attr">spring:</span></span><br><span class="line">  <span class="attr">cloud:</span></span><br><span class="line">    <span class="attr">nacos:</span></span><br><span class="line">      <span class="attr">config:</span></span><br><span class="line">        <span class="attr">namespace:</span> <span class="string">dev</span></span><br><span class="line">        <span class="comment"># 下面这个</span></span><br><span class="line">        <span class="attr">server-addr:</span> <span class="string">nacos-hs.nacos.svc.cluster.local:8848</span></span><br><span class="line">        <span class="attr">file-extension:</span> <span class="string">yml</span></span><br><span class="line">        <span class="attr">shared-configs:</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">config-port.yml</span></span><br><span class="line">          <span class="bullet">-</span> <span class="string">config-actuator.yml</span></span><br></pre></td></tr></table></figure>
 <p>这里就涉及到Nacos的寻址，采用虚拟IP（VIP）的方式。集群模式下，<strong>客户端连接时要使用这个VIP地址，当某个节点不可用时会自动转发到其它可用节点</strong>。本质上是依靠TCP/IP的ARP协议，详细了解学习可以戳这里☞<a target="_blank" rel="noopener" href="https://developer.aliyun.com/article/598792">微服务架构中基于DNS的服务发现</a>。</p>
 <p>这样一来就说的通了，客户端用拿到的IP地址（Java中DNS解析到IP后会缓存下来）一直尝试去连接DOWN掉的Nacos节点，肯定是一直失败，这也造成了一种Nacos集群不可用的假象。后来更新配置文件后，验证也没有问题了。Bingo!</p>
-<h2 id="服务不可用">服务不可用</h2>
-<h3 id="问题-2">问题</h3>
+<h2 id="服务不可用"><a class="markdownIt-Anchor" href="#服务不可用"></a> 服务不可用</h2>
+<h3 id="问题-2"><a class="markdownIt-Anchor" href="#问题-2"></a> 问题</h3>
 <p>最近公司项目在搞重构，基本上是推倒重来，新的架构设计，也用上了k8s流水线，很方便我们开发与快速部署。但是问题也随即出现，在dev环境，尤其是在前后端联调（开发会把自己本地的机子注册到Nacos上去）的时候会频繁的出现服务不可用的情况，这是为什么呢？这里先整理下主要用到的开源技术。</p>
 <ul>
 <li>网关：GateWay + Ribbon + Hystrix</li>
@@ -206,7 +206,7 @@
 <li>采用Nacos作为服务发现与注册中心。</li>
 </ul>
 <p>这里还是先来简单分析下Nacos和Ribbon的服务实例列表更新机制。</p>
-<h3 id="nacos">Nacos</h3>
+<h3 id="nacos"><a class="markdownIt-Anchor" href="#nacos"></a> Nacos</h3>
 <p>Nacos上的实例分为两种，持久化实例和临时实例，二者可以同时存在。</p>
 <ul>
 <li>临时实例：默认情况下都是临时实例，在健康检查不通过的情况下，随后的一段时间内会被剔除。适合大部分场景，如弹性扩容和缩容，多余的实例会自动销毁。</li>
@@ -218,7 +218,7 @@
 <li>持久化实例：由服务端主动检测。Server端会生成一个<code>HealthCheckTask</code>，再由<code>TcpSuperSenseProcessor</code>处理，这里利用了NIO来实现。（<code>SocketChannel</code>，<code>Selector.open()</code>）</li>
 </ul>
 <p>目前我们的系统默认都是<strong>临时实例，所以实例变更时会存在时延</strong>。</p>
-<h3 id="ribbon">Ribbon</h3>
+<h3 id="ribbon"><a class="markdownIt-Anchor" href="#ribbon"></a> Ribbon</h3>
 <p>作为SpringCloud中实现客户端负载均衡的利器，Ribbon核心的一些接口如下：</p>
 <ul>
 <li><code>ILoadBalancer</code>，这个接口下的实现<code>BaseLoadBalancer</code>是整个Ribbon实现负载均衡的核心类。</li>
@@ -239,7 +239,7 @@
 <li>默认的负载均衡选取规则是<code>RoundRobinRule</code>，轮询。在选取目标实例时，会判断<code>upServerList</code>是否为空，不为空则依次从<code>allServerList</code>中选取可用的实例作为目标实例。<strong>注意，这个时候由于默认的设置，所以拿到的服务永远是可用的，即<code>isAlive</code>总为true。</strong></li>
 </ol>
 <p>可以看出，<strong>Ribbon在获取最新实例时也是存在时延的，且默认情况下没有开启定时Ping的任务</strong>。</p>
-<h3 id="解决-2">解决</h3>
+<h3 id="解决-2"><a class="markdownIt-Anchor" href="#解决-2"></a> 解决</h3>
 <p>所以，问题就很明显了。结合上面的分析，采用定时的方式进行更新，那么必定有延时，当然在实际生产环境中，基本上不可能如此频繁的变更实例，所以一定的延时是完全没有问题的。而在我们的dev环境，由于容器频繁的重新部署或者开发机器上下线，导致经常出现服务不可用的情况，这也很正常。</p>
 <p>当然我们可以改进一下，比如<strong>缩小Ribbon/Nacos的定时拉取/剔除实例的时间间隔，开启Ribbon中定时Ping及时感知服务下线</strong>。但其实我们更应该从另一些方面去减少这类问题的发生，如开发联调规范化、增加多联调环境等等。</p>
 

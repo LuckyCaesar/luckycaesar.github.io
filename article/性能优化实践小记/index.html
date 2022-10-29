@@ -145,10 +145,10 @@
         </div>
         <!-- Post Main Content -->
         <div class="entry-content has_line_number">
-          <h1>背景</h1>
+          <h1 id="背景"><a class="markdownIt-Anchor" href="#背景"></a> 背景</h1>
 <p>最近项目里面做了一个分享助力排名中奖的活动，对性能有一定的要求，其实也不高，就 100~200 TPS左右。但是几个周赶出来的项目设计和实现问题都很多，追求快速完成功能，到性能测试这一步就卡住了，于是就有了这次性能优化之旅。</p>
-<h1>三个方向</h1>
-<h2 id="一-数据库">一、数据库</h2>
+<h1 id="三个方向"><a class="markdownIt-Anchor" href="#三个方向"></a> 三个方向</h1>
+<h2 id="一-数据库"><a class="markdownIt-Anchor" href="#一-数据库"></a> 一、数据库</h2>
 <p>首先当然是数据库表设计，使用的是MySQL数据库，主要是表索引以及尽量简单的查询。由于本次我们的业务比较简单，主要涉及几个表：</p>
 <ul>
 <li>用户参与记录表：哪些用户参与了我们的活动</li>
@@ -157,11 +157,11 @@
 </ul>
 <p>这些表的查询相对简单，基本都是按照用户ID（Long）查询相关数据，所以在表查询这块的优化空间并不大。</p>
 <p>然后就是MySQL集群模式，我们采用的是MySQL 8.0 官方推荐的MGR（MySQL Group Replication）模式，问题不大。</p>
-<h2 id="二-代码设计与中间件">二、代码设计与中间件</h2>
+<h2 id="二-代码设计与中间件"><a class="markdownIt-Anchor" href="#二-代码设计与中间件"></a> 二、代码设计与中间件</h2>
 <p>这块的问题是比较多，也是主要需要记录的。因为初期为了赶工，很多地方的设计都是简单粗暴的实现功能，所以这一块是优化的重点。</p>
-<h3 id="1-引入webflux">1. 引入WebFlux</h3>
+<h3 id="1-引入webflux"><a class="markdownIt-Anchor" href="#1-引入webflux"></a> 1. 引入WebFlux</h3>
 <p>助力相关接口采用WebFlux包装，利用其<strong>异步响应式</strong>的设计提高吞吐量，但效果并不明显，因为我们的并发量也不高，仅作为尝试。</p>
-<h3 id="2-利用mq解耦削峰">2. 利用MQ解耦削峰</h3>
+<h3 id="2-利用mq解耦削峰"><a class="markdownIt-Anchor" href="#2-利用mq解耦削峰"></a> 2. 利用MQ解耦削峰</h3>
 <p><strong>点击助力</strong>这个接口可以预见是并发最高的接口，里面主要包含几个步骤：</p>
 <ol>
 <li>记录A用户给B用户助力；</li>
@@ -184,7 +184,7 @@
 <li>消费消息时需要针对单个用户加分布式锁，因为服务都是多pod/实例部署，同一个用户的多次助力，可能被不同的实例所消费，为保证数据库记录数据的准确性，需要加锁。这个地方并没有性能要求，更多的是要关注数据的准确与否。</li>
 </ol>
 <p>这里主要是利用MQ的异步、解耦、削峰的特性，来实现对高并发下的接口写操作的分离和快速响应。虽然排行榜的更新有一定的延时（毫秒级或者秒级），但是用户感知不大且不是特别关心，因为助力操作本来就是在分享之后的某个不确定时间点发生的，除了系统需要记录精确的时间点以外，用户更关心的是最终的助力数是否正确。</p>
-<h3 id="3-redis实现排行榜">3. Redis实现排行榜</h3>
+<h3 id="3-redis实现排行榜"><a class="markdownIt-Anchor" href="#3-redis实现排行榜"></a> 3. Redis实现排行榜</h3>
 <p>排行榜的查询，最开始是直接利用MySQL的<strong>order by + @变量</strong>的方式实现排名和排名序号的递增。但是这样的实现在数据量稍大后，性能急速下降，SQL也比较复杂，后面对其重新设计，利用Redis的<strong>ZSet</strong>来实现排行榜的功能：</p>
 <ul>
 <li>ZSet的value是用户ID，<strong>（初始设计）score是被助力次数</strong>，次数越多，排名越高；</li>
@@ -194,13 +194,13 @@
 <p>这里出现了一个很有意思的问题，那就是<strong>如果两个人是相同的助力次数，排名怎么算</strong>？如果都在或者都不在中奖区间以内，那么谁前谁后都无所谓。但是一旦区间的边缘出现两个助力次数一样的排名，一个中奖一个没有中奖，那么就要必须有合理的解释。</p>
 <p>按照正常生活中的逻辑来说，应该是先达到某一助力次数的用户排在前面，即<strong>先到先得</strong>。但是按上面的实现，从ZSet里面取排名时，助力次数（score）相同的情况下，是按照先参加活动的用户排在前面，即先进入ZSet的value排在前面，这是我实际观察得到的结果。这个取值逻辑在程序里面肯定没有问题，但却不符合此时的业务逻辑。</p>
 <p>经过上面的分析，可以看出score需要跟时间挂钩，但如果score直接加上时间戳，那么就是后到先得，不符合我们的逻辑。所以我们可以换一种思路：<strong>Java时间精度默认是毫秒，目前生成的时间戳是13位。所以可以用某个14位数字（未来的某一个时间戳）减去当前的时间戳，再以得到的数字作为小数，助力次数作为整数，就成为了最终的score。</strong></p>
+<p><span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>s</mi><mi>c</mi><mi>o</mi><mi>r</mi><mi>e</mi><mo>=</mo><mi>n</mi><mi mathvariant="normal">.</mi><mo stretchy="false">(</mo><mi>x</mi><mo>−</mo><mi>y</mi><mo stretchy="false">)</mo></mrow><annotation encoding="application/x-tex">score = n.(x - y)</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mord mathdefault">s</span><span class="mord mathdefault">c</span><span class="mord mathdefault">o</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord mathdefault">e</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault">n</span><span class="mord">.</span><span class="mopen">(</span><span class="mord mathdefault">x</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span><span class="mbin">−</span><span class="mspace" style="margin-right:0.2222222222222222em;"></span></span><span class="base"><span class="strut" style="height:1em;vertical-align:-0.25em;"></span><span class="mord mathdefault" style="margin-right:0.03588em;">y</span><span class="mclose">)</span></span></span></span></p>
 <blockquote>
-<p>score = n.(x - y)</p>
 <p>注：score为一个double数，整数部分为助力次数，小数部分为逆向时间戳。这样助力次数越多，自然score越大，助力次数相同的情况下，小数越大排的越靠前。</p>
 </blockquote>
 <p><strong>x</strong> 为某14位数字，我取的是10 000 000 000 000，代表的是未来的<em>2286-11-21 01:46:40.000</em>这一刻，这个时间点已经大大超出目前绝大部软件系统的生命周期，因此可以认为它是一个常数。<strong>y</strong> 即助力那一刻的时间戳。<strong>n</strong> 是助力次数。</p>
 <p><strong>(x - y)得到的是一个逆向时间戳，在助力数n相同的情况下，助力越早，时间戳越小，逆向时间戳越大，最终的score就越大，排名就越靠前。</strong> 完美实现了我们想要的效果，先到先得。</p>
-<h3 id="4-预加载-压缩-缓存">4. 预加载、压缩、缓存</h3>
+<h3 id="4-预加载-压缩-缓存"><a class="markdownIt-Anchor" href="#4-预加载-压缩-缓存"></a> 4. 预加载、压缩、缓存</h3>
 <p>除了助力以外，这次活动还有一个比较麻烦的点在于<strong>分享二维码的生成</strong>。由于我们前端是微信小程序，微信的小程序码接口又只能在服务器端请求且返回的是一个图片Buffer（每个二维码大约110 kb左右），所以去实时生成二维码不但需要多次网络IO，返回的数据量也较大，显然达不到性能要求。</p>
 <blockquote>
 <p><a target="_blank" rel="noopener" href="https://developers.weixin.qq.com/miniprogram/dev/api-backend/open-api/qr-code/wxacode.getUnlimited.html">小程序码 &gt; wxacode.getUnlimited</a></p>
@@ -226,7 +226,7 @@
 </li>
 </ol>
 <p>长远来看，在面对更大体量的数据时，压缩也不好使，还是应该预加载 + OSS + Redis最佳。</p>
-<h2 id="三-参数调优">三、参数调优</h2>
+<h2 id="三-参数调优"><a class="markdownIt-Anchor" href="#三-参数调优"></a> 三、参数调优</h2>
 <p>这一块主要是JVM和Web容器的参数调优，我们实际生产环境的单个pod资源限制标准为2C4G。</p>
 <ol>
 <li>
@@ -240,7 +240,7 @@
 <figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment"># undertow配置</span></span><br><span class="line"><span class="attr">server:</span></span><br><span class="line">  <span class="attr">undertow:</span></span><br><span class="line">    <span class="comment"># 设置IO线程数, 它主要执行非阻塞的任务,它们会负责多个连接, 默认设置每个CPU核心一个线程</span></span><br><span class="line">    <span class="comment"># 不要设置过大，如果过大，启动项目会报错：打开文件数过多</span></span><br><span class="line">    <span class="attr">io-threads:</span> <span class="number">16</span></span><br><span class="line">    <span class="comment"># 阻塞任务线程池, 当执行类似servlet请求阻塞IO操作, undertow会从这个线程池中取得线程</span></span><br><span class="line">    <span class="comment"># 它的值设置取决于系统线程执行任务的阻塞系数，默认值是IO线程数*8</span></span><br><span class="line">    <span class="attr">worker-threads:</span> <span class="number">256</span></span><br><span class="line">    <span class="comment"># 以下的配置会影响buffer,这些buffer会用于服务器连接的IO操作,有点类似netty的池化内存管理</span></span><br><span class="line">    <span class="comment"># 每块buffer的空间大小,越小的空间被利用越充分，不要设置太大，以免影响其他应用，合适即可</span></span><br><span class="line">    <span class="attr">buffer-size:</span> <span class="number">1024</span></span><br><span class="line">    <span class="comment"># 是否分配的直接内存(NIO直接分配的堆外内存)</span></span><br><span class="line">    <span class="attr">direct-buffers:</span> <span class="literal">true</span></span><br></pre></td></tr></table></figure>
 </li>
 </ol>
-<h2 id="结果">结果</h2>
+<h2 id="结果"><a class="markdownIt-Anchor" href="#结果"></a> 结果</h2>
 <p>由于请求链路上还有网关与用户鉴权中心的存在，所以我们也分为了两种情况进行测试，走网关和不走网关，用来定位和排除一些应用服务的问题。当然，最终结果是以真实环境的网络链路为标准的，也就是走网关路由和鉴权。</p>
 <p>按照测试部门的要求，使用的工具是Jmeter，几个核心接口线程组的线程数设置为100，永久循环持续5分钟。测试环境开启两个pod，单个pod资源限制2C4G。但是测试环境的数据库集群是多个项目共用的，所以数据库的读写性能在不同时间段测试时表现波动很大，最终取的是一个比较折中的数据。</p>
 <ul>

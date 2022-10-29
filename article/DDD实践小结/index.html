@@ -145,7 +145,7 @@
         </div>
         <!-- Post Main Content -->
         <div class="entry-content has_line_number">
-          <h2 id="闲话">闲话</h2>
+          <h2 id="闲话"><a class="markdownIt-Anchor" href="#闲话"></a> 闲话</h2>
 <p>这几个月公司对系统进行重构，我们的<a target="_blank" rel="noopener" href="https://github.com/yangyang0507"><strong>架构师</strong></a>决定尝试下目前比较流行的设计思想 - DDD，领域驱动设计。这种设计理念很早就出现了，但是迄今为止除了大厂外并没有比较普适性的实践落地方案，也是由于许多中小型系统还达不到相当程度的复杂度来让DDD充分发挥其优势，或者由于部分开发人员的基本素质还达不到相关的要求，导致很难推行。</p>
 <p>但就我所了解或者参与的一些项目，其中也使用到了DDD中所推崇的一些设计，譬如说：</p>
 <ul>
@@ -160,9 +160,9 @@
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 持久层</span></span><br><span class="line"><span class="keyword">package</span> cn.xx.persistence.repository.impl.customer;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Slf4j</span></span><br><span class="line"><span class="meta">@Repository</span></span><br><span class="line"><span class="meta">@RequiredArgsConstructor</span></span><br><span class="line"><span class="keyword">public</span> <span class="keyword">class</span> <span class="title class_">CustomerRepositoryImpl</span> <span class="keyword">implements</span> <span class="title class_">CustomerRepository</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> CustomerFactory customerFactory;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">final</span> CustomerMapper customerMapper;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> Customer <span class="title function_">getById</span><span class="params">(Long id)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> customerFactory.toCustomerDO(customerMapper.selectById(id));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 </li>
 </ul>
-<h2 id="实践">实践</h2>
+<h2 id="实践"><a class="markdownIt-Anchor" href="#实践"></a> 实践</h2>
 <p>整体的实践过程的话，个人感觉就是理想很丰满，现实很骨感，也是由于我们对DDD的理解实践经验不够，其实大部分还是按照传统的一些方式在做。</p>
-<h3 id="战略设计">战略设计</h3>
+<h3 id="战略设计"><a class="markdownIt-Anchor" href="#战略设计"></a> 战略设计</h3>
 <p>这一块的感觉最明显，基本上还是由产品去定义，其它角色主要是参与到业务讨论，或者架构讨论中去。</p>
 <ul>
 <li>
@@ -209,16 +209,16 @@
 </li>
 </ul>
 <p>可以看出来整体的流程并不规范，但是很适合我们这样的小型团队，快速的定下产品基调，做好服务拆分，指派开发人员进行开发。</p>
-<h3 id="战术设计">战术设计</h3>
+<h3 id="战术设计"><a class="markdownIt-Anchor" href="#战术设计"></a> 战术设计</h3>
 <p>主要是单个微服务的分层结构规范，这部分由我们的<a target="_blank" rel="noopener" href="https://github.com/yangyang0507"><strong>架构师</strong></a>重新设计。初始的设计是这样的：</p>
-<p><img src="/img/image-20201117144112355.png" alt="image-20201117144112355"></p>
+<p><img src="/img/image-20201117144112355.png" alt="image-20201117144112355" /></p>
 <p>从这张图也可以看出一些问题：</p>
 <ul>
 <li>VO、DTO、DO(Data Object or Domain Object)、PO的转换比较繁琐，最多有三层转换，极大的降低开发效率。</li>
 <li>单独的Query层承担一些或复杂或简单的查询，但是下面还依赖了一层persistence，让简单的查询也变得麻烦，没有必要。</li>
 </ul>
 <p>优化后的最终版：</p>
-<p><img src="/img/image-20201117162157114.png" alt="image-20201117162157114"></p>
+<p><img src="/img/image-20201117162157114.png" alt="image-20201117162157114" /></p>
 <p>改进之后，可以看出更加合理，实践起来更接地气。</p>
 <p>先定义下各种对象：</p>
 <ul>
@@ -240,7 +240,7 @@
 <li>Infrastructure：基础设施层，Config（自定义配置）、Utils、Constant等。</li>
 </ul>
 <p>实际上在落地的过程中，还有一些改动，像PO就单独提出来一层，供Query和Persistence（使用了依赖倒置，实际上是Domain层）去依赖，这样Query层就不用再去创建PO，只需要创建Mapper即可。</p>
-<h2 id="小结">小结</h2>
+<h2 id="小结"><a class="markdownIt-Anchor" href="#小结"></a> 小结</h2>
 <p>总的来说，这次实践的收获还是蛮大的，对DDD的设计思想有了一个实际的落地方案，并在此过程中不断改进优化，使之更适合我们的团队。这让我们对它的理解更加深刻，在探索更合适的产品开发流程和微服务结构的道路上实实在在的迈出了一步。</p>
 <p>细化一点，个人感觉在实际的代码设计和编写过程中，遵循<strong>领域对象和充血模型</strong>的方式去做，可能对于大多数业务场景来说是更好的选择，实际上这两者也是面向对象语言的抽象和封装的体现。</p>
 

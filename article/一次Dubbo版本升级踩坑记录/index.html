@@ -145,7 +145,7 @@
         </div>
         <!-- Post Main Content -->
         <div class="entry-content has_line_number">
-          <h2 id="背景">背景</h2>
+          <h2 id="背景"><a class="markdownIt-Anchor" href="#背景"></a> 背景</h2>
 <p>最近我们部门负责基础组件的<a target="_blank" rel="noopener" href="https://github.com/yangyang0507"><strong>大佬</strong></a>准备升级下Dubbo（v2.7.3 -&gt; v2.7.8），本以为是一次简单的升级，我们各个服务配合刷新下依赖即可，结果却闹出了一系列的问题：</p>
 <ul>
 <li>RPC中枚举序列化问题：这个我们讨论过，应该要<strong>禁止在RPC调用中直接使用枚举作为字段类型</strong></li>
@@ -153,13 +153,13 @@
 <li>项目启动时找不到provider接口提供者：2.7.8版本创建的provider都会带有Group标识，但是之前的版本没有这个标识，导致provider匹配不上报No Provider错误</li>
 <li><u><strong>与Nacos集成引起系统持续不断的创建大量 nacos.naming 线程，导致系统负载持续增加出现崩溃的迹象：这是本次重点记录分析的问题</strong></u></li>
 </ul>
-<h2 id="问题发现">问题发现</h2>
+<h2 id="问题发现"><a class="markdownIt-Anchor" href="#问题发现"></a> 问题发现</h2>
 <p>升级上线一小段时间之后，运维通过监控工具<code>prometheus</code>发现各个服务实例创建了大量的线程，最少都有500+，最多的单个实例更是达到了4000+，明显太不正常了。持续关注了一段时间后发现线程数一直在增加，并没有减少的迹象，遂开始排查问题。</p>
-<h2 id="问题解决">问题解决</h2>
+<h2 id="问题解决"><a class="markdownIt-Anchor" href="#问题解决"></a> 问题解决</h2>
 <p>首先由运维暂时性的定时重启实例来保证服务的正常。</p>
 <p>然后利用<a target="_blank" rel="noopener" href="https://arthas.gitee.io/index.html">Arthas</a>的<code>thread</code>命令：查找最忙的N个线程、阻塞其他线程的线程、指定状态（WAITTING、TIMED_WAITTING等）的线程等等，观察发现有大量的<code>nacos.naming</code>线程。遂去GitHub Nacos的issues搜索有没有相关的问题描述，果然 <a target="_blank" rel="noopener" href="https://github.com/alibaba/nacos/issues/4491">https://github.com/alibaba/nacos/issues/4491</a> 这个issue跟我们的问题很相似，观察到的线程状态跟他的截图也差不多。</p>
 <p>之后定位到的是Dubbo issue <a target="_blank" rel="noopener" href="https://github.com/apache/dubbo/issues/6988">https://github.com/apache/dubbo/issues/6988</a> 和 <a target="_blank" rel="noopener" href="https://github.com/apache/dubbo/issues/6568">https://github.com/apache/dubbo/issues/6568</a> ，源自2.7.7版本的一个bug。之后按照Dubbo 2.7.9版本的解决方式编译打包了一个新版本来解决这个问题，注意并没有直接升级Dubbo最新版本，是因为怕再出现一些其它问题。</p>
-<h2 id="问题分析">问题分析</h2>
+<h2 id="问题分析"><a class="markdownIt-Anchor" href="#问题分析"></a> 问题分析</h2>
 <p>由于issue上已经把问题代码指出来并进行了修复，那我们现在根据观察到的线程结合源码来反向追踪到问题代码。</p>
 <p>利用<a target="_blank" rel="noopener" href="https://arthas.gitee.io/index.html">Arthas</a>的<code>thread</code>命令查找到的线程，发现大部分的都是<code>nacos.naming</code>相关线程，譬如：</p>
 <ul>
@@ -179,7 +179,7 @@
 <p>正确key的组成：</p>
 <p><code>nacos://nacos-cs.nacos.svc.cluster.local:8848/DEFAULT_GROUP/org.apache.dubbo.registry.RegistryService?namespace=test-rpc</code></p>
 <p>源码分析时也参考了这个issue <a target="_blank" rel="noopener" href="https://github.com/apache/dubbo/issues/6568">https://github.com/apache/dubbo/issues/6568</a> 的debug截图，基本搞清楚了整个问题产生的原因以及解决方式的逻辑。</p>
-<h2 id="小结">小结</h2>
+<h2 id="小结"><a class="markdownIt-Anchor" href="#小结"></a> 小结</h2>
 <p>升级开源基础组件一定要慎重，对于待升级版本的评审还是很重要的，可以预先通过官网、GitHub或者StackOverflow等等调研下相关版本的问题再动手也不迟 ~</p>
 
         </div>
