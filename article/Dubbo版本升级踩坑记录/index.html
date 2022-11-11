@@ -1,0 +1,659 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/rose.png">
+  <link rel="icon" href="/img/rose.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="LuckyCaesar">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="背景 最近我们部门负责基础组件的大佬准备升级下Dubbo（v2.7.3 -&gt; v2.7.8），本以为是一次简单的升级，我们各个服务配合刷新下依赖即可，结果却闹出了一系列的问题：  RPC中枚举序列化问题：这个我们讨论过，应该要禁止在RPC调用中直接使用枚举作为字段类型 Dubbo泛化调用问题：2.7.8版本在泛化调用无参方法时，由于没有对types做非空校验，导致NPE，详情戳☞ #6840">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Dubbo版本升级踩坑记录">
+<meta property="og:url" content="https://luckycaesar.github.io/article/Dubbo%E7%89%88%E6%9C%AC%E5%8D%87%E7%BA%A7%E8%B8%A9%E5%9D%91%E8%AE%B0%E5%BD%95/index.html">
+<meta property="og:site_name" content="一日三省吾身">
+<meta property="og:description" content="背景 最近我们部门负责基础组件的大佬准备升级下Dubbo（v2.7.3 -&gt; v2.7.8），本以为是一次简单的升级，我们各个服务配合刷新下依赖即可，结果却闹出了一系列的问题：  RPC中枚举序列化问题：这个我们讨论过，应该要禁止在RPC调用中直接使用枚举作为字段类型 Dubbo泛化调用问题：2.7.8版本在泛化调用无参方法时，由于没有对types做非空校验，导致NPE，详情戳☞ #6840">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://luckycaesar.github.io/img/lifeCodeTypography.jpg">
+<meta property="article:published_time" content="2021-03-28T12:00:00.000Z">
+<meta property="article:modified_time" content="2022-11-11T10:24:15.038Z">
+<meta property="article:author" content="LuckyCaesar">
+<meta property="article:tag" content="Dubbo">
+<meta property="article:tag" content="Nacos">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://luckycaesar.github.io/img/lifeCodeTypography.jpg">
+  
+  
+    <meta name="referrer" content="no-referrer-when-downgrade">
+  
+  
+  <title>Dubbo版本升级踩坑记录 - 一日三省吾身</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"luckycaesar.github.io","root":"/","version":"1.9.3","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"left","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>三味书屋</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/image-202208220aa.jpeg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Dubbo版本升级踩坑记录"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2021-03-28 20:00" pubdate>
+          2021年3月28日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          7k 字
+        
+      </span>
+    
+
+    
+
+    
+    
+      
+        <span id="busuanzi_container_page_pv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="busuanzi_value_page_pv"></span> 次
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="padding-left: 2rem; margin-right: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">Dubbo版本升级踩坑记录</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="背景">背景</h2>
+<p>最近我们部门负责基础组件的<a target="_blank" rel="noopener" href="https://github.com/yangyang0507"><strong>大佬</strong></a>准备升级下Dubbo（v2.7.3 -&gt; v2.7.8），本以为是一次简单的升级，我们各个服务配合刷新下依赖即可，结果却闹出了一系列的问题：</p>
+<ul>
+<li>RPC中枚举序列化问题：这个我们讨论过，应该要<strong>禁止在RPC调用中直接使用枚举作为字段类型</strong></li>
+<li>Dubbo泛化调用问题：2.7.8版本在泛化调用无参方法时，由于没有对types做非空校验，导致NPE，详情戳☞ <a target="_blank" rel="noopener" href="https://github.com/apache/dubbo/issues/6840">#6840</a></li>
+<li>项目启动时找不到provider接口提供者：2.7.8版本创建的provider都会带有Group标识，但是之前的版本没有这个标识，导致provider匹配不上报No Provider错误</li>
+<li><u><strong>与Nacos集成引起系统持续不断的创建大量 nacos.naming 线程，导致系统负载持续增加出现崩溃的迹象：这是本次重点记录分析的问题</strong></u></li>
+</ul>
+<h2 id="问题发现">问题发现</h2>
+<p>升级上线一小段时间之后，运维通过监控工具<code>prometheus</code>发现各个服务实例创建了大量的线程，最少都有500+，最多的单个实例更是达到了4000+，明显太不正常了。持续关注了一段时间后发现线程数一直在增加，并没有减少的迹象，遂开始排查问题。</p>
+<h2 id="问题解决">问题解决</h2>
+<p>首先由运维暂时性的定时重启实例来保证服务的正常。</p>
+<p>然后利用<a target="_blank" rel="noopener" href="https://arthas.gitee.io/index.html">Arthas</a>的<code>thread</code>命令：查找最忙的N个线程、阻塞其他线程的线程、指定状态（WAITTING、TIMED_WAITTING等）的线程等等，观察发现有大量的<code>nacos.naming</code>线程。遂去GitHub Nacos的issues搜索有没有相关的问题描述，果然<a target="_blank" rel="noopener" href="https://github.com/alibaba/nacos/issues/4491">#4491</a>这个issue跟我们的问题很相似，观察到的线程状态跟他的截图也差不多。</p>
+<p>之后定位到的是Dubbo issue<a target="_blank" rel="noopener" href="https://github.com/apache/dubbo/issues/6988">#6988</a>和 <a target="_blank" rel="noopener" href="https://github.com/apache/dubbo/issues/6568">#6568</a>，源自2.7.7版本的一个bug。之后按照Dubbo 2.7.9版本的解决方式编译打包了一个新版本来解决这个问题，注意并没有直接升级Dubbo最新版本，是因为怕再出现一些其它问题。</p>
+<h2 id="问题分析">问题分析</h2>
+<p>由于issue上已经把问题代码指出来并进行了修复，那我们现在根据观察到的线程结合源码来反向追踪到问题代码。</p>
+<p>利用<a target="_blank" rel="noopener" href="https://arthas.gitee.io/index.html">Arthas</a>的<code>thread</code>命令查找到的线程，发现大部分的都是<code>nacos.naming</code>相关线程，譬如：</p>
+<ul>
+<li><code>nacos.client.naming.updater</code>：<code>HostReactor</code>实例的周期任务线程，用来更新本地缓存的服务实例列表的定时任务。</li>
+<li><code>nacos.client.naming.client.listener</code>：<code>EventDispatcher</code>实例的周期任务线程，定时监听服务实例变更的消息（从<code>HostReactor</code>处得知）并分发<code>NamingEvent</code>事件给订阅者。</li>
+<li><code>nacos.client.naming.push.receiver</code>：<code>PushReceiver</code>实例的周期任务线程，开启UDP端口，接收Naocs服务端主动推送的实例节点变动信息，调用<code>HostReactor</code>的相关方法来更新服务实例列表，再做ack响应。</li>
+</ul>
+<p>查看相关源码发现，这些线程都跟<code>NacosNamingService</code>这个类有关系：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 实现了NamingService接口</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">NacosNamingService</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">NamingService</span> &#123;<br>    ...<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">init</span><span class="hljs-params">(Properties properties)</span> &#123;<br>        namespace = InitUtils.initNamespaceForNaming(properties);<br>        initServerAddr(properties);<br>        InitUtils.initWebRootContext();<br>        initCacheDir();<br>        initLogName(properties);<br><br>        eventDispatcher = <span class="hljs-keyword">new</span> <span class="hljs-title class_">EventDispatcher</span>();<br>  		<span class="hljs-comment">// 代理对象，跟注册中心Server相关的请求都走它</span><br>        serverProxy = <span class="hljs-keyword">new</span> <span class="hljs-title class_">NamingProxy</span>(namespace, endpoint, serverList, properties);<br>  		<span class="hljs-comment">// 客户端心跳</span><br>        beatReactor = <span class="hljs-keyword">new</span> <span class="hljs-title class_">BeatReactor</span>(serverProxy, initClientBeatThreadCount(properties));<br>  		<span class="hljs-comment">// 客户端实例刷新</span><br>        hostReactor = <span class="hljs-keyword">new</span> <span class="hljs-title class_">HostReactor</span>(eventDispatcher, serverProxy, cacheDir, isLoadCacheAtStart(properties),<br>            initPollingThreadCount(properties));<br>    &#125;<br>    ...<br></code></pre></td></tr></table></figure>
+<p>再继续追溯，发现其实例都是由<code>NamingFactory</code>创建：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br></pre></td><td class="code"><pre><code class="hljs java"><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">NamingFactory</span> &#123;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> NamingService <span class="hljs-title function_">createNamingService</span><span class="hljs-params">(String serverList)</span> <span class="hljs-keyword">throws</span> NacosException &#123;<br>        <span class="hljs-keyword">try</span> &#123;<br>            Class&lt;?&gt; driverImplClass = Class.forName(<span class="hljs-string">&quot;com.alibaba.nacos.client.naming.NacosNamingService&quot;</span>);<br>            <span class="hljs-type">Constructor</span> <span class="hljs-variable">constructor</span> <span class="hljs-operator">=</span> driverImplClass.getConstructor(String.class);<br>            <span class="hljs-type">NamingService</span> <span class="hljs-variable">vendorImpl</span> <span class="hljs-operator">=</span> (NamingService)constructor.newInstance(serverList);<br>            <span class="hljs-keyword">return</span> vendorImpl;<br>        &#125; <span class="hljs-keyword">catch</span> (Throwable e) &#123;<br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">NacosException</span>(NacosException.CLIENT_INVALID_PARAM, e);<br>        &#125;<br>    &#125;<br>    <span class="hljs-comment">// 最终是这个方法被调用</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> NamingService <span class="hljs-title function_">createNamingService</span><span class="hljs-params">(Properties properties)</span> <span class="hljs-keyword">throws</span> NacosException &#123;<br>        <span class="hljs-keyword">try</span> &#123;<br>            Class&lt;?&gt; driverImplClass = Class.forName(<span class="hljs-string">&quot;com.alibaba.nacos.client.naming.NacosNamingService&quot;</span>);<br>            <span class="hljs-type">Constructor</span> <span class="hljs-variable">constructor</span> <span class="hljs-operator">=</span> driverImplClass.getConstructor(Properties.class);<br>            <span class="hljs-type">NamingService</span> <span class="hljs-variable">vendorImpl</span> <span class="hljs-operator">=</span> (NamingService)constructor.newInstance(properties);<br>            <span class="hljs-keyword">return</span> vendorImpl;<br>        &#125; <span class="hljs-keyword">catch</span> (Throwable e) &#123;<br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">NacosException</span>(NacosException.CLIENT_INVALID_PARAM, e);<br>        &#125;<br>    &#125;<br>&#125;<br><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">NacosFactory</span> &#123;<br>    <span class="hljs-comment">/**</span><br><span class="hljs-comment">     * Create naming service</span><br><span class="hljs-comment">     *</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@param</span> properties init param</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@return</span> Naming</span><br><span class="hljs-comment">     * <span class="hljs-doctag">@throws</span> NacosException Exception</span><br><span class="hljs-comment">     */</span><br>    <span class="hljs-comment">// 此方法被外部所调用</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> NamingService <span class="hljs-title function_">createNamingService</span><span class="hljs-params">(Properties properties)</span> <span class="hljs-keyword">throws</span> NacosException &#123;<br>        <span class="hljs-keyword">return</span> NamingFactory.createNamingService(properties);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>上面这个方法被两个地方调用到，一个是<code>NacosDiscoveryProperties</code>，一个是<code>NacosNamingServiceUtils</code>。但由于此次问题是由于Dubbo升级导致的，所以最后的调用方可以不用关心前者，它是Nacos注册发现相关的调用。</p>
+<p>继续查看<code>NacosNamingServiceUtils</code>的调用链，最后定位到了问题代码<code>NacosRegistryFactory#createRegistryCacheKey</code>方法：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// 创建NacosRegistry对象的工厂，NacosRegistry就是Dubbo集成Nacos的注册类，通过它从Nacos上拉取、注册、移除服务实例，</span><br><span class="hljs-comment">// 最终是通过NacosNamingService来实现的，所以每一个NacosRegistry对象都会持有一个NamingService的对象。</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">NacosRegistryFactory</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">AbstractRegistryFactory</span> &#123;<br><br>  	<span class="hljs-comment">// 这个方法就是产生问题的方法代码</span><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">protected</span> String <span class="hljs-title function_">createRegistryCacheKey</span><span class="hljs-params">(URL url)</span> &#123;<br>      	<span class="hljs-comment">/** 问题代码中是没有这一段注释代码的，直接返回了 url.toFullString()</span><br><span class="hljs-comment">        String namespace = url.getParameter(CONFIG_NAMESPACE_KEY);</span><br><span class="hljs-comment">        // 重点一：这一个url.toServiceStringWithoutResolving()方法是没有拼接parameter的</span><br><span class="hljs-comment">        // 也就是说新的url指向的是一个基础protocol+host+port的字符串，相当于移除了多余的参数（传入的URL中是包含其它参数的）。</span><br><span class="hljs-comment">        url = URL.valueOf(url.toServiceStringWithoutResolving());</span><br><span class="hljs-comment">        if (StringUtils.isNotEmpty(namespace)) &#123;</span><br><span class="hljs-comment">            // 如果有namespace则添加为新url的参数</span><br><span class="hljs-comment">            url = url.addParameter(CONFIG_NAMESPACE_KEY, namespace);</span><br><span class="hljs-comment">        &#125;</span><br><span class="hljs-comment">      	*/</span><br>				<br>      	<span class="hljs-comment">// 这个方法拼接了URL的完整路径：protocol(+username+password)+host+port+servicekey+其它parameters</span><br>      	<span class="hljs-comment">// 上面这段修复代码加上了之后，这个时候parameters其实里面只有namespace一个参数了。</span><br>        <span class="hljs-keyword">return</span> url.toFullString();<br>    &#125;<br><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">protected</span> Registry <span class="hljs-title function_">createRegistry</span><span class="hljs-params">(URL url)</span> &#123;<br>      	<span class="hljs-comment">// 这个地方调用到了创建NamingService实例的方法，可以看出是跟NacosRegistry实例关联的</span><br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">NacosRegistry</span>(url, createNamingService(url));<br>    &#125;<br>&#125;<br><br><span class="hljs-comment">// 父类 AbstractRegistryFactory</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">abstract</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">AbstractRegistryFactory</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">RegistryFactory</span> &#123;<br>  <br>    ...<br>  <br>    <span class="hljs-comment">// 重点二：这个url中包含了其他参数，其中引发bug的就是含有一个timestamp参数，导致缓存未命中，重复大量创建了Registry对象，</span><br>    <span class="hljs-comment">// 进而出现很多的NamingService实例，以及其创建的周期性任务线程。</span><br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> Registry <span class="hljs-title function_">getRegistry</span><span class="hljs-params">(URL url)</span> &#123;<br>      <span class="hljs-keyword">if</span> (destroyed.get()) &#123;<br>        LOGGER.warn(<span class="hljs-string">&quot;All registry instances have been destroyed, failed to fetch any instance. &quot;</span> +<br>                    <span class="hljs-string">&quot;Usually, this means no need to try to do unnecessary redundant resource clearance, all registries has been taken care of.&quot;</span>);<br>        <span class="hljs-keyword">return</span> DEFAULT_NOP_REGISTRY;<br>      &#125;<br><br>      url = URLBuilder.from(url)<br>        .setPath(RegistryService.class.getName())<br>        .addParameter(INTERFACE_KEY, RegistryService.class.getName())<br>        .removeParameters(EXPORT_KEY, REFER_KEY)<br>        .build();<br>      <span class="hljs-comment">// 这儿创建一个缓存map的key，避免重复创建 Registry 实例，期望同一个NameSpaceId下的Registry实例只会创建一个（单例）。</span><br>      <span class="hljs-comment">// 但是由于这个方法里面没有将url中的多余参数timestamp移除，导致缓存key未命中重复创建大量的Registry实例。</span><br>      <span class="hljs-type">String</span> <span class="hljs-variable">key</span> <span class="hljs-operator">=</span> createRegistryCacheKey(url);<br>      <span class="hljs-comment">// Lock the registry access process to ensure a single instance of the registry</span><br>      LOCK.lock();<br>      <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-type">Registry</span> <span class="hljs-variable">registry</span> <span class="hljs-operator">=</span> REGISTRIES.get(key);<br>        <span class="hljs-keyword">if</span> (registry != <span class="hljs-literal">null</span>) &#123;<br>          <span class="hljs-keyword">return</span> registry;<br>        &#125;<br>        <span class="hljs-comment">//create registry by spi/ioc</span><br>        registry = createRegistry(url);<br>        <span class="hljs-keyword">if</span> (registry == <span class="hljs-literal">null</span>) &#123;<br>          <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalStateException</span>(<span class="hljs-string">&quot;Can not create registry &quot;</span> + url);<br>        &#125;<br>        REGISTRIES.put(key, registry);<br>        <span class="hljs-keyword">return</span> registry;<br>      &#125; <span class="hljs-keyword">finally</span> &#123;<br>        <span class="hljs-comment">// Release the lock</span><br>        LOCK.unlock();<br>      &#125;<br>    &#125;<br>    ...<br>&#125;<br></code></pre></td></tr></table></figure>
+<p>通过Arthas的<code>getstatic</code>命令查看 <code>AbstractRegistryFactory</code>的<code>REGISTRIES</code>缓存map中的key，这是我在测试环境获取到的示例：</p>
+<figure class="highlight perl"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs perl">[arthas@1]$ getstatic org.apache.dubbo.registry.support.AbstractRegistryFactory REGISTRIES<br>field: REGISTRIES<br>@HashMap[<br>    @String[nacos:<span class="hljs-regexp">//na</span><span class="hljs-keyword">cos</span>-cs.nacos.svc.cluster.local:<span class="hljs-number">8848</span>/DEFAULT_GROUP/org.apache.dubbo.registry.RegistryService?namespace=test-rpc]:@NacosRegistry[nacos:<span class="hljs-regexp">//na</span><span class="hljs-keyword">cos</span>-cs.nacos.svc.cluster.local:<span class="hljs-number">8848</span>/org.apache.dubbo.registry.RegistryService?application=auth-center&amp;dubbo=<span class="hljs-number">2.0</span>.<span class="hljs-number">2</span>&amp;group=DEFAULT_GROUP&amp;id=org.apache.dubbo.config.RegistryConfig<span class="hljs-comment">#0&amp;interface=org.apache.dubbo.registry.RegistryService&amp;namespace=test-rpc&amp;pid=1&amp;qos.enable=false&amp;release=2.7.9&amp;timestamp=1616754580092]</span><br>]<br></code></pre></td></tr></table></figure>
+<p>正确key的组成：</p>
+<p><code>nacos://nacos-cs.nacos.svc.cluster.local:8848/DEFAULT_GROUP/org.apache.dubbo.registry.RegistryService?namespace=test-rpc</code></p>
+<p>源码分析时也参考了这个issue <a target="_blank" rel="noopener" href="https://github.com/apache/dubbo/issues/6568">#6568</a>的debug截图，基本搞清楚了整个问题产生的原因以及解决方式的逻辑。</p>
+<h2 id="小结">小结</h2>
+<p>升级开源基础组件一定要慎重，对于待升级版本的评审还是很重要的，可以预先通过官网、GitHub或者StackOverflow等等调研下相关版本的问题再动手也不迟 ~</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Dubbo/">#Dubbo</a>
+      
+        <a href="/tags/Nacos/">#Nacos</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/article/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96%E5%AE%9E%E8%B7%B5%E5%B0%8F%E8%AE%B0/" title="性能优化实践小记">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">性能优化实践小记</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/article/Java%E5%B9%B6%E8%A1%8C%E6%B5%81%E5%BC%95%E8%B5%B7%E7%9A%84MySQL%E6%AD%BB%E9%94%81/" title="Java并行流引起的MySQL死锁">
+                        <span class="hidden-mobile">Java并行流引起的MySQL死锁</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            loader : {
+              load: ['ui/lazy']
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.2/es5/tex-mml-chtml.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+  <script defer src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

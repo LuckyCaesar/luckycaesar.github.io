@@ -1,386 +1,779 @@
+
+
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-default-color-scheme=auto>
 
-<!-- Head tag -->
+
+
 <head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/rose.png">
+  <link rel="icon" href="/img/rose.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="LuckyCaesar">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="本文是翻译Vavr官方文档的序章，上一篇的使用指南介绍了Vavr中的主要组件的定义和使用示例。其中也出现了一些函数式编程的概念，如函数副作用、引用透明性、持久化集合、不可变数据结构等等，在序言中都有更进一步的阐述。 1. 序章 Vavr（过去叫Javaslang）是一个为Java8+而生的函数式库，它提供了持久化数据类型和函数式控制结构。 1.1. 用Vavr实现Java8的函数式数据结构 Jav">
+<meta property="og:type" content="article">
+<meta property="og:title" content="函数式编程增强库Vavr初探（二）">
+<meta property="og:url" content="https://luckycaesar.github.io/article/%E5%87%BD%E6%95%B0%E5%BC%8F%E7%BC%96%E7%A8%8B%E5%A2%9E%E5%BC%BA%E5%BA%93Vavr%E5%88%9D%E6%8E%A2%EF%BC%88%E4%BA%8C%EF%BC%89/index.html">
+<meta property="og:site_name" content="一日三省吾身">
+<meta property="og:description" content="本文是翻译Vavr官方文档的序章，上一篇的使用指南介绍了Vavr中的主要组件的定义和使用示例。其中也出现了一些函数式编程的概念，如函数副作用、引用透明性、持久化集合、不可变数据结构等等，在序言中都有更进一步的阐述。 1. 序章 Vavr（过去叫Javaslang）是一个为Java8+而生的函数式库，它提供了持久化数据类型和函数式控制结构。 1.1. 用Vavr实现Java8的函数式数据结构 Jav">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://luckycaesar.github.io/img/vavr00.jpeg">
+<meta property="article:published_time" content="2022-11-11T02:00:00.000Z">
+<meta property="article:modified_time" content="2022-11-11T10:40:40.822Z">
+<meta property="article:author" content="LuckyCaesar">
+<meta property="article:tag" content="函数式编程">
+<meta property="article:tag" content="vavr">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://luckycaesar.github.io/img/vavr00.jpeg">
+  
+  
+    <meta name="referrer" content="no-referrer-when-downgrade">
+  
+  
+  <title>函数式编程增强库Vavr初探（二） - 一日三省吾身</title>
 
-  <!--Description-->
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
   
 
-  <!--Author-->
-  
-  <meta name="author" content="CaesarX">
-  
 
-  <!--Open Graph Title-->
-  
-      <meta property="og:title" content="函数式编程增强库Vavr初探（二）"/>
-  
-  <!--Open Graph Description-->
-  
-  <!--Open Graph Site Name-->
-  <meta property="og:site_name" content="三味书屋"/>
-  <!--Type page-->
-  
-      <meta property="og:type" content="article" />
-  
-  <!--Page Cover-->
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"luckycaesar.github.io","root":"/","version":"1.9.3","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"left","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
   
 
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 
-  <!-- Title -->
   
-  <title>函数式编程增强库Vavr初探（二） - 三味书屋</title>
-
-
-  <link rel="shortcut icon" href="/img/rose.png">
-
-  <!-- Custom CSS/Sass -->
-  
-<link rel="stylesheet" href="/css/style.css">
-
-
-  <!----------------------------
-  https://github.com/GallenHu/hexo-theme-Daily
-
- _____            _   _
-|  __ \          (_) | |
-| |  | |   __ _   _  | |  _   _
-| |  | |  / _` | | | | | | | | |
-| |__| | | (_| | | | | | | |_| |
-|_____/   \__,_| |_| |_|  \__, |
-                          __/ |
-                         |___/
-
-    --------------------------->
-
-<meta name="generator" content="Hexo 6.2.0"></head>
+<meta name="generator" content="Hexo 6.3.0"></head>
 
 
 <body>
+  
 
-  <!-- Nav -->
-  <header class="site-header">
-  <div class="header-inside">
-    <div class="logo">
-      <a href="/" rel="home">
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>三味书屋</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
         
-        <img src="/img/kobe.jpg" alt="三味书屋" height="60">
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
         
-      </a>
-    </div>
-    <!-- Navigation -->
-    <nav class="navbar">
-      <!-- Collect the nav links, forms, and other content for toggling -->
-      <div class="collapse">
-        <ul class="navbar-nav">
           
           
-            <li>
-              <a href="/.">
-                
-                  首页
-                
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
               </a>
             </li>
           
-            <li>
-              <a href="/archives">
-                
-                  归档
-                
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
               </a>
             </li>
           
-            <li>
-              <a href="/about">
-                
-                  关于
-                
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
               </a>
             </li>
           
-        </ul>
-      </div>
-      <!-- /.navbar-collapse -->
-    </nav>
-    <div class="button-wrap">
-      <button class="menu-toggle">Primary Menu</button>
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
     </div>
   </div>
-</header>
+</nav>
 
+  
 
-  <!-- Main Content -->
-  <div class="content-area">
-  <div class="post">
-    <!-- Post Content -->
-    <div class="container">
-      <article>
-        <!-- Title date & tags -->
-        <div class="post-header">
-          <h1 class="entry-title">
-            函数式编程增强库Vavr初探（二）
-            
-          </h1>
-          <p class="posted-on">
-          2022-11-11
-          </p>
-          <div class="tags-links">
-            
-              
-                <a href="/tags/函数式编程/" rel="tag">
-                  函数式编程
-                </a>
-              
-                <a href="/tags/vavr/" rel="tag">
-                  vavr
-                </a>
-              
-            
-          </div>
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/image-202208220aa.jpeg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="函数式编程增强库Vavr初探（二）"></span>
+          
         </div>
-        <!-- Post Main Content -->
-        <div class="entry-content has_line_number">
-          <p>本文是翻译Vavr官方文档的<a target="_blank" rel="noopener" href="https://docs.vavr.io/#_introduction">序章</a>，上一篇的<a href="https://luckycaesar.github.io/article/%E5%87%BD%E6%95%B0%E5%BC%8F%E7%BC%96%E7%A8%8B%E5%A2%9E%E5%BC%BA%E5%BA%93vavr%E5%88%9D%E6%8E%A2%EF%BC%88%E4%B8%80%EF%BC%89/">使用指南</a>介绍了Vavr中的主要组件的定义和使用示例。其中也出现了一些函数式编程的概念，如<em>函数副作用</em>、<em>引用透明性</em>、<em>持久化集合</em>、<em>不可变数据结构</em>等等，在序言中都有更进一步的阐述。</p>
-<h1 id="1-序章"><a class="markdownIt-Anchor" href="#1-序章"></a> 1. 序章</h1>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2022-11-11 10:00" pubdate>
+          2022年11月11日 上午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          7.5k 字
+        
+      </span>
+    
+
+    
+
+    
+    
+      
+        <span id="busuanzi_container_page_pv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="busuanzi_value_page_pv"></span> 次
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="padding-left: 2rem; margin-right: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">函数式编程增强库Vavr初探（二）</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>本文是翻译Vavr官方文档的<a target="_blank" rel="noopener" href="https://docs.vavr.io/#_introduction">序章</a>，上一篇的<a href="https://luckycaesar.github.io/article/%E5%87%BD%E6%95%B0%E5%BC%8F%E7%BC%96%E7%A8%8B%E5%A2%9E%E5%BC%BA%E5%BA%93vavr%E5%88%9D%E6%8E%A2%EF%BC%88%E4%B8%80%EF%BC%89/">使用指南</a>介绍了Vavr中的主要组件的定义和使用示例。其中也出现了一些函数式编程的概念，如<em>函数副作用</em>、<em>引用透明性</em>、<em>持久化集合</em>、<em>不可变数据结构</em>等等，在序言中都有更进一步的阐述。</p>
+<h1 id="序章">1. 序章</h1>
 <p>Vavr（过去叫Javaslang）是一个为Java8+而生的函数式库，它提供了持久化数据类型和函数式控制结构。</p>
-<h2 id="11-用vavr实现java8的函数式数据结构"><a class="markdownIt-Anchor" href="#11-用vavr实现java8的函数式数据结构"></a> 1.1. 用Vavr实现Java8的函数式数据结构</h2>
+<h2 id="用vavr实现java8的函数式数据结构">1.1. 用Vavr实现Java8的函数式数据结构</h2>
 <p>Java8的<a target="_blank" rel="noopener" href="https://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html">lambdas (λ)</a>能让我们创建出绝妙的API，这些API极大的提升了语言的表现力。</p>
 <p>Vavr利用基于函数式模型的lambdas创造了一系列的新特性，其中一个就是函数式集合库，旨在替换Java中的标准库。</p>
-<p><img src="/img/vavr-collections.png" alt="vavr-collections" /></p>
+<figure>
+<img src="/img/vavr-collections.png" srcset="/img/loading.gif" lazyload alt="collections" /><figcaption aria-hidden="true">collections</figcaption>
+</figure>
 <p><em>（这只是一张鸟瞰图，接下来会有更易于阅读的版本。）</em></p>
-<h2 id="12-函数式编程"><a class="markdownIt-Anchor" href="#12-函数式编程"></a> 1.2. 函数式编程</h2>
+<h2 id="函数式编程">1.2. 函数式编程</h2>
 <p>在探讨细节之前，我想先讲一些基础知识。这能解释我为什么会设计出Vavr，特别是新的Java集合类。</p>
-<h3 id="121-副作用"><a class="markdownIt-Anchor" href="#121-副作用"></a> 1.2.1. 副作用</h3>
+<h3 id="副作用">1.2.1. 副作用</h3>
 <p>Java应用通常都有大量的<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Side_effect_(computer_science)">副作用</a>。它们改变了某种状态，可能是外部世界的（应用程序以外的）。常见的副作用是就地改变对象或者变量，打印到控制台，写到一个日志文件或者数据库。如果副作用以非预期的方式影响了我们程序的语义，那就被认为是有害的。</p>
 <p>例如，如果一个函数抛出了异常且这个异常是<em>interpreted</em>，它就被认为是一个<em>影响程序</em>的副作用。另外，<a target="_blank" rel="noopener" href="http://c2.com/cgi/wiki?DontUseExceptionsForFlowControl">异常类似于非本地的go-to语句</a>，它们会破坏正常的控制流。不管怎样，实际的应用确实会产生副作用。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> <span class="title function_">divide</span><span class="params">(<span class="type">int</span> dividend, <span class="type">int</span> divisor)</span> &#123;</span><br><span class="line">    <span class="comment">// throws if divisor is zero</span></span><br><span class="line">    <span class="keyword">return</span> dividend / divisor;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">int</span> <span class="hljs-title function_">divide</span><span class="hljs-params">(<span class="hljs-type">int</span> dividend, <span class="hljs-type">int</span> divisor)</span> &#123;<br>    <span class="hljs-comment">// throws if divisor is zero</span><br>    <span class="hljs-keyword">return</span> dividend / divisor;<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>在函数环境下，可以用Try来封装副作用使我们（的程序）处于一个良好的状态：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// = Success(result) or Failure(exception)</span></span><br><span class="line">Try&lt;Integer&gt; <span class="title function_">divide</span><span class="params">(Integer dividend, Integer divisor)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> Try.of(() -&gt; dividend / divisor);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = Success(result) or Failure(exception)</span><br>Try&lt;Integer&gt; <span class="hljs-title function_">divide</span><span class="hljs-params">(Integer dividend, Integer divisor)</span> &#123;<br>    <span class="hljs-keyword">return</span> Try.of(() -&gt; dividend / divisor);<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>上面这个版本的divide方法不会再抛出任何异常，我们利用Try类型显式的显示了可能的失败。</p>
-<h3 id="122-引用透明性"><a class="markdownIt-Anchor" href="#122-引用透明性"></a> 1.2.2. 引用透明性</h3>
+<h3 id="引用透明性">1.2.2. 引用透明性</h3>
 <p>一个函数，或者更笼统的说一个表达式，对它的调用如果能用它的值替换而不影响程序本身的行为，那就称之为<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Referential_transparency">引用透明性</a>。简单来讲，给定相同的输入总能得到相同的输出。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// not referentially transparent</span></span><br><span class="line">Math.random();</span><br><span class="line"></span><br><span class="line"><span class="comment">// referentially transparent</span></span><br><span class="line">Math.max(<span class="number">1</span>, <span class="number">2</span>);</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// not referentially transparent</span><br>Math.random();<br><br><span class="hljs-comment">// referentially transparent</span><br>Math.max(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>);<br></code></pre></td></tr></table></figure>
 <p>如果（函数中）涉及的所有表达式都是引用透明的，则称该函数为<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Pure_function">纯函数</a> 。一个由纯函数组成的应用大概率在编译后就<em>可以运行</em>，对此我们能解释得通。单测易于编写，而调试则成为过去式。</p>
-<h3 id="123-对值的思考"><a class="markdownIt-Anchor" href="#123-对值的思考"></a> 1.2.3. 对值的思考</h3>
+<h3 id="对值的思考">1.2.3. 对值的思考</h3>
 <p>Clojure语言创始人Rich Hickey，曾做过一个很棒的演讲<a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=-6BsiVyC1kM">The Value of Values</a>。其中最有趣的值就是<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Immutable_object">不可变</a>值，主要原因是不可变值</p>
 <ul>
-<li>
-<p>天然是线程安全的，因此也无需同步</p>
-</li>
-<li>
-<p>有关于<em>equals</em>和<em>hashcode</em>都是稳定的，所以（不可变值）也是可靠的哈希键</p>
-</li>
-<li>
-<p>无需克隆</p>
-</li>
-<li>
-<p>当被用在未经检查的协变转换（Java特有的）中时也能表现得类型安全</p>
-</li>
+<li><p>天然是线程安全的，因此也无需同步</p></li>
+<li><p>有关于<em>equals</em>和<em>hashcode</em>都是稳定的，所以（不可变值）也是可靠的哈希键</p></li>
+<li><p>无需克隆</p></li>
+<li><p>当被用在未经检查的协变转换（Java特有的）中时也能表现得类型安全</p></li>
 </ul>
 <p>用<em>不可变值</em>搭配<em>引用透明性函数</em>是使Java变得更好的关键，Vavr则提供了必要的<a target="_blank" rel="noopener" href="http://static.javadoc.io/io.vavr/vavr/0.10.4/io/vavr/control/package-summary.html">控件</a>和<a target="_blank" rel="noopener" href="https://static.javadoc.io/io.vavr/vavr/0.10.4/io/vavr/collection/package-summary.html">集合</a>以在日常的Java编程中达成这一目标。</p>
-<h2 id="13-果壳中的数据结构"><a class="markdownIt-Anchor" href="#13-果壳中的数据结构"></a> 1.3. 果壳中的数据结构</h2>
-<p>Vavr的集合库包含了一组丰富的基于lambda之上的函数式数据结构，唯一个与Java原生集合共享的接口是Iterable。（没有共享其他接口的）主要原因是基于Java集合接口的更改器方法<sup class="footnote-ref"><a href="#fn1" id="fnref1">[1]</a></sup>无法返回一个底层集合类型的对象。</p>
+<h2 id="果壳中的数据结构">1.3. 果壳中的数据结构</h2>
+<p>Vavr的集合库包含了一组丰富的基于lambda之上的函数式数据结构，唯一个与Java原生集合共享的接口是Iterable。（没有共享其他接口的）主要原因是基于Java集合接口的更改器方法<sup id="fnref:1" class="footnote-ref"><a href="#fn:1" rel="footnote"><span class="hint--top hint--rounded" aria-label="mutator methods：https://en.wikipedia.org/wiki/Mutator_method。">[1]</span></a></sup>无法返回一个底层集合类型的对象。</p>
 <p>下面来看看不同类型的数据结构，我们会知道为什么这（不共享集合接口）是非常必要的。</p>
-<h3 id="131-可变数据结构"><a class="markdownIt-Anchor" href="#131-可变数据结构"></a> 1.3.1. 可变数据结构</h3>
+<h3 id="可变数据结构">1.3.1. 可变数据结构</h3>
 <p>Java是一门面向对象编程语言。我们通过封装对象的状态来达到数据隐藏的目的，然后提供更改器方法控制这种状态。<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Java_collections_framework">Java collections framework (JCF)</a> 就是基于此种思想构建的。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">interface</span> <span class="title class_">Collection</span>&lt;E&gt; &#123;</span><br><span class="line">    <span class="comment">// removes all elements from this collection</span></span><br><span class="line">    <span class="keyword">void</span> <span class="title function_">clear</span><span class="params">()</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">interface</span> <span class="hljs-title class_">Collection</span>&lt;E&gt; &#123;<br>    <span class="hljs-comment">// removes all elements from this collection</span><br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">clear</span><span class="hljs-params">()</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>现在我会把<em>void</em>的返回类型理解为一种异味。它就是<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Side_effect_(computer_science)">副作用</a>产生的证据，会使得状态发生变换。<em>共享</em>可变状态是一个造成失败的主要来源，不仅仅在并发环境中。</p>
-<h3 id="132-不可变数据结构"><a class="markdownIt-Anchor" href="#132-不可变数据结构"></a> 1.3.2. 不可变数据结构</h3>
+<h3 id="不可变数据结构">1.3.2. 不可变数据结构</h3>
 <p><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Immutable_object">不可变</a>数据结构被创建后就无法更改。在Java的上下文中，它们以集合包装器的形式被广泛应用。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">List&lt;String&gt; list = Collections.unmodifiableList(otherList);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Boom!</span></span><br><span class="line">list.add(<span class="string">&quot;why not?&quot;</span>);</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java">List&lt;String&gt; list = Collections.unmodifiableList(otherList);<br><br><span class="hljs-comment">// Boom!</span><br>list.add(<span class="hljs-string">&quot;why not?&quot;</span>);<br></code></pre></td></tr></table></figure>
 <p>有各种各样的库提供了类似实用的方法给我们。（这些方法）返回的结果总是一个特定集合的不可变视图，而且通常在我们调用一个更改器方法后在运行时抛出（异常）。</p>
-<h3 id="133-持久化数据结构"><a class="markdownIt-Anchor" href="#133-持久化数据结构"></a> 1.3.3. 持久化数据结构</h3>
+<h3 id="持久化数据结构">1.3.3. 持久化数据结构</h3>
 <p>一个<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Persistent_data_structure">持久化数据结构</a>在被修改时，会保留它以往的版本，也因此形成了<em>事实上</em>的不可变。完全地持久化数据结构允许对任何版本进行更新和查询。</p>
 <p>许多操作只会执行很小的改动，仅仅拷贝上一个版本并不会变得高效。要节省时间和内存，确认两个版本之间的相似之处并尽可能多的共享数据就显得尤为重要。</p>
 <p>这种模型不会强制任何实现细节，此时函数式数据结构就该登场了。</p>
-<h2 id="14-函数式数据结构"><a class="markdownIt-Anchor" href="#14-函数式数据结构"></a> 1.4. 函数式数据结构</h2>
+<h2 id="函数式数据结构">1.4. 函数式数据结构</h2>
 <p>也被称作<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Purely_functional"><em>纯</em> 函数式数据结构</a>，它们是<em>不可变</em>且<em>持久化</em>的。函数式数据结构的方法都是<em>引用透明</em>的。</p>
 <p>Vavr拥有许多很常用的函数式数据结构，接下来会用示例进行深入讲解。</p>
-<h3 id="141-链表"><a class="markdownIt-Anchor" href="#141-链表"></a> 1.4.1. 链表</h3>
+<h3 id="链表">1.4.1. 链表</h3>
 <p>最受欢迎当然也是最简单的一种函数式数据结构就是 <a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Linked_list">（单）链表</a>，它有一个<em>头</em>元素和一个<em>尾</em>列表。链表的行为类似于遵循<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Stack_(abstract_data_type)">后进先出 (LIFO)</a>方法的栈。</p>
 <p>在Vavr里我们可以像这样来实例化一个列表：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// = List(1, 2, 3)</span></span><br><span class="line">List&lt;Integer&gt; list1 = List.of(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>);</span><br></pre></td></tr></table></figure>
-<p>列表中的每一个元素都形成了一个独立的节点，最后一个元素的尾部指向Nil，一个空的列表。<sup class="footnote-ref"><a href="#fn2" id="fnref2">[2]</a></sup></p>
-<p><img src="/img/vavr-list1.png" alt="vavr-list1" /></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = List(1, 2, 3)</span><br>List&lt;Integer&gt; list1 = List.of(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>);<br></code></pre></td></tr></table></figure>
+<p>列表中的每一个元素都形成了一个独立的节点，最后一个元素的尾部指向Nil，一个空的列表。<sup id="fnref:2" class="footnote-ref"><a href="#fn:2" rel="footnote"><span class="hint--top hint--rounded" aria-label="查看源码可知，这里是按3、2、1的顺序进行构建的，对整个链表的遍历，则会按照1、2、3的顺序输出，遵循后进先出原则。整个链表遍历顺序的**头节点是1，尾节点是3**。">[2]</span></a></sup></p>
+<figure>
+<img src="/img/vavr-list1.png" srcset="/img/loading.gif" lazyload alt="list1" /><figcaption aria-hidden="true">list1</figcaption>
+</figure>
 <p>这使得我们可以在列表的不同版本之间共享元素：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// = List(0, 2, 3)</span></span><br><span class="line">List&lt;Integer&gt; list2 = list1.tail().prepend(<span class="number">0</span>);</span><br></pre></td></tr></table></figure>
-<p>新的头元素0被<em>链接</em>到原列表的尾部<sup class="footnote-ref"><a href="#fn3" id="fnref3">[3]</a></sup>，原来的列表则保持不变。</p>
-<p><img src="/img/vavr-list2.png" alt="vavr-list2" /></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = List(0, 2, 3)</span><br>List&lt;Integer&gt; list2 = list1.tail().prepend(<span class="hljs-number">0</span>);<br></code></pre></td></tr></table></figure>
+<p>新的头元素0被<em>链接</em>到原列表的尾部<sup id="fnref:3" class="footnote-ref"><a href="#fn:3" rel="footnote"><span class="hint--top hint--rounded" aria-label="此时的**尾部**不是按链表的遍历顺序，而是按构建链表时的顺序来定义的。**头元素0**会变成新版本链表遍历顺序的头节点。更新后的新版本链表，遍历出来的结果就是0、2、3。">[3]</span></a></sup>，原来的列表则保持不变。</p>
+<figure>
+<img src="/img/vavr-list2.png" srcset="/img/loading.gif" lazyload alt="list2" /><figcaption aria-hidden="true">list2</figcaption>
+</figure>
 <p>这些操作都会在常数时间内运行，换句话说就是与列表的大小无关。大部分其它操作都是线性时间，在Vavr里面会通过接口LinearSeq来表示，我们可能已经从Scala中了解过了。</p>
 <p>如果我们需要能在常数时间内执行查询的数据结构，Vavr提供了Array和Vector，它们都拥有<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Random_access">随机存取</a>的能力。</p>
 <p>Array类型由Java对象数组支持，插入和删除操作都是线性时间。Vector（的时间开销）则介于Array和List之间，它在随机存取和修改时表现的都很不错。</p>
 <p>实际上链表也可以用来实现队列数据结构。</p>
-<h3 id="142-队列"><a class="markdownIt-Anchor" href="#142-队列"></a> 1.4.2. 队列</h3>
+<h3 id="队列">1.4.2. 队列</h3>
 <p>一个很高效的函数式队列可以基于两个链表来实现。<em>front</em>链表持有<em>出队的</em>元素，<em>rear</em>链表持有<em>入队的</em>元素，入队和出队操作都是O(1)的时间复杂度。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Queue&lt;Integer&gt; queue = Queue.of(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>)</span><br><span class="line">                            .enqueue(<span class="number">4</span>)</span><br><span class="line">                            .enqueue(<span class="number">5</span>);</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java">Queue&lt;Integer&gt; queue = Queue.of(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>)<br>                            .enqueue(<span class="hljs-number">4</span>)<br>                            .enqueue(<span class="hljs-number">5</span>);<br></code></pre></td></tr></table></figure>
 <p>队列由3个元素初始化，还有两个元素在rear列表中排队。</p>
-<p><img src="/img/vavr-queue1.png" alt="vavr-queue1" /></p>
+<figure>
+<img src="/img/vavr-queue1.png" srcset="/img/loading.gif" lazyload alt="queue1" /><figcaption aria-hidden="true">queue1</figcaption>
+</figure>
 <p>如果front列表在出队时元素耗尽，那么rear列表会被翻转成为新的front列表。</p>
-<p><img src="/img/vavr-queue2.png" alt="vavr-queue2" /></p>
+<figure>
+<img src="/img/vavr-queue2.png" srcset="/img/loading.gif" lazyload alt="queue2" /><figcaption aria-hidden="true">queue2</figcaption>
+</figure>
 <p>一个元素出队时我们会得到第一个元素和剩余队列组成的一对数据。必须返回这个队列的新版本，因为函数式数据结构是不可变且持久化的，原队列不应当受影响。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Queue&lt;Integer&gt; queue = Queue.of(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// = (1, Queue(2, 3))</span></span><br><span class="line">Tuple2&lt;Integer, Queue&lt;Integer&gt;&gt; dequeued = queue.dequeue();</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java">Queue&lt;Integer&gt; queue = Queue.of(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>);<br><br><span class="hljs-comment">// = (1, Queue(2, 3))</span><br>Tuple2&lt;Integer, Queue&lt;Integer&gt;&gt; dequeued = queue.dequeue();<br></code></pre></td></tr></table></figure>
 <p>当队列为空时会发生什么？这时dequeue()方法会抛出NoSuchElementException，用<em>函数式方式</em>来做的话我们更期望返回一个可选结果。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// = Some((1, Queue()))</span></span><br><span class="line">Queue.of(<span class="number">1</span>).dequeueOption();</span><br><span class="line"></span><br><span class="line"><span class="comment">// = None</span></span><br><span class="line">Queue.empty().dequeueOption();</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = Some((1, Queue()))</span><br>Queue.of(<span class="hljs-number">1</span>).dequeueOption();<br><br><span class="hljs-comment">// = None</span><br>Queue.empty().dequeueOption();<br></code></pre></td></tr></table></figure>
 <p>一个可选结果可以被进一步处理，不管它是否为空。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// = Queue(1)</span></span><br><span class="line">Queue&lt;Integer&gt; queue = Queue.of(<span class="number">1</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// = Some((1, Queue()))</span></span><br><span class="line">Option&lt;Tuple2&lt;Integer, Queue&lt;Integer&gt;&gt;&gt; dequeued = queue.dequeueOption();</span><br><span class="line"></span><br><span class="line"><span class="comment">// = Some(1)</span></span><br><span class="line">Option&lt;Integer&gt; element = dequeued.map(Tuple2::_1);</span><br><span class="line"></span><br><span class="line"><span class="comment">// = Some(Queue())</span></span><br><span class="line">Option&lt;Queue&lt;Integer&gt;&gt; remaining = dequeued.map(Tuple2::_2);</span><br></pre></td></tr></table></figure>
-<h3 id="143-有序集合"><a class="markdownIt-Anchor" href="#143-有序集合"></a> 1.4.3. 有序集合<sup class="footnote-ref"><a href="#fn4" id="fnref4">[4]</a></sup></h3>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = Queue(1)</span><br>Queue&lt;Integer&gt; queue = Queue.of(<span class="hljs-number">1</span>);<br><br><span class="hljs-comment">// = Some((1, Queue()))</span><br>Option&lt;Tuple2&lt;Integer, Queue&lt;Integer&gt;&gt;&gt; dequeued = queue.dequeueOption();<br><br><span class="hljs-comment">// = Some(1)</span><br>Option&lt;Integer&gt; element = dequeued.map(Tuple2::_1);<br><br><span class="hljs-comment">// = Some(Queue())</span><br>Option&lt;Queue&lt;Integer&gt;&gt; remaining = dequeued.map(Tuple2::_2);<br></code></pre></td></tr></table></figure>
+<h3 id="有序集合4">1.4.3. 有序集合<sup id="fnref:4" class="footnote-ref"><a href="#fn:4" rel="footnote"><span class="hint--top hint--rounded" aria-label="这里的集合是指Set。">[4]</span></a></sup></h3>
 <p>有序集合是比队列使用得更频繁的一种数据结构。我们使用二叉搜索树以函数式方式给它们建模，这些树由一些节点组成，每个节点有一个值且最多只能拥有两个孩子节点。</p>
 <p>我们会在排序的情况下 - 使用一个元素比较器来表达，构建二叉搜索树。任何给定节点的左子树的值都严格地小于当前给定节点的值，而所有右子树的值则严格地大于。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// = TreeSet(1, 2, 3, 4, 6, 7, 8)</span></span><br><span class="line">SortedSet&lt;Integer&gt; xs = TreeSet.of(<span class="number">6</span>, <span class="number">1</span>, <span class="number">3</span>, <span class="number">2</span>, <span class="number">4</span>, <span class="number">7</span>, <span class="number">8</span>);</span><br></pre></td></tr></table></figure>
-<p><img src="/img/vavr-binarytree1.png" alt="vavr-binarytree1" /></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = TreeSet(1, 2, 3, 4, 6, 7, 8)</span><br>SortedSet&lt;Integer&gt; xs = TreeSet.of(<span class="hljs-number">6</span>, <span class="hljs-number">1</span>, <span class="hljs-number">3</span>, <span class="hljs-number">2</span>, <span class="hljs-number">4</span>, <span class="hljs-number">7</span>, <span class="hljs-number">8</span>);<br></code></pre></td></tr></table></figure>
+<figure>
+<img src="/img/vavr-binarytree1.png" srcset="/img/loading.gif" lazyload alt="binarytree1" /><figcaption aria-hidden="true">binarytree1</figcaption>
+</figure>
 <p>这棵树的查询时间复杂度为O(log<sub>n</sub>)。我们从根节点开始搜索，并判断是否找到了目标元素。由于所有的值是整体有序的，所以我们知道下一步该从何处进行搜索，是这棵树的左分支还是右分支。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// = TreeSet(1, 2, 3);</span></span><br><span class="line">SortedSet&lt;Integer&gt; set = TreeSet.of(<span class="number">2</span>, <span class="number">3</span>, <span class="number">1</span>, <span class="number">2</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// = TreeSet(3, 2, 1);</span></span><br><span class="line">Comparator&lt;Integer&gt; c = (a, b) -&gt; b - a;</span><br><span class="line">SortedSet&lt;Integer&gt; reversed = TreeSet.of(c, <span class="number">2</span>, <span class="number">3</span>, <span class="number">1</span>, <span class="number">2</span>);</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = TreeSet(1, 2, 3);</span><br>SortedSet&lt;Integer&gt; set = TreeSet.of(<span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>);<br><br><span class="hljs-comment">// = TreeSet(3, 2, 1);</span><br>Comparator&lt;Integer&gt; c = (a, b) -&gt; b - a;<br>SortedSet&lt;Integer&gt; reversed = TreeSet.of(c, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>);<br></code></pre></td></tr></table></figure>
 <p>大部分树的操作本质上都是<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Recursion">递归</a>。插入函数和搜索函数很类似，当一条搜索路径抵达终点时，会创建一个新节点，然后整个路径会重建到根节点，（在此期间会）尽可能的引用现有的子节点。因此插入操作会花费O(log<sub>n</sub>)的时间和空间。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// = TreeSet(1, 2, 3, 4, 5, 6, 7, 8)</span></span><br><span class="line">SortedSet&lt;Integer&gt; ys = xs.add(<span class="number">5</span>);</span><br></pre></td></tr></table></figure>
-<p><img src="/img/vavr-binarytree2.png" alt="vavr-binarytree2" /></p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = TreeSet(1, 2, 3, 4, 5, 6, 7, 8)</span><br>SortedSet&lt;Integer&gt; ys = xs.add(<span class="hljs-number">5</span>);<br></code></pre></td></tr></table></figure>
+<figure>
+<img src="/img/vavr-binarytree2.png" srcset="/img/loading.gif" lazyload alt="binarytree2" /><figcaption aria-hidden="true">binarytree2</figcaption>
+</figure>
 <p>为了保持二叉搜索树的性能特点，它需要保持一个平衡。所有从根节点到叶子节点的路径需要在大体上保持等长。</p>
-<p>在Vavr里面我们基于<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Red%E2%80%93black_tree">红黑树</a>实现了一个二叉搜索树，它使用一种特殊的着色方式来使得二叉树在插入和删除节点时保持平衡。</p>
+<p>在Vavr里面我们基于<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Red–black_tree">红黑树</a>实现了一个二叉搜索树，它使用一种特殊的着色方式来使得二叉树在插入和删除节点时保持平衡。</p>
 <p>如想了解更多关于本章节主题的内容，请查阅Chris Okasaki的书籍 <a target="_blank" rel="noopener" href="http://www.amazon.com/Purely-Functional-Structures-Chris-Okasaki/dp/0521663504">Purely Functional Data Structures</a>。</p>
-<h2 id="15-集合的状态"><a class="markdownIt-Anchor" href="#15-集合的状态"></a> 1.5. 集合的状态</h2>
+<h2 id="集合的状态">1.5. 集合的状态</h2>
 <p>一般来说，我们看到的是目前编程语言的趋同。优秀的特性会保留，反之则会消亡。但是Java不同，它注定要一直向后兼容，这是一种优势但也会延缓发展速度。</p>
 <p>Lambda拉近了Java和Scala的距离，当然他们还是不一样的。Scala之父，Martin Odersky，最近在他的<a target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=NW5h8d_ZyOs">BDSBTB 2015 keynote</a>里就提到了Java8集合的状态。</p>
 <p>他把Java的Stream形容成一种很花哨的迭代器。Java8 Stream API是一个<em>lifted</em>集合的示例，它所做的就是<em>定义</em>一次计算并在另一个明确的步骤中把它<em>link</em>到一个特定的集合。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// i + 1</span></span><br><span class="line">i.prepareForAddition()</span><br><span class="line"> .add(<span class="number">1</span>)</span><br><span class="line"> .mapBackToInteger(Mappers.toInteger())</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// i + 1</span><br>i.prepareForAddition()<br> .add(<span class="hljs-number">1</span>)<br> .mapBackToInteger(Mappers.toInteger())<br></code></pre></td></tr></table></figure>
 <p>这就是新的Java8 Stream API的工作机制，它就是一个在人所熟知的Java集合之上的计算层。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// = [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;] in Java 8</span></span><br><span class="line">Arrays.asList(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>)</span><br><span class="line">      .stream()</span><br><span class="line">      .map(Object::toString)</span><br><span class="line">      .collect(Collectors.toList())</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;] in Java 8</span><br>Arrays.asList(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>)<br>      .stream()<br>      .map(Object::toString)<br>      .collect(Collectors.toList())<br></code></pre></td></tr></table></figure>
 <p>Vavr则深受Scala的启发。上面的例子在Java8中本应该是这样的：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// = Stream(&quot;1&quot;, &quot;2&quot;, &quot;3&quot;) in Vavr</span></span><br><span class="line">Stream.of(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>).map(Object::toString)</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = Stream(&quot;1&quot;, &quot;2&quot;, &quot;3&quot;) in Vavr</span><br>Stream.of(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>).map(Object::toString)<br></code></pre></td></tr></table></figure>
 <p>过去一年我们在实现Vavr集合库上面付出了很大的努力，它包含了绝大多数的被广泛使用的集合类型。</p>
-<h3 id="151-seq"><a class="markdownIt-Anchor" href="#151-seq"></a> 1.5.1. Seq</h3>
+<h3 id="seq">1.5.1. Seq</h3>
 <p>我们通过实现序列类型来开启我们的旅程。在上面我们已经详述了链表，之后的Stream是一个惰性链表。它允许我们处理可能的无限长度的元素序列。</p>
-<p><img src="/img/vavr-collections-seq.png" alt="vavr-collections-seq" /></p>
+<figure>
+<img src="/img/vavr-collections-seq.png" srcset="/img/loading.gif" lazyload alt="collections-seq" /><figcaption aria-hidden="true">collections-seq</figcaption>
+</figure>
 <p>所有集合都是迭代器，因此能够被用在增强型for语句里面：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">for</span> (String s : List.of(<span class="string">&quot;Java&quot;</span>, <span class="string">&quot;Advent&quot;</span>)) &#123;</span><br><span class="line">    <span class="comment">// side effects and mutation</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">for</span> (String s : List.of(<span class="hljs-string">&quot;Java&quot;</span>, <span class="hljs-string">&quot;Advent&quot;</span>)) &#123;<br>    <span class="hljs-comment">// side effects and mutation</span><br>&#125;<br></code></pre></td></tr></table></figure>
 <p>我们也可以通过内部化循环并使用lambda注入行为来达到同样的效果：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">List.of(<span class="string">&quot;Java&quot;</span>, <span class="string">&quot;Advent&quot;</span>).forEach(s -&gt; &#123;</span><br><span class="line">    <span class="comment">// side effects and mutation</span></span><br><span class="line">&#125;);</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java">List.of(<span class="hljs-string">&quot;Java&quot;</span>, <span class="hljs-string">&quot;Advent&quot;</span>).forEach(s -&gt; &#123;<br>    <span class="hljs-comment">// side effects and mutation</span><br>&#125;);<br></code></pre></td></tr></table></figure>
 <p>总之，如前所见我们更期望的是返回一个带值的表达式而不是不返回任何东西的语句。通过一个简单的例子，我们马上就能意识到这种语句会带来干扰并且会把一个整体的东西分割开。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">String <span class="title function_">join</span><span class="params">(String... words)</span> &#123;</span><br><span class="line">    <span class="type">StringBuilder</span> <span class="variable">builder</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">StringBuilder</span>();</span><br><span class="line">    <span class="keyword">for</span>(String s : words) &#123;</span><br><span class="line">        <span class="keyword">if</span> (builder.length() &gt; <span class="number">0</span>) &#123;</span><br><span class="line">            builder.append(<span class="string">&quot;, &quot;</span>);</span><br><span class="line">        &#125;</span><br><span class="line">        builder.append(s);</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">return</span> builder.toString();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs java">String <span class="hljs-title function_">join</span><span class="hljs-params">(String... words)</span> &#123;<br>    <span class="hljs-type">StringBuilder</span> <span class="hljs-variable">builder</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">StringBuilder</span>();<br>    <span class="hljs-keyword">for</span>(String s : words) &#123;<br>        <span class="hljs-keyword">if</span> (builder.length() &gt; <span class="hljs-number">0</span>) &#123;<br>            builder.append(<span class="hljs-string">&quot;, &quot;</span>);<br>        &#125;<br>        builder.append(s);<br>    &#125;<br>    <span class="hljs-keyword">return</span> builder.toString();<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>Vavr集合提供了很多操作底层元素的函数，这让我们可以用很简洁的方式来表达某些事物：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">String <span class="title function_">join</span><span class="params">(String... words)</span> &#123;</span><br><span class="line">    <span class="keyword">return</span> List.of(words)</span><br><span class="line">               .intersperse(<span class="string">&quot;, &quot;</span>)</span><br><span class="line">               .foldLeft(<span class="keyword">new</span> <span class="title class_">StringBuilder</span>(), StringBuilder::append)</span><br><span class="line">               .toString();</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java">String <span class="hljs-title function_">join</span><span class="hljs-params">(String... words)</span> &#123;<br>    <span class="hljs-keyword">return</span> List.of(words)<br>               .intersperse(<span class="hljs-string">&quot;, &quot;</span>)<br>               .foldLeft(<span class="hljs-keyword">new</span> <span class="hljs-title class_">StringBuilder</span>(), StringBuilder::append)<br>               .toString();<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>Vavr可以用各种不同的方式来实现许多目标。在这里我们可以通过缩减整个方法体来使列表实例上的函数调用变得更流畅，甚至可以移除这个方法然后直接用我们的列表来获取计算结果。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">List.of(words).mkString(<span class="string">&quot;, &quot;</span>);</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java">List.of(words).mkString(<span class="hljs-string">&quot;, &quot;</span>);<br></code></pre></td></tr></table></figure>
 <p>在实际应用中我们可以借此大幅减少代码行数，也降低了出现bug的风险。</p>
-<h3 id="152-set和map"><a class="markdownIt-Anchor" href="#152-set和map"></a> 1.5.2. Set和Map</h3>
+<h3 id="set和map">1.5.2. Set和Map</h3>
 <p>序列固然很棒，但就完整性来讲，一个集合库也需要不同类型的Sets和Maps。</p>
-<p><img src="/img/vavr-collections-set-map.png" alt="vavr-collections-set-map" /></p>
+<figure>
+<img src="/img/vavr-collections-set-map.png" srcset="/img/loading.gif" lazyload alt="collections-set-map" /><figcaption aria-hidden="true">collections-set-map</figcaption>
+</figure>
 <p>我们已经描述过如何通过二叉搜索树为有序集合进行建模，而一个有序的Map也不过是一个包含键值对且对键进行了排序的有序集合。</p>
 <p>HashMap的实现是依赖于<a target="_blank" rel="noopener" href="http://lampwww.epfl.ch/papers/idealhashtrees.pdf">Hash Array Mapped Trie (HAMT)</a>，对应的HashSet也是依赖于一个包含键键对（key-key pairs）的HAMT。</p>
-<p>我们的Map<em>没有</em>一个特殊的Entry类型来表示键值对，作为替代使用的是Vavr中的Tuple2。一个Tuple<sup class="footnote-ref"><a href="#fn5" id="fnref5">[5]</a></sup>中的字段总是可枚举的。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// = (1, &quot;A&quot;)</span></span><br><span class="line">Tuple2&lt;Integer, String&gt; entry = Tuple.of(<span class="number">1</span>, <span class="string">&quot;A&quot;</span>);</span><br><span class="line"></span><br><span class="line"><span class="type">Integer</span> <span class="variable">key</span> <span class="operator">=</span> entry._1;</span><br><span class="line"><span class="type">String</span> <span class="variable">value</span> <span class="operator">=</span> entry._2;</span><br></pre></td></tr></table></figure>
+<p>我们的Map<em>没有</em>一个特殊的Entry类型来表示键值对，作为替代使用的是Vavr中的Tuple2。一个Tuple<sup id="fnref:5" class="footnote-ref"><a href="#fn:5" rel="footnote"><span class="hint--top hint--rounded" aria-label="**多元组**，也称为**顺序组**（英语：Tuple），泛指有限个[元素](https://zh.m.wikipedia.org/wiki/元素_(數學))所组成的[序列](https://zh.m.wikipedia.org/wiki/序列)。在数学及计算机科学分别有其特殊的意义。">[5]</span></a></sup>中的字段总是可枚举的。</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = (1, &quot;A&quot;)</span><br>Tuple2&lt;Integer, String&gt; entry = Tuple.of(<span class="hljs-number">1</span>, <span class="hljs-string">&quot;A&quot;</span>);<br><br><span class="hljs-type">Integer</span> <span class="hljs-variable">key</span> <span class="hljs-operator">=</span> entry._1;<br><span class="hljs-type">String</span> <span class="hljs-variable">value</span> <span class="hljs-operator">=</span> entry._2;<br></code></pre></td></tr></table></figure>
 <p>Maps和Tuples在Vavr中广泛被应用。把Tuples作为处理多值返回类型的一种通用方式已经是惯例了。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// = HashMap((0, List(2, 4)), (1, List(1, 3)))</span></span><br><span class="line">List.of(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>).groupBy(i -&gt; i % <span class="number">2</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// = List((a, 0), (b, 1), (c, 2))</span></span><br><span class="line">List.of(<span class="string">&#x27;a&#x27;</span>, <span class="string">&#x27;b&#x27;</span>, <span class="string">&#x27;c&#x27;</span>).zipWithIndex();</span><br></pre></td></tr></table></figure>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = HashMap((0, List(2, 4)), (1, List(1, 3)))</span><br>List.of(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">4</span>).groupBy(i -&gt; i % <span class="hljs-number">2</span>);<br><br><span class="hljs-comment">// = List((a, 0), (b, 1), (c, 2))</span><br>List.of(<span class="hljs-string">&#x27;a&#x27;</span>, <span class="hljs-string">&#x27;b&#x27;</span>, <span class="hljs-string">&#x27;c&#x27;</span>).zipWithIndex();<br></code></pre></td></tr></table></figure>
 <p>在Vavr里，我们会通过实现<a target="_blank" rel="noopener" href="https://projecteuler.net/archives">99 Euler Problems</a>来考察以及测试我们的库，这是一个很棒的概念性验证，请不要吝啬给我们的库推送PR。</p>
-<hr class="footnotes-sep" />
 <section class="footnotes">
-<ol class="footnotes-list">
-<li id="fn1" class="footnote-item"><p>mutator methods：<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Mutator_method%E3%80%82">https://en.wikipedia.org/wiki/Mutator_method。</a> <a href="#fnref1" class="footnote-backref">↩︎</a></p>
+<hr>
+<div class="footnote-list">
+<ol>
+<li>
+<span id="fn:1" class="footnote-text"><span>mutator methods：https://en.wikipedia.org/wiki/Mutator_method。 <a href="#fnref:1" rev="footnote" class="footnote-backref"> ↩︎</a></span></span>
 </li>
-<li id="fn2" class="footnote-item"><p>查看源码可知，这里是按3、2、1的顺序进行构建的，对整个链表的遍历，则会按照1、2、3的顺序输出，遵循后进先出原则。整个链表遍历顺序的<strong>头节点是1，尾节点是3</strong>。 <a href="#fnref2" class="footnote-backref">↩︎</a></p>
+<li>
+<span id="fn:2" class="footnote-text"><span>查看源码可知，这里是按3、2、1的顺序进行构建的，对整个链表的遍历，则会按照1、2、3的顺序输出，遵循后进先出原则。整个链表遍历顺序的<strong>头节点是1，尾节点是3</strong>。 <a href="#fnref:2" rev="footnote" class="footnote-backref"> ↩︎</a></span></span>
 </li>
-<li id="fn3" class="footnote-item"><p>此时的<strong>尾部</strong>不是按链表的遍历顺序，而是按构建链表时的顺序来定义的。<strong>头元素0</strong>会变成新版本链表遍历顺序的头节点。更新后的新版本链表，遍历出来的结果就是0、2、3。 <a href="#fnref3" class="footnote-backref">↩︎</a></p>
+<li>
+<span id="fn:3" class="footnote-text"><span>此时的<strong>尾部</strong>不是按链表的遍历顺序，而是按构建链表时的顺序来定义的。<strong>头元素0</strong>会变成新版本链表遍历顺序的头节点。更新后的新版本链表，遍历出来的结果就是0、2、3。 <a href="#fnref:3" rev="footnote" class="footnote-backref"> ↩︎</a></span></span>
 </li>
-<li id="fn4" class="footnote-item"><p>这里的集合是指Set。 <a href="#fnref4" class="footnote-backref">↩︎</a></p>
+<li>
+<span id="fn:4" class="footnote-text"><span>这里的集合是指Set。 <a href="#fnref:4" rev="footnote" class="footnote-backref"> ↩︎</a></span></span>
 </li>
-<li id="fn5" class="footnote-item"><p><strong>多元组</strong>，也称为<strong>顺序组</strong>（英语：Tuple），泛指有限个<a target="_blank" rel="noopener" href="https://zh.m.wikipedia.org/wiki/%E5%85%83%E7%B4%A0_(%E6%95%B8%E5%AD%B8)">元素</a>所组成的<a target="_blank" rel="noopener" href="https://zh.m.wikipedia.org/wiki/%E5%BA%8F%E5%88%97">序列</a>。在数学及计算机科学分别有其特殊的意义。 <a href="#fnref5" class="footnote-backref">↩︎</a></p>
+<li>
+<span id="fn:5" class="footnote-text"><span><strong>多元组</strong>，也称为<strong>顺序组</strong>（英语：Tuple），泛指有限个<a target="_blank" rel="noopener" href="https://zh.m.wikipedia.org/wiki/元素_(數學)">元素</a>所组成的<a target="_blank" rel="noopener" href="https://zh.m.wikipedia.org/wiki/序列">序列</a>。在数学及计算机科学分别有其特殊的意义。 <a href="#fnref:5" rev="footnote" class="footnote-backref"> ↩︎</a></span></span>
 </li>
 </ol>
+</div>
 </section>
 
-        </div>
-      </article>
-    </div>
-    <!-- Comments -->
-    <div class="container">
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
       
-<section id="comment">
-  <!-- <h1 class="title">留言</h1> -->
+        <a href="/tags/%E5%87%BD%E6%95%B0%E5%BC%8F%E7%BC%96%E7%A8%8B/">#函数式编程</a>
+      
+        <a href="/tags/vavr/">#vavr</a>
+      
+    </div>
+  
+</div>
+
+
+              
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/article/%E5%87%BD%E6%95%B0%E5%BC%8F%E7%BC%96%E7%A8%8B%E5%A2%9E%E5%BC%BA%E5%BA%93vavr%E5%88%9D%E6%8E%A2%EF%BC%88%E4%B8%80%EF%BC%89/" title="函数式编程增强库Vavr初探（一）">
+                        <span class="hidden-mobile">函数式编程增强库Vavr初探（一）</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+  </div>
+</div>
+
+
+
+
 
   
-</section>
 
 
-    </div>
-    <!-- Pre or Next -->
-    <div class="nav-links">
-      
-      
-        <div class="nav-next">
-          <a href="/article/函数式编程增强库vavr初探（一）/" rel="prev">下一页 <span class="meta-arraw meta-arraw-right"></span></a>
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
         </div>
-      
+        <div class="list-group" id="local-search-result"></div>
+      </div>
     </div>
-
   </div>
 </div>
 
+    
 
-  <!-- Footer -->
-  <!-- Footer-widgets -->
-<div class="footer-widgets">
-  <div class="row inside-wrapper">
-    <div class="col-1-3">
-      <aside>
-        <h3 class="widget-title">关于本站</h3>
-        <div class="custom-widget-content">
-          
-          学而不思则罔，思而不学则殆。
-        </div>
-      </aside>
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
     </div>
-    <div class="col-1-3">
-      <aside>
-        <h3 class="widget-title">与我联系</h3>
-        <div class="widget-text">
-          
-            
-              <a href="https://github.com/LuckyCaesar" class="icon icon-github" target="_blank">github</a>
-            
-          
-        </div>
-      </aside>
-    </div>
-    <div class="col-1-3">
-      <aside>
-        <h3 class="widget-title">站内搜索</h3>
-        <div class="widget-text">
-          <form onSubmit="return appDaily.submitSearch('')">
-            <p>
-              <input type="text" placeholder="search..." id="homeSearchInput">
-            </p>
-            <!-- <input type="submit" value="GO"> -->
-          </form>
-        </div>
-      </aside>
-    </div>
-  </div>
+  
+  
+  
+  
 </div>
-<!-- Footer -->
-<footer class="site-info">
-  <p>
-    <span>三味书屋 &copy; 2022</span>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            loader : {
+              load: ['ui/lazy']
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
     
-      <span class="split">|</span>
-      <span>Powered by <a href="https://hexo.io/" target="_blank">Hexo</a> with Theme <a href="https://github.com/GallenHu/hexo-theme-Daily" target="_blank">Daily</a></span>
-    
-  </p>
-</footer>
 
+  <script  src="https://lib.baomitu.com/mathjax/3.2.2/es5/tex-mml-chtml.js" ></script>
 
-  <!-- After footer scripts -->
-  <!-- scripts -->
+  <script  src="/js/local-search.js" ></script>
 
-<script src="/js/app.js"></script>
+  <script defer src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" ></script>
 
 
 
 
 
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
 
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
 </body>
-
 </html>
