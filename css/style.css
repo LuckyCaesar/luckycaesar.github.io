@@ -247,6 +247,40 @@ var {
   padding: 0;
   vertical-align: baseline; }
 
+table {
+  padding: 0;
+  word-break: initial; }
+
+table tr {
+  border: 1px solid #dfe2e5;
+  margin: 0;
+  padding: 0; }
+
+table tr:nth-child(2n),
+thead {
+  background-color: #f8f8f8;
+  text-align: left; }
+
+table th {
+  font-weight: bold;
+  border: 1px solid #dfe2e5;
+  border-bottom: 0;
+  margin: 0;
+  padding: 6px 13px; }
+
+table td {
+  border: 1px solid #dfe2e5;
+  margin: 0;
+  padding: 6px 13px; }
+
+table th:first-child,
+table td:first-child {
+  margin-top: 0; }
+
+table th:last-child,
+table td:last-child {
+  margin-bottom: 0; }
+
 /*--------------------------------------------------------------
 Typography
 --------------------------------------------------------------*/
@@ -853,7 +887,7 @@ pre {
 
 code {
   padding: 0.2em 0.4em;
-  background-color: #efefef;
+  background-color: #f3f4f4;
   border-radius: 3px; }
 
 pre .line {
@@ -868,6 +902,7 @@ pre .line {
   border: 1px solid #eeeeee;
   overflow-x: auto; }
   .highlight table, .highlight tr, .highlight td {
+    border: 0;
     width: 100%;
     border-collapse: collapse;
     padding: 0;
@@ -1022,7 +1057,6 @@ pre {
   pre .tex .command,
   pre .prompt {
     color: #42b983; }
-  pre .comment,
   pre .java .annotation,
   pre .python .decorator,
   pre .template_comment,
@@ -1032,6 +1066,8 @@ pre {
   pre .apache .sqbracket,
   pre .tex .formula {
     color: #b3b3b3; }
+  pre .comment {
+    color: #b4654d; }
   pre .deletion {
     color: #BA4545; }
   pre .coffeescript .javascript,

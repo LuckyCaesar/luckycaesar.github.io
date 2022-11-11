@@ -151,29 +151,29 @@
 Vavr是对Java8的对象-函数式语言的扩展，目的是减少代码行数并提高代码质量。提供了持久化集合，针对错误处理的函数式抽象，并发编程，模式匹配以及其他更丰富的内容。</p>
 </blockquote>
 <p>本文主要是翻译至Vavr官方文档中的<a target="_blank" rel="noopener" href="https://docs.vavr.io/#_usage_guide">使用指南</a>部分，会出现一些术语，主要参考维基百科。</p>
-<h2 id="3-使用指南"><a class="markdownIt-Anchor" href="#3-使用指南"></a> 3. 使用指南</h2>
+<h1 id="3-使用指南"><a class="markdownIt-Anchor" href="#3-使用指南"></a> 3. 使用指南</h1>
 <p>Vavr带来的是对一些最基础类型 — 很明显，在Java中是缺失的或者（实现地）比较简陋，的精心设计的表征：<code>Tuple</code>，<code>Value</code>和<code>λ</code>。</p>
 <p>在Vavr中，一切（实现）都是基于这三个最基本的构建块（building blocks）：</p>
 <p><img src="/img/vavr01.jpeg" alt="" /></p>
-<h3 id="31-多元组"><a class="markdownIt-Anchor" href="#31-多元组"></a> 3.1. 多元组<sup class="footnote-ref"><a href="#fn1" id="fnref1">[1]</a></sup></h3>
+<h2 id="31-多元组"><a class="markdownIt-Anchor" href="#31-多元组"></a> 3.1. 多元组<sup class="footnote-ref"><a href="#fn1" id="fnref1">[1]</a></sup></h2>
 <p>Java里面没有一个针对多元组的整体概念。一个Tuple可以将固定数量的元素组合在一起作为一个整体进行传递。不同于Array或者List，它可以持有不同类型的对象，但同时也是不可变的。</p>
 <p>多元组的类型有Tuple1，Tuple2，Tuple3等等，目前最多支持8个元素。对于一个多元组 <code>t</code>，可以通过<code>t._1</code>方法访问它的第一个元素，<code>t._2</code>方法访问第二个，以此类推。</p>
-<h4 id="311-创建多元组"><a class="markdownIt-Anchor" href="#311-创建多元组"></a> 3.1.1. 创建多元组</h4>
+<h3 id="311-创建多元组"><a class="markdownIt-Anchor" href="#311-创建多元组"></a> 3.1.1. 创建多元组</h3>
 <p>接下来通过一个示例来演示如何创建一个持有String和Integer两种类型的元素的多元组：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// (Java，8)</span></span><br><span class="line">Tuple2&lt;String, Integer&gt; java8 = Tuple.of(<span class="string">&quot;Java&quot;</span>, <span class="number">8</span>); ❶</span><br><span class="line"></span><br><span class="line"><span class="comment">// &quot;Java&quot;</span></span><br><span class="line"><span class="type">String</span> <span class="variable">s</span> <span class="operator">=</span> java8._1; ❷</span><br><span class="line"></span><br><span class="line"><span class="comment">// 8</span></span><br><span class="line"><span class="type">Integer</span> <span class="variable">i</span> <span class="operator">=</span> java8._2; ❸</span><br></pre></td></tr></table></figure>
 <p>❶ 通过静态工厂方法<code>Tuple.of()</code>来创建一个多元组。</p>
 <p>❷ 获取这个多元组的第一个元素。</p>
 <p>❸ 获取这个多元组的第二个元素。</p>
-<h4 id="312-组件映射"><a class="markdownIt-Anchor" href="#312-组件映射"></a> 3.1.2. 组件映射</h4>
+<h3 id="312-组件映射"><a class="markdownIt-Anchor" href="#312-组件映射"></a> 3.1.2. 组件映射</h3>
 <p>组件映射就是为多元组的每一个元素执行一个函数，然后返回一个新的多元组：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// (vavr, 1)</span></span><br><span class="line">Tuple2&lt;String, Integer&gt; that = java8.map(</span><br><span class="line">		s -&gt; s.substring(<span class="number">2</span>) + <span class="string">&quot;vr&quot;</span>,</span><br><span class="line">    	i -&gt; i / <span class="number">8</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
-<h4 id="313-单映射器映射"><a class="markdownIt-Anchor" href="#313-单映射器映射"></a> 3.1.3. 单映射器映射</h4>
+<h3 id="313-单映射器映射"><a class="markdownIt-Anchor" href="#313-单映射器映射"></a> 3.1.3. 单映射器映射</h3>
 <p>当然，也可以通过一个映射函数来映射一个多元组（中的所有元素）：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// (vavr, 1)</span></span><br><span class="line">Tuple2&lt;String, Integer&gt; that = java8.map(</span><br><span class="line">		(s, i) -&gt; Tuple.of(s.substring(<span class="number">2</span>) + <span class="string">&quot;vr&quot;</span>, i / <span class="number">8</span>)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
-<h4 id="314-多元组变换"><a class="markdownIt-Anchor" href="#314-多元组变换"></a> 3.1.4. 多元组变换</h4>
+<h3 id="314-多元组变换"><a class="markdownIt-Anchor" href="#314-多元组变换"></a> 3.1.4. 多元组变换</h3>
 <p>根据多元组的内容，变换操作可以得到一个新的类型的值：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// &quot;vavr 1&quot;</span></span><br><span class="line"><span class="type">String</span> <span class="variable">that</span> <span class="operator">=</span> java8.apply(</span><br><span class="line">		(s, i) -&gt; s.substring(<span class="number">2</span>) + <span class="string">&quot;vr &quot;</span> + i / <span class="number">8</span></span><br><span class="line">);</span><br></pre></td></tr></table></figure>
-<h3 id="32-函数"><a class="markdownIt-Anchor" href="#32-函数"></a> 3.2. 函数</h3>
+<h2 id="32-函数"><a class="markdownIt-Anchor" href="#32-函数"></a> 3.2. 函数</h2>
 <p>函数式编程的所有工作都与值有关并能使用函数对值进行变换。Java8仅提供了一个接收单个参数的<code>Function</code>和一个接收两个参数的<code>BiFunction</code>，Vavr则把这个参数上限提高到了8个。这些函数式接口被命名为<code>Function0,Function1,Function2,Function3</code>等以此类推。如果需要能抛出检查异常的函数，则可以使用<code>CheckedFunction1,CheckedFunction2</code>等等。</p>
 <p>下面的lambda表达式创建了一个两数相加的函数：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// sum.apply(1, 2) = 3</span></span><br><span class="line">Function2&lt;Integer, Integer, Integer&gt; sum = (a,b) -&gt; a + b;</span><br></pre></td></tr></table></figure>
@@ -183,18 +183,18 @@ Vavr是对Java8的对象-函数式语言的扩展，目的是减少代码行数�
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">Function3&lt;String, String, String, String&gt; function3 =</span><br><span class="line">        Function3.of(<span class="built_in">this</span>::methodWhichAccepts3Parameters);</span><br></pre></td></tr></table></figure>
 <p>实际上，Vavr的函数式接口是针对Java8函数式接口的“类固醇”（意思是增强），也提供了更多的特性如：</p>
 <ul>
-<li>合成（Composition）</li>
+<li>组合（Composition）</li>
 <li>提升（Lifting）</li>
 <li>柯里化（Currying）</li>
 <li>记忆化（Memoization）</li>
 </ul>
-<h4 id="321-合成"><a class="markdownIt-Anchor" href="#321-合成"></a> 3.2.1. 合成</h4>
-<p>对函数可以进行合成。在数学中，函数合成是指把一个函数应用到另一个函数的结果当中从而产生第三个函数。举个例子，函数<code>f: X → Y</code>和函数<code>g: Y → Z</code>可以合成生成一个新的函数<code>h:g(f(X))</code>就能得到<code>X → Z</code>的映射。</p>
-<p>（要实现合成）可以使用<code>andThen</code>方法：</p>
+<h3 id="321-组合"><a class="markdownIt-Anchor" href="#321-组合"></a> 3.2.1. 组合</h3>
+<p>对函数可以进行组合。在数学中，函数组合是指把一个函数应用到另一个函数的结果当中从而产生第三个函数。举个例子，函数<code>f: X → Y</code>和函数<code>g: Y → Z</code>可以组合生成一个新的函数<code>h:g(f(X))</code>就能得到<code>X → Z</code>的映射。</p>
+<p>（要实现组合）可以使用<code>andThen</code>方法：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">Function1&lt;Integer, Integer&gt; plusOne = a -&gt; a + <span class="number">1</span>;</span><br><span class="line">Function1&lt;Integer, Integer&gt; multiplyByTwo = a -&gt; a * <span class="number">2</span>;</span><br><span class="line"></span><br><span class="line">Function1&lt;Integer, Integer&gt; add1AndMultiplyBy2 = plusOne.andThen(multiplyByTwo);</span><br><span class="line"></span><br><span class="line">then(add1AndMultiplyBy2.apply(<span class="number">2</span>)).isEqualTo(<span class="number">6</span>);</span><br></pre></td></tr></table></figure>
 <p>或者<code>compose</code>方法：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Function1&lt;Integer, Integer&gt; add1AndMultiplyBy2 = multiplyByTwo.compose(plusOne);</span><br><span class="line"></span><br><span class="line">then(add1AndMultiplyBy2.apply(<span class="number">2</span>)).isEqualTo(<span class="number">6</span>);</span><br></pre></td></tr></table></figure>
-<h4 id="322-提升"><a class="markdownIt-Anchor" href="#322-提升"></a> 3.2.2. 提升</h4>
+<h3 id="322-提升"><a class="markdownIt-Anchor" href="#322-提升"></a> 3.2.2. 提升</h3>
 <p>我们可以把一个偏函数<sup class="footnote-ref"><a href="#fn2" id="fnref2">[2]</a></sup>提升为一个返回<code>Option</code>结果的全函数<sup class="footnote-ref"><a href="#fn2" id="fnref2:1">[2:1]</a></sup>。<em>偏函数</em> 是数学中的术语，一个从X到Y的偏函数就是函数 f: X’ → Y，X’是X的某个子集。它通过不强制函数f将X中的每一个元素都映射到Y中对应的元素来概括一个函数 f: X → Y的概念。这就意味着偏函数仅适用于某些输入值，如果有非法的输入值调用了函数，那么通常会抛出异常。</p>
 <p>下面的方法<code>divide</code>是一个只接收非零除数的偏函数：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Function2&lt;Integer, Integer, Integer&gt; divide = (a, b) -&gt; a / b;</span><br></pre></td></tr></table></figure>
@@ -208,7 +208,7 @@ Vavr是对Java8的对象-函数式语言的扩展，目的是减少代码行数�
 <p>我们也可以通过方法引用来提升<code>sum</code>方法：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Function2&lt;Integer, Integer, Option&lt;Integer&gt;&gt; sum = Function2.lift(<span class="built_in">this</span>::sum);</span><br><span class="line"></span><br><span class="line"><span class="comment">// = None</span></span><br><span class="line">Option&lt;Integer&gt; optionalResult = sum.apply(-<span class="number">1</span>, <span class="number">2</span>); ❶</span><br></pre></td></tr></table></figure>
 <p>❶ 被提升的函数会捕捉到<code>IllegalArgumentException</code>并映射成<code>None</code>进行返回。</p>
-<h4 id="323-偏函数应用partial-application"><a class="markdownIt-Anchor" href="#323-偏函数应用partial-application"></a> 3.2.3. 偏函数应用（Partial application）</h4>
+<h3 id="323-偏函数应用partial-application"><a class="markdownIt-Anchor" href="#323-偏函数应用partial-application"></a> 3.2.3. 偏函数应用（Partial application）</h3>
 <p>偏函数应用允许你用一个已有的函数通过固定某些值（指参数值）来派生出一个新的函数。你可以固定一个或者多个参数，而且要固定的参数数量会决定新函数的参数数量，这样<code>新参数数量 = （原参数数量 - 要固定的参数数量）</code>。参数都是从左向右依次绑定的。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Function2&lt;Integer, Integer, Integer&gt; sum = (a, b) -&gt; a + b;</span><br><span class="line">Function1&lt;Integer, Integer&gt; add2 = sum.apply(<span class="number">2</span>); ❶</span><br><span class="line"></span><br><span class="line">then(add2.apply(<span class="number">4</span>)).isEqualTo(<span class="number">6</span>);</span><br></pre></td></tr></table></figure>
 <p>❶ 第一个参数<code>a</code>的值被固定为2。</p>
@@ -216,7 +216,7 @@ Vavr是对Java8的对象-函数式语言的扩展，目的是减少代码行数�
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Function5&lt;Integer, Integer, Integer, Integer, Integer, Integer&gt; sum = (a, b, c, d, e) -&gt; a + b + c + d + e;</span><br><span class="line">Function2&lt;Integer, Integer, Integer&gt; add6 = sum.apply(<span class="number">2</span>, <span class="number">3</span>, <span class="number">1</span>); ❶</span><br><span class="line"></span><br><span class="line">then(add6.apply(<span class="number">4</span>, <span class="number">3</span>)).isEqualTo(<span class="number">13</span>);</span><br></pre></td></tr></table></figure>
 <p>❶ 参数<code>a</code>，<code>b</code>，<code>c</code>的值被分别固定成了2，3，1。</p>
 <p>偏函数应用不同于柯里化，会在接下来的章节中进行讨论。</p>
-<h4 id="324-柯里化"><a class="markdownIt-Anchor" href="#324-柯里化"></a> 3.2.4. 柯里化</h4>
+<h3 id="324-柯里化"><a class="markdownIt-Anchor" href="#324-柯里化"></a> 3.2.4. 柯里化</h3>
 <p>柯里化是一种通过固定其中一个参数的值来部分的应用一个函数的技术，从而得到一个返回<code>Function1</code>的<code>Function1</code>函数。</p>
 <p>当函数<code>Function2</code>被<em>柯里化</em>后，得到的结果和对<code>Function2</code>进行<em>偏函数应用</em>的结果很难区别，因为两者都是一个一元函数。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Function2&lt;Integer, Integer, Integer&gt; sum = (a, b) -&gt; a + b;</span><br><span class="line">Function1&lt;Integer, Integer&gt; add2 = sum.curried().apply(<span class="number">2</span>); ❶</span><br><span class="line"></span><br><span class="line">then(add2.apply(<span class="number">4</span>)).isEqualTo(<span class="number">6</span>);</span><br></pre></td></tr></table></figure>
@@ -225,13 +225,13 @@ Vavr是对Java8的对象-函数式语言的扩展，目的是减少代码行数�
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Function3&lt;Integer, Integer, Integer, Integer&gt; sum = (a, b, c) -&gt; a + b + c;</span><br><span class="line"><span class="keyword">final</span> Function1&lt;Integer, Function1&lt;Integer, Integer&gt;&gt; add2 = sum.curried().apply(<span class="number">2</span>); ❶</span><br><span class="line"></span><br><span class="line">then(add2.apply(<span class="number">4</span>).apply(<span class="number">3</span>)).isEqualTo(<span class="number">9</span>); ❷</span><br></pre></td></tr></table></figure>
 <p>❶ 注意参数中存在的额外的函数。</p>
 <p>❷ 除了最后一次调用以外，对<code>apply</code>的进一步调用会返回不同的函数<code>Function1</code>。</p>
-<h4 id="325-记忆化"><a class="markdownIt-Anchor" href="#325-记忆化"></a> 3.2.5. 记忆化</h4>
+<h3 id="325-记忆化"><a class="markdownIt-Anchor" href="#325-记忆化"></a> 3.2.5. 记忆化</h3>
 <p>记忆化是缓存的一种形式。一个有记忆的函数只会执行一次然后（之后的执行）会从缓存中取值进行返回。在下面的示例中，第一次执行会计算得到一个随机数然后在第二次执行时会返回缓存的这个数。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Function0&lt;Double&gt; hashCache =</span><br><span class="line">    Function0.of(Math::random).memoized();</span><br><span class="line"></span><br><span class="line"><span class="type">double</span> <span class="variable">randomValue1</span> <span class="operator">=</span> hashCache.apply();</span><br><span class="line"><span class="type">double</span> <span class="variable">randomValue2</span> <span class="operator">=</span> hashCache.apply();</span><br><span class="line"></span><br><span class="line">then(randomValue1).isEqualTo(randomValue2);</span><br></pre></td></tr></table></figure>
-<h3 id="33-值"><a class="markdownIt-Anchor" href="#33-值"></a> 3.3. 值</h3>
-<p>在函数设定中，我们把值认作是一种<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Normal_form_(abstract_rewriting)">范式</a>（normal form），一个无法进一步求值的表达式。在Java中我们通过把一个对象的状态设置为final并叫它<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Immutable_object">不可变对象</a>来表达这种含义。</p>
+<h2 id="33-值"><a class="markdownIt-Anchor" href="#33-值"></a> 3.3. 值</h2>
+<p>在函数式环境中，我们把值认作是一种<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Normal_form_(abstract_rewriting)">范式</a>（normal form），一个无法进一步求值的表达式。在Java中我们通过把一个对象的状态设置为final并称它为<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Immutable_object">不可变对象</a>来表达这种含义。</p>
 <p>Vavr中的函数值则对不可变对象进行了抽象，通过在实例之间共享不可变内存实现了高效的写操作。我们就&quot;免费&quot;实现了线程安全！（共享不可变内存这里我理解为Java中final或static final的变量，天然具备线程安全的特性，无需花费额外的成本。）</p>
-<h4 id="331-option"><a class="markdownIt-Anchor" href="#331-option"></a> 3.3.1. Option</h4>
+<h3 id="331-option"><a class="markdownIt-Anchor" href="#331-option"></a> 3.3.1. Option</h3>
 <p>Option是一个单子<sup class="footnote-ref"><a href="#fn3" id="fnref3">[3]</a></sup>容器类型，代表着一个可选值。Option的实例要么是<code>Some</code>的实例，要么是<code>None</code>的实例。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// optional *value*, no more nulls</span></span><br><span class="line">Option&lt;T&gt; option = Option.of(...);</span><br></pre></td></tr></table></figure>
 <p>如果你在使用了Java中的<code>Optional</code>类后再接触Vavr（中的<code>Option</code>），会发现一个很关键的不同点。在<code>Optional</code>里面，调用<code>.map</code>方法然后使其返回null会得到一个空的<code>Optional</code>。而在Vavr里面，会得到一个<code>Some(null)</code>然后导致<code>NullPointerException</code>。</p>
@@ -255,30 +255,30 @@ Vavr是对Java8的对象-函数式语言的扩展，目的是减少代码行数�
 <p>❶ 可选项是<code>Some(&quot;foo&quot;)</code>。</p>
 <p>❷ 结果选项是<code>None</code>。</p>
 <p><a target="_blank" rel="noopener" href="http://blog.vavr.io/the-agonizing-death-of-an-astronaut/">Vavr博客</a>中对此进行了更详细的探讨。</p>
-<h4 id="332-try"><a class="markdownIt-Anchor" href="#332-try"></a> 3.3.2. Try</h4>
+<h3 id="332-try"><a class="markdownIt-Anchor" href="#332-try"></a> 3.3.2. Try</h3>
 <p>Try是一个单子容器类型，表示一次要么返回异常，要么返回计算成功的值的计算。和<code>Either</code>有点类似，但在语义上又有所区别。Try的实例都是<code>Success</code>或者<code>Failure</code>的实例。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// no need to handle exceptions</span></span><br><span class="line">Try.of(() -&gt; bunchOfWork()).getOrElse(other);</span><br></pre></td></tr></table></figure>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> <span class="keyword">static</span> io.vavr.API.*;        <span class="comment">// $, Case, Match</span></span><br><span class="line"><span class="keyword">import</span> <span class="keyword">static</span> io.vavr.Predicates.*; <span class="comment">// instanceOf</span></span><br><span class="line"></span><br><span class="line"><span class="type">A</span> <span class="variable">result</span> <span class="operator">=</span> Try.of(<span class="built_in">this</span>::bunchOfWork)</span><br><span class="line">    .recover(x -&gt; Match(x).of(</span><br><span class="line">        Case($(instanceOf(Exception_1.class)), t -&gt; somethingWithException(t)),</span><br><span class="line">        Case($(instanceOf(Exception_2.class)), t -&gt; somethingWithException(t)),</span><br><span class="line">        Case($(instanceOf(Exception_n.class)), t -&gt; somethingWithException(t))</span><br><span class="line">    ))</span><br><span class="line">    .getOrElse(other);</span><br></pre></td></tr></table></figure>
-<h4 id="333-lazy"><a class="markdownIt-Anchor" href="#333-lazy"></a> 3.3.3. Lazy</h4>
+<h3 id="333-lazy"><a class="markdownIt-Anchor" href="#333-lazy"></a> 3.3.3. Lazy</h3>
 <p>Lazy是一个单子容器类型，表示一个惰性计算的值。同Supplier相比，Lazy是有记忆的，即它只会执行一次并由此具有了<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Referential_transparency">引用透明性</a>（一个表达式在程序中可以被它等价的值替换，而不影响结果）。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">Lazy&lt;Double&gt; lazy = Lazy.of(Math::random);</span><br><span class="line">lazy.isEvaluated(); <span class="comment">// = false</span></span><br><span class="line">lazy.get();         <span class="comment">// = 0.123 (random generated)</span></span><br><span class="line">lazy.isEvaluated(); <span class="comment">// = true</span></span><br><span class="line">lazy.get();         <span class="comment">// = 0.123 (memoized)</span></span><br></pre></td></tr></table></figure>
 <p>你也可以（通过Lazy）创建一个真正的惰性值（只适用于接口（interfaces））：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">CharSequence</span> <span class="variable">chars</span> <span class="operator">=</span> Lazy.val(() -&gt; <span class="string">&quot;Yay!&quot;</span>, CharSequence.class); <span class="comment">// 第二个参数是一个interface</span></span><br></pre></td></tr></table></figure>
-<h4 id="334-either"><a class="markdownIt-Anchor" href="#334-either"></a> 3.3.4. Either</h4>
+<h3 id="334-either"><a class="markdownIt-Anchor" href="#334-either"></a> 3.3.4. Either</h3>
 <p>Either表示的是两种可能类型的值。一个Either只会是Left或者Right。如果一个给定的Either是Right，然后把它投射给Left，那么对Left的操作不会对Right的值有任何影响。同样的，如果一个给定的Either是Left，然后把它投射给Right，那么对Right的操作也不会对Left的值有任何影响。如果Left投射给Left或者Right投射给Right，那么这些操作就会互相产生影响。</p>
 <p>例：一个compute()函数，返回了一个Integer值（成功的情况下）或者返回一个String类型的错误信息（失败的情况下）。按惯例，成功的情况下返回Right，失败的情况下返回Left。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Either&lt;String,Integer&gt; value = compute().right().map(i -&gt; i * <span class="number">2</span>).toEither();</span><br></pre></td></tr></table></figure>
 <p>如果compute()的结果是Right(1)，value的值就是Right(2)。</p>
 <p>如果compute()的结果是Left(“error”)，value的值就是Left(“error”)。</p>
-<h4 id="335-future"><a class="markdownIt-Anchor" href="#335-future"></a> 3.3.5. Future</h4>
+<h3 id="335-future"><a class="markdownIt-Anchor" href="#335-future"></a> 3.3.5. Future</h3>
 <p>Future是一个在某个不确定的时刻才会变得可用的计算结果。它提供的所有操作都是非阻塞的，底层的ExecutorService通常被用做执行异步处理程序，比如onComplete(…)。</p>
 <p>一个Future有两种状态：等待中和已完成。</p>
 <p><strong>等待中：</strong> 计算正在进行当中，只有一个处于等待中的future才能被标记为已完成或者已撤销。</p>
 <p><strong>已完成：</strong> 计算完成后，返回结果就是成功，返回异常或者被撤销则是失败。</p>
 <p>回调可以在任意时间点上被注册到Future。当Future完成时，这些（回调）动作会被执行。注册到已完成的Future上的动作会被立即执行，它可能会运行在一个独立的线程中，这取决于底层的ExecutorService。而那些注册到被撤销的Future上的动作会带着失败的结果被执行。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// future *value*, result of an async calculation</span></span><br><span class="line">Future&lt;T&gt; future = Future.of(...);</span><br></pre></td></tr></table></figure>
-<h4 id="336-validation"><a class="markdownIt-Anchor" href="#336-validation"></a> 3.3.6. Validation</h4>
-<p>Validation控件是一个<em>应用式函子</em><sup class="footnote-ref"><a href="#fn4" id="fnref4">[4]</a></sup>，有助于累积错误。在我们尝试合成单子时，组合过程会在第一次遇到错误时短路。但是’Validation’可以继续这个组合过程，并累积所有错误。这在对多个字段做校验时尤其有用，比方说一个web表单，你肯定是想一次请求拿到所有可能遇见的错误，而不是一次一个。</p>
+<h3 id="336-validation"><a class="markdownIt-Anchor" href="#336-validation"></a> 3.3.6. Validation</h3>
+<p>Validation控件是一个<em>应用式函子</em><sup class="footnote-ref"><a href="#fn4" id="fnref4">[4]</a></sup>，有助于累积错误。在我们尝试组合单子时，会在第一次遇到错误时短路。但是’Validation’可以继续这个组合过程，并累积所有错误。这在对多个字段做校验时尤其有用，比方说一个web表单，你肯定是想一次请求拿到所有可能遇见的错误，而不是一次一个。</p>
 <p>例：在一个web表单中，有’name’和’age’两个字段，希望（提交后）要么创建一个有效的Person实例，要么返回校验的错误列表。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">PersonValidator</span> <span class="variable">personValidator</span> <span class="operator">=</span> <span class="keyword">new</span> <span class="title class_">PersonValidator</span>();</span><br><span class="line"></span><br><span class="line"><span class="comment">// Valid(Person(John Dow, 30))</span></span><br><span class="line">Validation&lt;Seq&lt;String&gt;, Person&gt; valid = personValidator.validatePerson(<span class="string">&quot;John Doe&quot;</span>, <span class="number">30</span>);</span><br><span class="line"></span><br><span class="line"><span class="comment">// Invalid(List(Name contains invalid characters: &#x27;!4?&#x27;, Age must be greater than 0))</span></span><br><span class="line">Validation&lt;Seq&lt;String&gt;, Person&gt; invalid = personValidator.validatePerson(<span class="string">&quot;John? Doe!4&quot;</span>, -<span class="number">1</span>);</span><br></pre></td></tr></table></figure>
 <p><code>Validation.Valid</code>实例包含了一个有效的值，而<code>Validation.Invalid</code>实例则包含了一组校验的错误列表。</p>
@@ -286,24 +286,24 @@ Vavr是对Java8的对象-函数式语言的扩展，目的是减少代码行数�
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">PersonValidator</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">String</span> <span class="variable">VALID_NAME_CHARS</span> <span class="operator">=</span> <span class="string">&quot;[a-zA-Z ]&quot;</span>;</span><br><span class="line">    <span class="keyword">private</span> <span class="keyword">static</span> <span class="keyword">final</span> <span class="type">int</span> <span class="variable">MIN_AGE</span> <span class="operator">=</span> <span class="number">0</span>;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> Validation&lt;Seq&lt;String&gt;, Person&gt; <span class="title function_">validatePerson</span><span class="params">(String name, <span class="type">int</span> age)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> Validation.combine(validateName(name), validateAge(age)).ap(Person::<span class="keyword">new</span>);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Validation&lt;String, String&gt; <span class="title function_">validateName</span><span class="params">(String name)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> CharSeq.of(name).replaceAll(VALID_NAME_CHARS, <span class="string">&quot;&quot;</span>).transform(seq -&gt; seq.isEmpty()</span><br><span class="line">                ? Validation.valid(name)</span><br><span class="line">                : Validation.invalid(<span class="string">&quot;Name contains invalid characters: &#x27;&quot;</span></span><br><span class="line">                + seq.distinct().sorted() + <span class="string">&quot;&#x27;&quot;</span>));</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">private</span> Validation&lt;String, Integer&gt; <span class="title function_">validateAge</span><span class="params">(<span class="type">int</span> age)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> age &lt; MIN_AGE</span><br><span class="line">                ? Validation.invalid(<span class="string">&quot;Age must be at least &quot;</span> + MIN_AGE)</span><br><span class="line">                : Validation.valid(age);</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>如果校验成功，即输入的数据是有效的，那么一个<code>Person</code>实例会根据给定的字段<code>name</code>和<code>age</code>被创建。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">class</span> <span class="title class_">Person</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">final</span> String name;</span><br><span class="line">    <span class="keyword">public</span> <span class="keyword">final</span> <span class="type">int</span> age;</span><br><span class="line"></span><br><span class="line">    <span class="keyword">public</span> <span class="title function_">Person</span><span class="params">(String name, <span class="type">int</span> age)</span> &#123;</span><br><span class="line">        <span class="built_in">this</span>.name = name;</span><br><span class="line">        <span class="built_in">this</span>.age = age;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Override</span></span><br><span class="line">    <span class="keyword">public</span> String <span class="title function_">toString</span><span class="params">()</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> <span class="string">&quot;Person(&quot;</span> + name + <span class="string">&quot;, &quot;</span> + age + <span class="string">&quot;)&quot;</span>;</span><br><span class="line">    &#125;</span><br><span class="line"></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
-<h3 id="34-集合"><a class="markdownIt-Anchor" href="#34-集合"></a> 3.4 集合</h3>
+<h2 id="34-集合"><a class="markdownIt-Anchor" href="#34-集合"></a> 3.4 集合</h2>
 <p>为了满足函数式编程的要求，即所谓不变性，我们做了大量的工作来为Java设计一个全新的集合库。</p>
 <p>Java中的Stream会将计算拔高到一个不同的层次，然后在另一个显式步骤中把它关联到某个特定的集合。而在Vavr中我们抛弃了所有这些额外的公式化的东西。</p>
 <p>新的集合是基于<a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html">java.lang.Iterable</a>（来实现的），所以它们也利用了迭代风格的语法糖。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 1000 random numbers</span></span><br><span class="line"><span class="keyword">for</span> (<span class="type">double</span> random : Stream.continually(Math::random).take(<span class="number">1000</span>)) &#123;</span><br><span class="line">    ...</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p><code>TraversableOnce</code>拥有大量实用的函数来操作集合，它的API和<a target="_blank" rel="noopener" href="http://docs.oracle.com/javase/8/docs/api/java/util/stream/Stream.html">java.util.stream.Stream</a>类似，但却更加成熟。</p>
-<h4 id="341-list"><a class="markdownIt-Anchor" href="#341-list"></a> 3.4.1. List</h4>
+<h3 id="341-list"><a class="markdownIt-Anchor" href="#341-list"></a> 3.4.1. List</h3>
 <p>Vavr中的<code>List</code>是一个不可变的链表。（对List的）变种（Mutations）会创建新的实例。大多数操作会在线性时间内执行，产生结果的操作将依次执行。</p>
-<h5 id="java8"><a class="markdownIt-Anchor" href="#java8"></a> Java8</h5>
+<h4 id="java8"><a class="markdownIt-Anchor" href="#java8"></a> Java8</h4>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Arrays.asList(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>).stream().reduce((i, j) -&gt; i + j);</span><br></pre></td></tr></table></figure>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">IntStream.of(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>).sum();</span><br></pre></td></tr></table></figure>
-<h5 id="vavr"><a class="markdownIt-Anchor" href="#vavr"></a> Vavr</h5>
+<h4 id="vavr"><a class="markdownIt-Anchor" href="#vavr"></a> Vavr</h4>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// io.vavr.collection.List</span></span><br><span class="line">List.of(<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>).sum();</span><br></pre></td></tr></table></figure>
-<h4 id="342-stream"><a class="markdownIt-Anchor" href="#342-stream"></a> 3.4.2. Stream</h4>
+<h3 id="342-stream"><a class="markdownIt-Anchor" href="#342-stream"></a> 3.4.2. Stream</h3>
 <p><code>io.vavr.collection.Stream</code>的（底层）实现是一个惰性的链表，只有在需要时才会对值进行计算。由于它惰性的特性，大多数操作都会在常数时间内执行。操作通常会处于中间且会在一次遍历中被执行。</p>
 <p>streams最妙的是我们可以用它们来表示（理论上）无限长的序列。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 2, 4, 6, ...</span></span><br><span class="line">Stream.from(<span class="number">1</span>).filter(i -&gt; i % <span class="number">2</span> == <span class="number">0</span>);</span><br></pre></td></tr></table></figure>
-<h4 id="343-性能特点"><a class="markdownIt-Anchor" href="#343-性能特点"></a> 3.4.3. 性能特点</h4>
+<h3 id="343-性能特点"><a class="markdownIt-Anchor" href="#343-性能特点"></a> 3.4.3. 性能特点</h3>
 <p>表1. 序列操作的时间复杂度</p>
 <table>
 <thead>
@@ -464,12 +464,12 @@ Vavr是对Java8的对象-函数式语言的扩展，目的是减少代码行数�
 <li>log — 对数时间</li>
 <li>linear — 线性时间</li>
 </ul>
-<h3 id="35-性能检查"><a class="markdownIt-Anchor" href="#35-性能检查"></a> 3.5 性能<sup class="footnote-ref"><a href="#fn5" id="fnref5">[5]</a></sup>检查</h3>
+<h2 id="35-性能检查"><a class="markdownIt-Anchor" href="#35-性能检查"></a> 3.5 性能<sup class="footnote-ref"><a href="#fn5" id="fnref5">[5]</a></sup>检查</h2>
 <p>性能检查（也被称作<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Property_testing">性能测试</a>）是一个很强有力的手段，可以通过函数式的方式帮助我们测试代码的性能。它基于生成的随机数据，再把这些数据传递给用户定义的检查函数。</p>
 <p>Vavr在其<code>io.vavr:vavr-test</code>模块中有对性能检查的支持，所以在测试中要使用它的话得确保引入了这个模块。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">Arbitrary&lt;Integer&gt; ints = Arbitrary.integer();</span><br><span class="line"></span><br><span class="line"><span class="comment">// square(int) &gt;= 0: OK, passed 1000 tests.</span></span><br><span class="line">Property.def(<span class="string">&quot;square(int) &gt;= 0&quot;</span>)</span><br><span class="line">        .forAll(ints)</span><br><span class="line">        .suchThat(i -&gt; i * i &gt;= <span class="number">0</span>)</span><br><span class="line">        .check()</span><br><span class="line">        .assertIsSatisfied();</span><br></pre></td></tr></table></figure>
 <p>复杂数据结构的生成器都是由一些简单生成器组成的。</p>
-<h3 id="36-模式匹配"><a class="markdownIt-Anchor" href="#36-模式匹配"></a> 3.6. 模式匹配</h3>
+<h2 id="36-模式匹配"><a class="markdownIt-Anchor" href="#36-模式匹配"></a> 3.6. 模式匹配</h2>
 <p>Scala天然拥有模式匹配的特性，相对于<em>朴素</em>的Java来说这是一个优点。其基础语法和Java的switch类似：</p>
 <figure class="highlight scala"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">val</span> s = i <span class="keyword">match</span> &#123;</span><br><span class="line">  <span class="keyword">case</span> <span class="number">1</span> =&gt; <span class="string">&quot;one&quot;</span></span><br><span class="line">  <span class="keyword">case</span> <span class="number">2</span> =&gt; <span class="string">&quot;two&quot;</span></span><br><span class="line">  <span class="keyword">case</span> _ =&gt; <span class="string">&quot;?&quot;</span></span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>注意<em>match</em>是一个表达式，它会产出一个结果。此外，它还提供了：</p>
@@ -481,7 +481,7 @@ Vavr是对Java8的对象-函数式语言的扩展，目的是减少代码行数�
 <li>编译期<em>穷尽</em>检查</li>
 </ul>
 <p>模式匹配是一个很棒的特性。它让我们从一堆if-then-else分支中解放了出来，减少了代码量的同时，也能专注于更有意义的部分。</p>
-<h4 id="361-java匹配的基础知识"><a class="markdownIt-Anchor" href="#361-java匹配的基础知识"></a> 3.6.1. Java匹配的基础知识</h4>
+<h3 id="361-java匹配的基础知识"><a class="markdownIt-Anchor" href="#361-java匹配的基础知识"></a> 3.6.1. Java匹配的基础知识</h3>
 <p>Vavr提供了一个和Scala的match相似的macth API，添加如下的引用可以启用它：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> <span class="keyword">static</span> io.vavr.API.*;</span><br></pre></td></tr></table></figure>
 <p>它提供了静态方法<em>Match</em>，<em>Case</em>，还有所谓的 <em>atomic patterns</em>：</p>
@@ -493,10 +493,10 @@ Vavr是对Java8的对象-函数式语言的扩展，目的是减少代码行数�
 <p>在（一定的/合理的）范围内，最初Scala的示例可以用如下的方式进行实现：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">String</span> <span class="variable">s</span> <span class="operator">=</span> Match(i).of(</span><br><span class="line">    Case($(<span class="number">1</span>), <span class="string">&quot;one&quot;</span>),</span><br><span class="line">    Case($(<span class="number">2</span>), <span class="string">&quot;two&quot;</span>),</span><br><span class="line">    Case($(), <span class="string">&quot;?&quot;</span>)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
 <p>⚡ 我们的方法名（Case）统一使用了大写开头，因为Java中的’case’是一个关键字，这让这个API有点特殊。</p>
-<h5 id="穷尽"><a class="markdownIt-Anchor" href="#穷尽"></a> 穷尽</h5>
+<h4 id="穷尽"><a class="markdownIt-Anchor" href="#穷尽"></a> 穷尽</h4>
 <p>最后那个通配符模式<code>$()</code>能帮我们从抛出的匹配错误中解放出来，如果没有任何分支匹配上的话。由于我们无法像Scala编译器那样执行穷尽检查，所以我们提供了可选结果的返回：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">Option&lt;String&gt; s = Match(i).option(</span><br><span class="line">    Case($(<span class="number">0</span>), <span class="string">&quot;zero&quot;</span>)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
-<h5 id="语法糖"><a class="markdownIt-Anchor" href="#语法糖"></a> 语法糖</h5>
+<h4 id="语法糖"><a class="markdownIt-Anchor" href="#语法糖"></a> 语法糖</h4>
 <p>如上所述，<code>Case</code>允许匹配条件模式。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Case($(predicate), ...)</span><br></pre></td></tr></table></figure>
 <p>Vavr提供了一组默认的断言。</p>
@@ -506,24 +506,21 @@ Vavr是对Java8的对象-函数式语言的扩展，目的是减少代码行数�
 <p><strong>多重条件</strong></p>
 <p>可以用<code>isIn</code>的断言来检查多重条件：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">Case($(isIn(<span class="string">&quot;-h&quot;</span>, <span class="string">&quot;--help&quot;</span>)), ...)</span><br></pre></td></tr></table></figure>
-<p><strong>Performing Side-Effects<sup class="footnote-ref"><a href="#fn7" id="fnref7">[7]</a></sup></strong></p>
-<blockquote>
-<p>只检索到了<em>函数副作用</em>这个术语。</p>
-</blockquote>
-<p>Match就像一个表达式，它会返回一个值。为了perform side-effects我们要用到一个返回<code>Void</code>的辅助函数<code>run</code>：</p>
+<p><strong>处理副作用<sup class="footnote-ref"><a href="#fn7" id="fnref7">[7]</a></sup></strong></p>
+<p>Match就像一个表达式，它会返回一个值。为了处理副作用我们要用到一个返回<code>Void</code>的辅助函数<code>run</code>：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">Match(arg).of(</span><br><span class="line">    Case($(isIn(<span class="string">&quot;-h&quot;</span>, <span class="string">&quot;--help&quot;</span>)), o -&gt; run(<span class="built_in">this</span>::displayHelp)),</span><br><span class="line">    Case($(isIn(<span class="string">&quot;-v&quot;</span>, <span class="string">&quot;--version&quot;</span>)), o -&gt; run(<span class="built_in">this</span>::displayVersion)),</span><br><span class="line">    Case($(), o -&gt; run(() -&gt; &#123;</span><br><span class="line">        <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">IllegalArgumentException</span>(arg);</span><br><span class="line">    &#125;))</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
 <p>⚡ <code>run</code>用于消除歧义，因为<code>void</code>在Java中不是一个有效的返回值。</p>
 <p><strong>注意：</strong><code>run</code>不能当作直接返回值，也就是不能放到lambda表达式的外面：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Wrong!</span></span><br><span class="line">Case($(isIn(<span class="string">&quot;-h&quot;</span>, <span class="string">&quot;--help&quot;</span>)), run(<span class="built_in">this</span>::displayHelp))</span><br></pre></td></tr></table></figure>
 <p>否则，分支就会在模式匹配命中<em>之前</em>执行，这会导致整个匹配表达式的中断。相反我们应该把它放在lambda表达式里面：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// Ok</span></span><br><span class="line">Case($(isIn(<span class="string">&quot;-h&quot;</span>, <span class="string">&quot;--help&quot;</span>)), o -&gt; run(<span class="built_in">this</span>::displayHelp))</span><br></pre></td></tr></table></figure>
-<p>总之，<code>run</code>的使用不当很容易造成错误，一定要小心。我们正考虑可能在之后的某个release版本中把它废弃掉，然后会提供一个更好的API来performing side-effects。</p>
-<h5 id="具名参数"><a class="markdownIt-Anchor" href="#具名参数"></a> 具名参数</h5>
+<p>总之，<code>run</code>的使用不当很容易造成错误，一定要小心。我们正考虑可能在之后的某个release版本中把它废弃掉，然后会提供一个更好的API来处理函数副作用。</p>
+<h4 id="具名参数"><a class="markdownIt-Anchor" href="#具名参数"></a> 具名参数</h4>
 <p>Vavr使用了lambda的方式为匹配的值提供了具名参数。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">Number</span> <span class="variable">plusOne</span> <span class="operator">=</span> Match(obj).of(</span><br><span class="line">    Case($(instanceOf(Integer.class)), i -&gt; i + <span class="number">1</span>),</span><br><span class="line">    Case($(instanceOf(Double.class)), d -&gt; d + <span class="number">1</span>),</span><br><span class="line">    Case($(), o -&gt; &#123; <span class="keyword">throw</span> <span class="keyword">new</span> <span class="title class_">NumberFormatException</span>(); &#125;)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
 <p>截止目前，我们都是采用原子模式来做值匹配。如果一个原子模式匹配成功，那么匹配对象的真正类型则是从模式的下文中推断出来的。</p>
 <p>接下来，我们来看看能够匹配（理论上）任意深度的对象图的递归模式。</p>
-<h5 id="对象分解"><a class="markdownIt-Anchor" href="#对象分解"></a> 对象分解</h5>
+<h4 id="对象分解"><a class="markdownIt-Anchor" href="#对象分解"></a> 对象分解</h4>
 <p>Java中使用构造器来实例化类。我们可以把<em>对象分解</em>理解成把对象分解为它的各个部分。</p>
 <p>构造器是一个可以施加参数然后返回新实例的函数，那相应的解构器就是一个接收实例（参数）然后返回某部分的函数。这时我们就说一个对象<em>unapplied</em>。</p>
 <p>对象解构不一定是一个唯一操作。比方说，LocalDate能够被分解成：</p>
@@ -532,9 +529,9 @@ Vavr是对Java8的对象-函数式语言的扩展，目的是减少代码行数�
 <li>代表对应某个时刻的纪元毫秒的long值</li>
 <li>…</li>
 </ul>
-<h4 id="362-模式"><a class="markdownIt-Anchor" href="#362-模式"></a> 3.6.2. 模式</h4>
+<h3 id="362-模式"><a class="markdownIt-Anchor" href="#362-模式"></a> 3.6.2. 模式</h3>
 <p>在Vavr中我们使用模式来描述某个特定类型的实例是如何被解构的。这些模式可以和Match API结合在一起使用。</p>
-<h5 id="预定义的模式"><a class="markdownIt-Anchor" href="#预定义的模式"></a> 预定义的模式</h5>
+<h4 id="预定义的模式"><a class="markdownIt-Anchor" href="#预定义的模式"></a> 预定义的模式</h4>
 <p>针对Vavr中的很多类型都已经有对应的匹配模式了，可以通过如下方式引入它们：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> <span class="keyword">static</span> io.vavr.Patterns.*;</span><br></pre></td></tr></table></figure>
 <p>比如说我们现在需要匹配一个Try的结果：</p>
@@ -543,14 +540,14 @@ Vavr是对Java8的对象-函数式语言的扩展，目的是减少代码行数�
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Match(_try).of(</span><br><span class="line">    Case($Success($Tuple2($(<span class="string">&quot;a&quot;</span>), $())), tuple2 -&gt; ...),</span><br><span class="line">    Case($Failure($(instanceOf(Error.class))), error -&gt; ...)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
 <p>可以看到这里的Success和Failure是根模式，它们被分解成了Tuple2和Error，拥有了正确的泛型类型。</p>
 <p>⚡ 深度嵌套的类型是根据匹配参数而不是匹配模式来推断的。</p>
-<h5 id="用户自定义模式"><a class="markdownIt-Anchor" href="#用户自定义模式"></a> 用户自定义模式</h5>
+<h4 id="用户自定义模式"><a class="markdownIt-Anchor" href="#用户自定义模式"></a> 用户自定义模式</h4>
 <p>能够unapply（即<a href="#%E5%AF%B9%E8%B1%A1%E5%88%86%E8%A7%A3">对象分解</a>提到的概念）任意对象，包括不可变类的实例，都是至关重要的。Vavr提供了编译期注解<code>@Patterns</code>和<code>@Unapply</code>，以声明式的方式实现了这一点。</p>
 <p>要启用annotation processor，需要项目中依赖<a target="_blank" rel="noopener" href="http://search.maven.org/#search%7Cga%7C1%7Cvavr-match">vavr-match</a>包。</p>
 <p>⚡ 注：当然我们也可以不通过代码生成器而是直接实现这些模式。想了解有关更多的信息，可以查看生成的源码。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> io.vavr.match.annotation.*;</span><br><span class="line"></span><br><span class="line"><span class="meta">@Patterns</span></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">My</span> &#123;</span><br><span class="line"></span><br><span class="line">    <span class="meta">@Unapply</span></span><br><span class="line">    <span class="keyword">static</span> &lt;T&gt; Tuple1&lt;T&gt; <span class="title function_">Optional</span><span class="params">(java.util.Optional&lt;T&gt; optional)</span> &#123;</span><br><span class="line">        <span class="keyword">return</span> Tuple.of(optional.orElse(<span class="literal">null</span>));</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
 <p>annotation processor放了一个文件MyPatterns在同一个包中（默认是在target/generated-sources下面），也支持内部类。</p>
 <p>特殊情况：如果类名是$，那么生成的类名就只是个不带前缀的Patterns。</p>
-<h5 id="卫"><a class="markdownIt-Anchor" href="#卫"></a> 卫<sup class="footnote-ref"><a href="#fn6" id="fnref6:1">[6:1]</a></sup></h5>
+<h4 id="卫"><a class="markdownIt-Anchor" href="#卫"></a> 卫<sup class="footnote-ref"><a href="#fn6" id="fnref6:1">[6:1]</a></sup></h4>
 <p>现在我们用<em>卫</em>来实现对Optionals的匹配。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line">Match(optional).of(</span><br><span class="line">    Case($Optional($(v -&gt; v != <span class="literal">null</span>)), <span class="string">&quot;defined&quot;</span>),</span><br><span class="line">    Case($Optional($(v -&gt; v == <span class="literal">null</span>)), <span class="string">&quot;empty&quot;</span>)</span><br><span class="line">);</span><br></pre></td></tr></table></figure>
 <p>可以通过实现<code>isNull</code>和<code>isNotNull</code>来简化断言。</p>
@@ -592,6 +589,10 @@ Vavr是对Java8的对象-函数式语言的扩展，目的是减少代码行数�
     </div>
     <!-- Pre or Next -->
     <div class="nav-links">
+      
+        <div class="nav-previous">
+          <a href="/article/函数式编程增强库Vavr初探（二）/" rel="prev"><span class="meta-arraw meta-arraw-left"></span> 上一页</a>
+        </div>
       
       
         <div class="nav-next">
