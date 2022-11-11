@@ -560,7 +560,7 @@ Content
   position: relative; }
 
 .container {
-  max-width: 780px;
+  max-width: 880px;
   margin: 0 auto;
   padding-left: 50px;
   padding-right: 50px; }
@@ -875,6 +875,12 @@ Footer
   .entry-content a:hover {
     color: #3769c9;
     opacity: 0.8; }
+
+.footnotes ol,
+.footnotes ul {
+  font-size: 0.85em;
+  margin: 0 0 1.5em 1em;
+  color: #888888; }
 
 /*
  * From https://github.com/pinggod/hexo-theme-apollo/blob/master/source/scss/_partial/post.scss
