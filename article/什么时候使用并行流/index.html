@@ -16,12 +16,12 @@
   <meta name="author" content="LuckyCaesar">
   <meta name="keywords" content="">
   
-    <meta name="description" content="翻译至Doug Lea关于并行流的介绍，原文链接  java.util.stream框架支持对集合或者其他源进行数据驱动的操作，其中大多数方法都是对每一个数据元素应用相同的操作。当多个内核可用时，我们可以使用集合的parallelStream()方法，使得“数据驱动”变成“数据并行”。但是，什么时候应该这样做呢？（注：说明不是有多核就可以盲目使用并行流） 当各个操作是独立的，并且计算量很大或者是">
+    <meta name="description" content="翻译至Doug Lea关于并行流的介绍，原文链接  java.util.stream框架支持对集合或者其他源进行数据驱动的操作，其中大多数方法都是对每一个数据元素应用相同的操作。当多个内核可用时，我们可以使用集合的parallelStream()方法，使得“数据驱动”变成“数据并行”。但是，什么时候应该这样做呢？（注：说明不是有多核就可以盲目使用并行流） 当各个操作是独立的，并且计算量很">
 <meta property="og:type" content="article">
 <meta property="og:title" content="什么时候使用并行流">
 <meta property="og:url" content="https://luckycaesar.github.io/article/%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E4%BD%BF%E7%94%A8%E5%B9%B6%E8%A1%8C%E6%B5%81/index.html">
 <meta property="og:site_name" content="一日三省吾身">
-<meta property="og:description" content="翻译至Doug Lea关于并行流的介绍，原文链接  java.util.stream框架支持对集合或者其他源进行数据驱动的操作，其中大多数方法都是对每一个数据元素应用相同的操作。当多个内核可用时，我们可以使用集合的parallelStream()方法，使得“数据驱动”变成“数据并行”。但是，什么时候应该这样做呢？（注：说明不是有多核就可以盲目使用并行流） 当各个操作是独立的，并且计算量很大或者是">
+<meta property="og:description" content="翻译至Doug Lea关于并行流的介绍，原文链接  java.util.stream框架支持对集合或者其他源进行数据驱动的操作，其中大多数方法都是对每一个数据元素应用相同的操作。当多个内核可用时，我们可以使用集合的parallelStream()方法，使得“数据驱动”变成“数据并行”。但是，什么时候应该这样做呢？（注：说明不是有多核就可以盲目使用并行流） 当各个操作是独立的，并且计算量很">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://luckycaesar.github.io/img/java.jpg">
 <meta property="article:published_time" content="2020-06-24T16:00:00.000Z">
@@ -277,60 +277,69 @@
               <div class="markdown-body">
                 
                 <blockquote>
-<p>翻译至Doug Lea关于并行流的介绍，<a target="_blank" rel="noopener" href="http://gee.cs.oswego.edu/dl/html/StreamParallelGuidance.html">原文链接</a></p>
+<p>翻译至Doug Lea关于并行流的介绍，<a
+target="_blank" rel="noopener" href="http://gee.cs.oswego.edu/dl/html/StreamParallelGuidance.html">原文链接</a></p>
 </blockquote>
 <p><code>java.util.stream</code>框架支持对集合或者其他源进行<u>数据驱动</u>的操作，其中大多数方法都是对每一个数据元素应用相同的操作。<u>当多个内核可用时</u>，我们可以使用集合的<code>parallelStream()</code>方法，使得“数据驱动”变成“数据并行”。但是，什么时候应该这样做呢？（<em>注：说明不是有多核就可以盲目使用并行流</em>）</p>
-<p>当各个操作是独立的，并且<u>计算量很大</u>或者是作用于<u>可以高效拆分数据结构的大量数据元素</u>，或者以上情况都有时，那么请考虑使用<code>S.parallelStream().operation(F)</code> 来替代<code>S.stream().operation(F)</code>。下面是详细的说明：</p>
+<p>当各个操作是独立的，并且<u>计算量很大</u>或者是作用于<u>可以高效拆分数据结构的大量数据元素</u>，或者以上情况都有时，那么请考虑使用<code>S.parallelStream().operation(F)</code>
+来替代<code>S.stream().operation(F)</code>。下面是详细的说明：</p>
 <ul>
 <li><strong>F</strong>，<u>每个元素的函数操作（通常是一个lambda）是独立的</u>：对每个数据元素的计算是<u>不需要依赖或者不会影响</u>其他任何数据元素的。</li>
 <li><strong>S</strong>，<u>数据源集合可以被高效的拆分</u>。除了Collections外，还有一些其它易于并行化的stream数据源，譬如<code>java.util.SplittableRandom</code>（你可以使用<code>stream.parallel()</code>方法使之并行化）。但是大多数基于IO的数据源还是主要为了顺序使用而设计的。</li>
-<li><u>执行顺序型式的总时间需要超过一个最小的阈值</u>。如今在大多数平台上，这个阈值大约是100微秒（的10倍以内），但是可以不用那么精准的去测量它。在实践中，使用 <u><strong>N</strong>（数据元素的个数） 乘以 <strong>Q</strong>（每个数据元素在 <strong>F</strong> 中消耗的时间成本）</u>就可以很好的估算了。反过来，也可以将 <strong>Q</strong> 表示为<u>操作数或者代码的行数</u>，然后检查 <strong>N * Q</strong> 至少为10000（如果还是怕这个数太小，也可以再加一两个0）。所以当 <strong>F</strong> 是一个很简单的函数比如<code>x-&gt;x+1</code>，那么只有当 <strong>N&gt;=10000</strong> 时使用parallel并行执行才会有价值。相反，当 <strong>F</strong> 需要进行大量的计算比如在棋局游戏中找到下一步的最佳走法，那么 <strong>Q</strong> 这个因子就会很大，以至于只要数据源集合可以被完全的拆分，<strong>N</strong> 就变得不那么重要了。</li>
+<li><u>执行顺序型式的总时间需要超过一个最小的阈值</u>。如今在大多数平台上，这个阈值大约是100微秒（的10倍以内），但是可以不用那么精准的去测量它。在实践中，使用
+<u><strong>N</strong>（数据元素的个数） 乘以
+<strong>Q</strong>（每个数据元素在 <strong>F</strong>
+中消耗的时间成本）</u>就可以很好的估算了。反过来，也可以将
+<strong>Q</strong> 表示为<u>操作数或者代码的行数</u>，然后检查 <strong>N
+* Q</strong>
+至少为10000（如果还是怕这个数太小，也可以再加一两个0）。所以当
+<strong>F</strong>
+是一个很简单的函数比如<code>x-&gt;x+1</code>，那么只有当
+<strong>N&gt;=10000</strong> 时使用parallel并行执行才会有价值。相反，当
+<strong>F</strong>
+需要进行大量的计算比如在棋局游戏中找到下一步的最佳走法，那么
+<strong>Q</strong>
+这个因子就会很大，以至于只要数据源集合可以被完全的拆分，<strong>N</strong>
+就变得不那么重要了。</li>
 </ul>
 <p>Stream框架不会（也不能）去强制实施以上这些（<em>标准/理论</em>）。假如每个计算不是独立的，那用并行的方式去运行不但没有任何好处反而会出现很严重的错误。下面是一些其他说明，来自于三个工程问题和一些折中的思想：</p>
 <ul>
-<li>Start-up：<u>启动</u>。由于计算机处理器多年来一直在增加内核，其中大多数还添加了电源控制机制，这可能会导致内核启动速度变慢，有时还会增加JVM、操作系统和管理程序带来的额外开销。因此该阈值就大致相当于足够多的内核开始处理并行子任务所需的时间。一旦它们开始启动，并行计算就会比顺序计算能效更高（当然这取决于不同的处理器和操作系统的实现细节；可以看看这个例子<a target="_blank" rel="noopener" href="http://queue.acm.org/detail.cfm?id=1658422">this article by Federova et al</a>）。</li>
+<li>Start-up：<u>启动</u>。由于计算机处理器多年来一直在增加内核，其中大多数还添加了电源控制机制，这可能会导致内核启动速度变慢，有时还会增加JVM、操作系统和管理程序带来的额外开销。因此该阈值就大致相当于足够多的内核开始处理并行子任务所需的时间。一旦它们开始启动，并行计算就会比顺序计算能效更高（当然这取决于不同的处理器和操作系统的实现细节；可以看看这个例子<a
+target="_blank" rel="noopener" href="http://queue.acm.org/detail.cfm?id=1658422">this article by
+Federova et al</a>）。</li>
 <li>Granularity：<u>粒度</u>。对已经很小粒度的计算再进行细分是不值得的。Stream框架通常将问题进行分解，以便于系统上所有可用的内核都可以去运行处理。如果启动之后，每个内核实际上什么都做不了，那么设置并行计算（实际上大部分都是顺序计算的）的努力就白费了。考虑到目前内核数的实际范围在2~256之间，该阈值也避免了过度分区的影响。</li>
-<li>Splittability：<u>可分拆性</u>。最有效的可拆分的集合包括ArrayLists和HashMaps（ConcurrentHashMaps），以及普通数组（比如形如T[ ]的数组，使用<code>java.util.Arrays</code>的静态方法拆分的数组）。效率最低的是LinkedLists，BlockingQueues和大多数基于IO的资源。其他的则介于两者之间（<u>如果数据结构内部支持随机访问、高效搜索，或者二者皆有，那么数据结构往往是高效可分的</u>）。如果拆分数据比处理数据的时间还长，那就没必要了。当然，如果计算的 <strong>Q</strong> 因子足够的大，即使对于一个<code>LinkedList</code>，使用并行流也可能更具效率，当然这并不常见。除此之外，一些数据源无法被拆分为单个元素，因此在任务划分的精细程度上可能有所限制。</li>
+<li>Splittability：<u>可分拆性</u>。最有效的可拆分的集合包括ArrayLists和HashMaps（ConcurrentHashMaps），以及普通数组（比如形如T[
+]的数组，使用<code>java.util.Arrays</code>的静态方法拆分的数组）。效率最低的是LinkedLists，BlockingQueues和大多数基于IO的资源。其他的则介于两者之间（<u>如果数据结构内部支持随机访问、高效搜索，或者二者皆有，那么数据结构往往是高效可分的</u>）。如果拆分数据比处理数据的时间还长，那就没必要了。当然，如果计算的
+<strong>Q</strong>
+因子足够的大，即使对于一个<code>LinkedList</code>，使用并行流也可能更具效率，当然这并不常见。除此之外，一些数据源无法被拆分为单个元素，因此在任务划分的精细程度上可能有所限制。</li>
 </ul>
-<p>收集这些影响的详细度量是很困难的（尽管可以谨慎使用比如<a target="_blank" rel="noopener" href="http://openjdk.java.net/projects/code-tools/jmh/">JMH</a>这样的工具）。但总体效果显而易见。你可以自己实验去感受下，比如在一台32核的测试机器上运行<code>ArrayList</code>的<code>max()</code>或者<code>sum()</code>这样的小函数，盈亏平衡点非常接近10K大小。更大的数据量可以看到高达20倍的加速。小于10K大小的运行时间并不比10K大小的运行时间少多少，因此通常比顺序运行时间更慢。（<em>注：上面两句对原句理解的不是特别清楚</em>）更糟糕的减速发生在当数据元素个数少于100时，这将激活一堆线程，然而这些线程最终没有任何事情可做，因为计算在它们开始运行之前就已经完成了。另一方面，当每个元素的计算非常耗时时，使用高效且可以完全分解的集合的好处是显而易见的，比如<code>ArrayList</code>。</p>
+<p>收集这些影响的详细度量是很困难的（尽管可以谨慎使用比如<a
+target="_blank" rel="noopener" href="http://openjdk.java.net/projects/code-tools/jmh/">JMH</a>这样的工具）。但总体效果显而易见。你可以自己实验去感受下，比如在一台32核的测试机器上运行<code>ArrayList</code>的<code>max()</code>或者<code>sum()</code>这样的小函数，盈亏平衡点非常接近10K大小。更大的数据量可以看到高达20倍的加速。小于10K大小的运行时间并不比10K大小的运行时间少多少，因此通常比顺序运行时间更慢。（<em>注：上面两句对原句理解的不是特别清楚</em>）更糟糕的减速发生在当数据元素个数少于100时，这将激活一堆线程，然而这些线程最终没有任何事情可做，因为计算在它们开始运行之前就已经完成了。另一方面，当每个元素的计算非常耗时时，使用高效且可以完全分解的集合的好处是显而易见的，比如<code>ArrayList</code>。</p>
 <p>换一种说法，在没有足够的计算量来证明它的合理性时使用<code>parallel()</code>可能会花费大约100微秒的时间，而在证明了其合理性时使用它至少会节省这么多时间（对于非常大的计算，可能会节省数小时）。（<em>注：我的理解是合理的使用<code>parallel()</code>会带来更高的效率，反之则会带来不必要的开销。</em>）具体的成本和收益是会随着时间和平台的变化而变化的，当然也会随着环境的变化而不同。例如，在一段顺序循环中去并行运行一个微小的计算会更突出（<em>注：使用并行操作带来的</em>）加速和减速的效果（做这样的微基准测试可能无法预测实际的使用情况）。</p>
 <h2 id="提问与答疑">提问与答疑</h2>
 <ul>
-<li>
-<p><strong>为什么JVM自己不能确定是否使用并行模式？</strong></p>
-<p>JVM可以尝试，但是通常情况下都会给出糟糕的答案。过去30年来，对完全无导向的全自动的多核并行的追求并没有取得统一的成果，因此，Stream框架采用了更安全的方式，仅要求用户做出是或否的决策。这些决策依赖于工程上的折中，并且这些折中不太可能完全消失，这类似于顺序编程中经常会做的判断。例如，在仅包含单个元素的集合中寻找最大的元素而不是直接使用这个元素（不在集合内部）时，可能会遇到上百倍的开销（减速）。有时候JVM可以为您优化这种开销，但这在顺序的情况下并不常见，在并行的情况下更是从不适用。另一方面，我们也希望工具能帮助用户做更好的决策。</p>
-</li>
-<li>
-<p><strong>我对 F, N, Q, S 这些参数的了解甚少，如何去更好的抉择呢？</strong></p>
-<p>这也类似于常见的顺序性编程中出现的问题。比如，S 是一个<code>HashSet</code>，调用集合的方法<code>S.contains(x)</code>通常会很快，但是如果是<code>LinkedList</code>就会变慢了，其它的集合介于二者之间。通常，对于使用了集合的组件的作者来说，<u>最好的处理方法不是直接导出集合，而是基于集合导出操作</u>，这样用户就与这些决策隔绝了，这同样适用于并行操作。比如，一个内置“prices”集合的组件，可能会定义一个使用size大小阈值进行判断的方法，除非对每个元素的计算都非常昂贵。例如：</p>
+<li><p><strong>为什么JVM自己不能确定是否使用并行模式？</strong></p>
+<p>JVM可以尝试，但是通常情况下都会给出糟糕的答案。过去30年来，对完全无导向的全自动的多核并行的追求并没有取得统一的成果，因此，Stream框架采用了更安全的方式，仅要求用户做出是或否的决策。这些决策依赖于工程上的折中，并且这些折中不太可能完全消失，这类似于顺序编程中经常会做的判断。例如，在仅包含单个元素的集合中寻找最大的元素而不是直接使用这个元素（不在集合内部）时，可能会遇到上百倍的开销（减速）。有时候JVM可以为您优化这种开销，但这在顺序的情况下并不常见，在并行的情况下更是从不适用。另一方面，我们也希望工具能帮助用户做更好的决策。</p></li>
+<li><p><strong>我对 F, N, Q, S
+这些参数的了解甚少，如何去更好的抉择呢？</strong></p>
+<p>这也类似于常见的顺序性编程中出现的问题。比如，S
+是一个<code>HashSet</code>，调用集合的方法<code>S.contains(x)</code>通常会很快，但是如果是<code>LinkedList</code>就会变慢了，其它的集合介于二者之间。通常，对于使用了集合的组件的作者来说，<u>最好的处理方法不是直接导出集合，而是基于集合导出操作</u>，这样用户就与这些决策隔绝了，这同样适用于并行操作。比如，一个内置“prices”集合的组件，可能会定义一个使用size大小阈值进行判断的方法，除非对每个元素的计算都非常昂贵。例如：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-type">long</span> <span class="hljs-title function_">getMaxPrice</span><span class="hljs-params">()</span> &#123; <span class="hljs-keyword">return</span> priceStream().max(); &#125;<br><br><span class="hljs-keyword">private</span> Stream <span class="hljs-title function_">priceStream</span><span class="hljs-params">()</span> &#123;<br>  <span class="hljs-keyword">return</span> (prices.size() &lt; MIN_PAR) ? <br>    prices.stream() : prices.parallelStream();<br>&#125;<br></code></pre></td></tr></table></figure>
-<p>你可以通过各种方式扩展这一思想，以处理有关何时以及如何使用并行性的各种考虑。</p>
-</li>
-<li>
-<p><strong>如果我的函数操作可能会涉及到IO或者同步呢？</strong></p>
-<p>一种极端情况是没有通过独立性标准的函数，包括本质上是顺序的IO，对锁定同步资源的访问以及一个并行子任务执行IO失败对其他子任务会产生副作用。将这些函数并行没有多大意义。还有另一种极端情况是，执行偶发且短暂的IO或者很少阻塞的同步计算（例如大多数形式的日志以及对并发集合的大多数使用，如<code>ConcurrentHashMap</code>），这些（<em>使用并行</em>）都是无害的。介于这两者之间的中间情况最需要去判决。如果每个子任务在等待IO或者访问时都阻塞了一段时间，那么CPU资源可能会闲置，并且程序或者JVM也无法通过任何方式去使用它们。（<em>这样的话</em>）每个人都不开心。在这些情况下，使用并行流通常不是一个很好的选择，但还是有可用的比较好的替代方案，比如<code>async-IO</code>以及<code>CompletableFuture</code>的设计。</p>
-</li>
-<li>
-<p><strong>如果我的数据源是基于IO的呢？</strong></p>
-<p>目前，基于JDK IO的Stream源（例如<code>BufferedReader.lines()</code>）主要用于顺序性的使用，在元素到达时逐个处理。支持缓存IO的高效批处理也是有可能的，但是目前需要定制开发Stream源、Spliterators和/或Collectors，在JDK未来的发行版中可能会支持某些常见的类型（<em>数据源</em>）。</p>
-</li>
-<li>
-<p><strong>如果我的程序运行在一台很繁忙的机器上，并且所有的核心都被占用了怎么办？</strong></p>
-<p>机器通常只有一组固定的核心，当进行并行操作的时候不会变魔术般的多出更多的核心。然而，只要清晰的满足了选择并行执行的条件，那么就没有任何理由去担心（<em>机器繁忙的问题</em>）。你的并行任务执行时会与其它任务竞争CPU时间，所以你会看到加速得并没有那么多。在大多数情况下，这仍然比其他方式更有效。在底层机制的设计上，如果没有其他核心可用，你会发现对比顺序执行，（<em>并行执行速度</em>）只会有很小的减缓，除非系统已经超负荷到花费所有的时间在上下文切换上而不是执行真正的任务上，或者是在假定所有处理都是顺序的情况下进行调整的。如果你使用的是这样一个系统，管理员可能已经禁用了将多线程/多核心作为JVM配置的一部分。而如果你是管理员，那么可以考虑这样做（<em>禁用</em>）。</p>
-</li>
-<li>
-<p><strong>是否所有操作都是以并行模式并行化执行？</strong></p>
-<p>是，至少在某种程度上是这样的，尽管Stream框架在选择如何这样做时会遵循源和方法的约束。通常来说，更少的约束使更多潜在的并行性成为可能。另一方面，也无法保证该框架会提取并应用所有可能的并行机会。在某些情况下，如果你有足够的时间和专业知识，你可以手动实现一个更好的并行解决方案。</p>
-</li>
-<li>
-<p><strong>使用并行化的方式能提升多少效率？</strong></p>
+<p>你可以通过各种方式扩展这一思想，以处理有关何时以及如何使用并行性的各种考虑。</p></li>
+<li><p><strong>如果我的函数操作可能会涉及到IO或者同步呢？</strong></p>
+<p>一种极端情况是没有通过独立性标准的函数，包括本质上是顺序的IO，对锁定同步资源的访问以及一个并行子任务执行IO失败对其他子任务会产生副作用。将这些函数并行没有多大意义。还有另一种极端情况是，执行偶发且短暂的IO或者很少阻塞的同步计算（例如大多数形式的日志以及对并发集合的大多数使用，如<code>ConcurrentHashMap</code>），这些（<em>使用并行</em>）都是无害的。介于这两者之间的中间情况最需要去判决。如果每个子任务在等待IO或者访问时都阻塞了一段时间，那么CPU资源可能会闲置，并且程序或者JVM也无法通过任何方式去使用它们。（<em>这样的话</em>）每个人都不开心。在这些情况下，使用并行流通常不是一个很好的选择，但还是有可用的比较好的替代方案，比如<code>async-IO</code>以及<code>CompletableFuture</code>的设计。</p></li>
+<li><p><strong>如果我的数据源是基于IO的呢？</strong></p>
+<p>目前，基于JDK
+IO的Stream源（例如<code>BufferedReader.lines()</code>）主要用于顺序性的使用，在元素到达时逐个处理。支持缓存IO的高效批处理也是有可能的，但是目前需要定制开发Stream源、Spliterators和/或Collectors，在JDK未来的发行版中可能会支持某些常见的类型（<em>数据源</em>）。</p></li>
+<li><p><strong>如果我的程序运行在一台很繁忙的机器上，并且所有的核心都被占用了怎么办？</strong></p>
+<p>机器通常只有一组固定的核心，当进行并行操作的时候不会变魔术般的多出更多的核心。然而，只要清晰的满足了选择并行执行的条件，那么就没有任何理由去担心（<em>机器繁忙的问题</em>）。你的并行任务执行时会与其它任务竞争CPU时间，所以你会看到加速得并没有那么多。在大多数情况下，这仍然比其他方式更有效。在底层机制的设计上，如果没有其他核心可用，你会发现对比顺序执行，（<em>并行执行速度</em>）只会有很小的减缓，除非系统已经超负荷到花费所有的时间在上下文切换上而不是执行真正的任务上，或者是在假定所有处理都是顺序的情况下进行调整的。如果你使用的是这样一个系统，管理员可能已经禁用了将多线程/多核心作为JVM配置的一部分。而如果你是管理员，那么可以考虑这样做（<em>禁用</em>）。</p></li>
+<li><p><strong>是否所有操作都是以并行模式并行化执行？</strong></p>
+<p>是，至少在某种程度上是这样的，尽管Stream框架在选择如何这样做时会遵循源和方法的约束。通常来说，更少的约束使更多潜在的并行性成为可能。另一方面，也无法保证该框架会提取并应用所有可能的并行机会。在某些情况下，如果你有足够的时间和专业知识，你可以手动实现一个更好的并行解决方案。</p></li>
+<li><p><strong>使用并行化的方式能提升多少效率？</strong></p>
 <p>如果你遵循这些准则，通常来说都是很值得的。但是可预测性并不是现代硬件和系统的强项，所以不可能给出普适性的答案。缓存位置、GC效率、JIT编译、内存争用、数据布局、操作系统定时调度策略以及虚拟机监视器的存在都是可能产生重大影响的因素。这些也在顺序执行的性能中发挥作用，但是通常会在并行设置中被放大：在顺序执行中造成10%的差异的问题会在并行执行中产生10倍的差异。</p>
-<p>Stream框架囊括了一些能帮助你提高执行速度的工具。比如，像<code>IntStream</code>这样的原语使用了一些特殊的手段，在并行执行上比顺序执行更具效率，因为它不仅减少了开销（以及空间占用），还增强了缓存的局部性。并且，使用<code>ConcurrentHashMap</code>而不是<code>HashMap</code>作为并行“collect”操作的目标集合能减少内部的开销（<em>注：这里理解为<code>ConcurrentHashMap</code>是数据源集合，而不是collect到<code>ConcurrentHashMap</code>中</em>）。伴随着大家对框架的使用经验的累积，将会出现更多的技巧和指导。</p>
-</li>
-<li>
-<p><strong>这一切都太可怕了！难道我们不应该制定一个使用JVM参数的策略来禁用并行化操作么？</strong></p>
-<p>我们不想告诉你该怎么做，为程序员引入新的会使事情出错的方法是很可怕的。在编码、设计和决策上的错误肯定时有发生。但是有些人几十年来一直在预言，启用应用程序级别的并行会导致不可预知的重大灾难。（<em>这段感觉不太能明白</em>）</p>
-</li>
+<p>Stream框架囊括了一些能帮助你提高执行速度的工具。比如，像<code>IntStream</code>这样的原语使用了一些特殊的手段，在并行执行上比顺序执行更具效率，因为它不仅减少了开销（以及空间占用），还增强了缓存的局部性。并且，使用<code>ConcurrentHashMap</code>而不是<code>HashMap</code>作为并行“collect”操作的目标集合能减少内部的开销（<em>注：这里理解为<code>ConcurrentHashMap</code>是数据源集合，而不是collect到<code>ConcurrentHashMap</code>中</em>）。伴随着大家对框架的使用经验的累积，将会出现更多的技巧和指导。</p></li>
+<li><p><strong>这一切都太可怕了！难道我们不应该制定一个使用JVM参数的策略来禁用并行化操作么？</strong></p>
+<p>我们不想告诉你该怎么做，为程序员引入新的会使事情出错的方法是很可怕的。在编码、设计和决策上的错误肯定时有发生。但是有些人几十年来一直在预言，启用应用程序级别的并行会导致不可预知的重大灾难。（<em>这段感觉不太能明白</em>）</p></li>
 </ul>
 
                 

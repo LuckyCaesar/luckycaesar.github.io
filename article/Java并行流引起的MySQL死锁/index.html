@@ -16,12 +16,12 @@
   <meta name="author" content="LuckyCaesar">
   <meta name="keywords" content="">
   
-    <meta name="description" content="问题描述 之前（半年前）有同事在代码中使用并行流来操作数据库，基于MySQL 5.7版本默认的事务隔离级别RR（Repeatable Read - 可重复读），在测试环境中出现了死锁的问题。 解决方式 经过同事排查发现是在并发写的情况下触发MySQL的间隙锁再引发的死锁，最后把并行流改为串行解决问题，主要是数据量不大没有必要使用并行。 问题一、并行流的使用 具体分析可以看看这里☞什么时候使用并行流">
+    <meta name="description" content="问题描述 之前（半年前）有同事在代码中使用并行流来操作数据库，基于MySQL 5.7版本默认的事务隔离级别RR（Repeatable Read - 可重复读），在测试环境中出现了死锁的问题。 解决方式 经过同事排查发现是在并发写的情况下触发MySQL的间隙锁再引发的死锁，最后把并行流改为串行解决问题，主要是数据量不大没有必要使用并行。 问题一、并行流的使用 具体分析可以看看这里☞什么">
 <meta property="og:type" content="article">
 <meta property="og:title" content="Java并行流引起的MySQL死锁">
 <meta property="og:url" content="https://luckycaesar.github.io/article/Java%E5%B9%B6%E8%A1%8C%E6%B5%81%E5%BC%95%E8%B5%B7%E7%9A%84MySQL%E6%AD%BB%E9%94%81/index.html">
 <meta property="og:site_name" content="一日三省吾身">
-<meta property="og:description" content="问题描述 之前（半年前）有同事在代码中使用并行流来操作数据库，基于MySQL 5.7版本默认的事务隔离级别RR（Repeatable Read - 可重复读），在测试环境中出现了死锁的问题。 解决方式 经过同事排查发现是在并发写的情况下触发MySQL的间隙锁再引发的死锁，最后把并行流改为串行解决问题，主要是数据量不大没有必要使用并行。 问题一、并行流的使用 具体分析可以看看这里☞什么时候使用并行流">
+<meta property="og:description" content="问题描述 之前（半年前）有同事在代码中使用并行流来操作数据库，基于MySQL 5.7版本默认的事务隔离级别RR（Repeatable Read - 可重复读），在测试环境中出现了死锁的问题。 解决方式 经过同事排查发现是在并发写的情况下触发MySQL的间隙锁再引发的死锁，最后把并行流改为串行解决问题，主要是数据量不大没有必要使用并行。 问题一、并行流的使用 具体分析可以看看这里☞什么">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://luckycaesar.github.io/img/programmer_1920.png">
 <meta property="article:published_time" content="2021-03-24T01:00:00.000Z">
@@ -278,18 +278,24 @@
               <div class="markdown-body">
                 
                 <h2 id="问题描述">问题描述</h2>
-<p>之前（半年前）有同事在代码中使用<strong>并行流</strong>来操作数据库，基于MySQL 5.7版本默认的事务隔离级别<strong>RR（Repeatable Read - 可重复读）</strong>，在测试环境中出现了死锁的问题。</p>
+<p>之前（半年前）有同事在代码中使用<strong>并行流</strong>来操作数据库，基于MySQL
+5.7版本默认的事务隔离级别<strong>RR（Repeatable Read -
+可重复读）</strong>，在测试环境中出现了死锁的问题。</p>
 <h2 id="解决方式">解决方式</h2>
 <p>经过同事排查发现是在并发写的情况下触发MySQL的<strong>间隙锁</strong>再引发的死锁，最后把并行流改为串行解决问题，主要是数据量不大没有必要使用并行。</p>
-<h2 id="问题一、并行流的使用">问题一、并行流的使用</h2>
-<p>具体分析可以看看这里☞<a href="https://luckycaesar.github.io/article/%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E4%BD%BF%E7%94%A8%E5%B9%B6%E8%A1%8C%E6%B5%81/">什么时候使用并行流</a>，翻译至Doug Lea大神的文章。</p>
+<h2 id="问题一并行流的使用">问题一、并行流的使用</h2>
+<p>具体分析可以看看这里☞<a
+href="https://luckycaesar.github.io/article/%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E4%BD%BF%E7%94%A8%E5%B9%B6%E8%A1%8C%E6%B5%81/">什么时候使用并行流</a>，翻译至Doug
+Lea大神的文章。</p>
 <p>总结来说就是并行流并不一定能提升效率，是和<u>数据量以及流中每个操作的复杂度</u>挂钩的。而且Java底层采用<strong>ForkJoinPool</strong>的方式来实现，并行流的盲目使用反而会带来额外的线程创建的开销，拖慢程序响应速度。</p>
-<h2 id="问题二、MySQL事务隔离级别及读一致性问题分析">问题二、MySQL事务隔离级别及读一致性问题分析</h2>
+<h2
+id="问题二mysql事务隔离级别及读一致性问题分析">问题二、MySQL事务隔离级别及读一致性问题分析</h2>
 <h3 id="事务隔离级别">事务隔离级别</h3>
 <p>MySQL的事务隔离级别主要是为了解决并发事务（基于InnoDB）下的读一致性问题，主要有以下四种：</p>
 <table>
+
 <thead>
-<tr>
+<tr class="header">
 <th>隔离级别</th>
 <th>读数据一致性</th>
 <th>脏读</th>
@@ -298,28 +304,28 @@
 </tr>
 </thead>
 <tbody>
-<tr>
+<tr class="odd">
 <td>未提交读（Read uncommitted）</td>
 <td>最低级别，只能保证不读取物理上损坏的数据</td>
 <td>是</td>
 <td>是</td>
 <td>是</td>
 </tr>
-<tr>
+<tr class="even">
 <td>已提交读（Read committed，RC）</td>
 <td>语句级</td>
 <td>否</td>
 <td>是</td>
 <td>是</td>
 </tr>
-<tr>
+<tr class="odd">
 <td>可重复读（Read repeatable，RR）</td>
 <td>事务级</td>
 <td>否</td>
 <td>否</td>
 <td>是</td>
 </tr>
-<tr>
+<tr class="even">
 <td>可序列化（Serilizable）</td>
 <td>最高级别，事务级</td>
 <td>否</td>
@@ -333,36 +339,39 @@
 <li>不可重复读：重点是数据是否被修改。事务一读取数据，事务二对数据进行了修改并提交，事务一再次以同样的条件读取，两次读取的数据不一致。</li>
 <li>幻读：主要是新增or删除操作，重点是数据是否存在。事务一针对某一条件的数据进行读取、修改，然后提交，事务二新增or删除了同样条件的数据，导致事务一提交后发现还存在没有修改到的数据or数据已经不存在。</li>
 </ul>
-<p><u>实际上可能很多业务场景中为了保证数据库吞吐量，对于不可重复读和幻读问题有一定的容忍度，再就是RR级别下扫描的记录都要加锁，而RC级别下扫描过但不匹配的记录不会加锁，或者是先加锁再释放，这对扫描大量数据更新的场景影响很大。</u>所以像阿里云的RDS MySQL的默认隔离级别就调整为RC，而不是RR。</p>
-<h3 id="MVVC、行锁、间隙锁">MVVC、行锁、间隙锁</h3>
+<p><u>实际上可能很多业务场景中为了保证数据库吞吐量，对于不可重复读和幻读问题有一定的容忍度，再就是RR级别下扫描的记录都要加锁，而RC级别下扫描过但不匹配的记录不会加锁，或者是先加锁再释放，这对扫描大量数据更新的场景影响很大。</u>所以像阿里云的RDS
+MySQL的默认隔离级别就调整为RC，而不是RR。</p>
+<h3 id="mvvc行锁间隙锁">MVVC、行锁、间隙锁</h3>
 <p>在MySQL中，读取实际上分为两种：<strong>快照读（官方定义：一致性非锁定读）和当前读</strong>。</p>
 <ul>
-<li>
-<p>快照读：读取的是数据在某一时刻的快照（如果数据行没有发生改变则直接读取），普通的select…where…。<strong>RC和RR级别下默认的读取方式。</strong></p>
-</li>
-<li>
-<p>当前读：始终读取的是最新的数据，如select … lock in share mode、select … for update、insert、update、delete</p>
-</li>
+<li><p>快照读：读取的是数据在某一时刻的快照（如果数据行没有发生改变则直接读取），普通的select...where...。<strong>RC和RR级别下默认的读取方式。</strong></p></li>
+<li><p>当前读：始终读取的是最新的数据，如select … lock in share
+mode、select … for update、insert、update、delete</p></li>
 </ul>
-<p><strong>MVVC（Multiversion Concurrency Control）多版本并发控制</strong>：是通过了乐观锁理论（类似版本号比较）的方式来避免<strong>快照读中的不可重复读和幻读</strong>问题。但InnoDB中实际的实现并不是简单的版本号控制，而是借助了<strong>undo log</strong>。</p>
-<ol>
-<li>
-<p>修改前的数据会存放于undo log，通过一个滚动指针关联，就是保存了一份之前版本的数据，也是为了事务的回滚操作；</p>
-</li>
-<li>
-<p>每行数据有一个<strong>事务标识符 - TRX_ID</strong>（插入或更新该行的最后一个事务的标识符），通过对比数据行最新的事务ID和当前事务的ID来判断当前事务是直接读取该行数据还是读取undo log中对当前事务可见的版本数据。</p>
-</li>
+<p><strong>MVVC（Multiversion Concurrency
+Control）多版本并发控制</strong>：是通过了乐观锁理论（类似版本号比较）的方式来避免<strong>快照读中的不可重复读和幻读</strong>问题。但InnoDB中实际的实现并不是简单的版本号控制，而是借助了<strong>undo
+log</strong>。</p>
+<ol type="1">
+<li><p>修改前的数据会存放于undo
+log，通过一个滚动指针关联，就是保存了一份之前版本的数据，也是为了事务的回滚操作；</p></li>
+<li><p>每行数据有一个<strong>事务标识符 -
+TRX_ID</strong>（插入或更新该行的最后一个事务的标识符），通过对比数据行最新的事务ID和当前事务的ID来判断当前事务是直接读取该行数据还是读取undo
+log中对当前事务可见的版本数据。</p></li>
 </ol>
 <p>由于读取的数据要么是没被修改的，要么是历史版本的，所以在快照读的情况下不会出现不可重复读和幻读问题，但可能读取到过时的数据。</p>
-<p><strong>行锁 + 间隙锁</strong>：组合起来就叫Next-Key Lock，主要是为了解决<strong>RR级别当前读的情况下出现的不可重复读和幻读</strong>问题。</p>
+<p><strong>行锁 + 间隙锁</strong>：组合起来就叫Next-Key
+Lock，主要是为了解决<strong>RR级别当前读的情况下出现的不可重复读和幻读</strong>问题。</p>
 <ul>
-<li>行锁（记录锁，Record Lock）：排他锁，直接加在索引记录（key）上，事务对数据修改时加行锁，保证可重复读。</li>
-<li>间隙锁（Gap Lock）：共享锁，锁定某个事务扫描到的数据的索引记录的一个间隙（理解为一个范围），即使范围内不存在的数据也会被锁定，这样这个范围内的数据在事务未提交前肯定不会有变动，因为其他事务会被间隙锁阻塞。<strong>只针对非唯一索引</strong>，因为唯一键肯定不会有重复的插入。</li>
+<li>行锁（记录锁，Record
+Lock）：排他锁，直接加在索引记录（key）上，事务对数据修改时加行锁，保证可重复读。</li>
+<li>间隙锁（Gap
+Lock）：共享锁，锁定某个事务扫描到的数据的索引记录的一个间隙（理解为一个范围），即使范围内不存在的数据也会被锁定，这样这个范围内的数据在事务未提交前肯定不会有变动，因为其他事务会被间隙锁阻塞。<strong>只针对非唯一索引</strong>，因为唯一键肯定不会有重复的插入。</li>
 </ul>
 <h2 id="场景复现">场景复现</h2>
-<p>在理解了上述原理的情况下，就可以对问题进行复现（主要是太久了问题代码没有找到…╮(╯▽╰)╭）：</p>
+<p>在理解了上述原理的情况下，就可以对问题进行复现（主要是太久了问题代码没有找到...╮(╯▽╰)╭）：</p>
 <ul>
-<li>并行流开启了多个并行的事务，需要执行写操作，在MySQL 5.7默认的<strong>RR</strong>事务隔离级别下，会触发<strong>间隙锁</strong>。</li>
+<li>并行流开启了多个并行的事务，需要执行写操作，在MySQL
+5.7默认的<strong>RR</strong>事务隔离级别下，会触发<strong>间隙锁</strong>。</li>
 <li>多个事务同时执行当前读，获取了同一个间隙锁，互相等待，就产生了死锁。</li>
 </ul>
 
