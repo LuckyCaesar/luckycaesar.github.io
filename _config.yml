@@ -155,16 +155,9 @@ archive_generator:
   monthly: true
   daily: false
 
-markdown_it_plus:
-    highlight: true
-    html: true
-    xhtmlOut: true
-    breaks: true
-    langPrefix:
-    linkify: true
-    typographer:
-    quotes: “”‘’
-    pre_class: highlight
+# markdown:
+#   plugins:
+#     - "@traptitech/markdown-it-katex"
   
 # Extensions
 ## Plugins: https://hexo.io/plugins/

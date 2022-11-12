@@ -560,6 +560,7 @@ Stream.from(1).filter(i -> i % 2 == 0);
 
 
 表2. Map/Set操作的时间复杂度
+
 |               | contains/Key | add/put    | remove     | min    |
 | :------------ | :----------- | :--------- | :--------- | :----- |
 | HashMap       | const^eff^   | const^eff^ | const^eff^ | linear |
