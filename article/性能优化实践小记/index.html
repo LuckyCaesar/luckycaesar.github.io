@@ -25,7 +25,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://luckycaesar.github.io/img/code-wallpaper-16.jpeg">
 <meta property="article:published_time" content="2021-11-20T12:00:00.000Z">
-<meta property="article:modified_time" content="2022-11-11T15:12:20.754Z">
+<meta property="article:modified_time" content="2022-11-15T09:21:37.736Z">
 <meta property="article:author" content="LuckyCaesar">
 <meta property="article:tag" content="性能测试">
 <meta property="article:tag" content="性能优化">
@@ -377,7 +377,7 @@ kb左右，我们测试的用户数据是10w，如果原始数据直接缓存到
 <p>我们项目使用的是Undertow而不是Tomcat，从网上找了一些通用的参数调整。</p>
 <figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs yml"><span class="hljs-comment"># undertow配置</span><br><span class="hljs-attr">server:</span><br>  <span class="hljs-attr">undertow:</span><br>    <span class="hljs-comment"># 设置IO线程数, 它主要执行非阻塞的任务,它们会负责多个连接, 默认设置每个CPU核心一个线程</span><br>    <span class="hljs-comment"># 不要设置过大，如果过大，启动项目会报错：打开文件数过多</span><br>    <span class="hljs-attr">io-threads:</span> <span class="hljs-number">16</span><br>    <span class="hljs-comment"># 阻塞任务线程池, 当执行类似servlet请求阻塞IO操作, undertow会从这个线程池中取得线程</span><br>    <span class="hljs-comment"># 它的值设置取决于系统线程执行任务的阻塞系数，默认值是IO线程数*8</span><br>    <span class="hljs-attr">worker-threads:</span> <span class="hljs-number">256</span><br>    <span class="hljs-comment"># 以下的配置会影响buffer,这些buffer会用于服务器连接的IO操作,有点类似netty的池化内存管理</span><br>    <span class="hljs-comment"># 每块buffer的空间大小,越小的空间被利用越充分，不要设置太大，以免影响其他应用，合适即可</span><br>    <span class="hljs-attr">buffer-size:</span> <span class="hljs-number">1024</span><br>    <span class="hljs-comment"># 是否分配的直接内存(NIO直接分配的堆外内存)</span><br>    <span class="hljs-attr">direct-buffers:</span> <span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure></li>
 </ol>
-<h2 id="结果">结果</h2>
+<h1 id="结果">结果</h1>
 <p>由于请求链路上还有网关与用户鉴权中心的存在，所以我们也分为了两种情况进行测试，走网关和不走网关，用来定位和排除一些应用服务的问题。当然，最终结果是以真实环境的网络链路为标准的，也就是走网关路由和鉴权。</p>
 <p>按照测试部门的要求，使用的工具是Jmeter，几个核心接口线程组的线程数设置为100，永久循环持续5分钟。测试环境开启两个pod，单个pod资源限制2C4G。但是测试环境的数据库集群是多个项目共用的，所以数据库的读写性能在不同时间段测试时表现波动很大，最终取的是一个比较折中的数据。</p>
 <ul>
