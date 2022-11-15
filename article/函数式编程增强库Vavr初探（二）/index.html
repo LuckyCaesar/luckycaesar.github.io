@@ -25,7 +25,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://luckycaesar.github.io/img/vavr00.jpeg">
 <meta property="article:published_time" content="2022-11-11T02:00:00.000Z">
-<meta property="article:modified_time" content="2022-11-11T15:12:20.753Z">
+<meta property="article:modified_time" content="2022-11-15T09:55:05.740Z">
 <meta property="article:author" content="LuckyCaesar">
 <meta property="article:tag" content="函数式编程">
 <meta property="article:tag" content="vavr">
@@ -318,15 +318,17 @@ target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Immutable_obj
 <li><p>天然是线程安全的，因此也无需同步</p></li>
 <li><p>有关于<em>equals</em>和<em>hashcode</em>都是稳定的，所以（不可变值）也是可靠的哈希键</p></li>
 <li><p>无需克隆</p></li>
-<li><p>当被用在未经检查的协变转换（Java特有的）中时也能表现得类型安全</p></li>
+<li><p>当被用在未经检查的协变<sup id="fnref:1" class="footnote-ref"><a href="#fn:1" rel="footnote"><span
+class="hint--top hint--rounded"
+aria-label="[协变与逆变](https://zh.wikipedia.org/wiki/%E5%8D%8F%E5%8F%98%E4%B8%8E%E9%80%86%E5%8F%98)。">[1]</span></a></sup>转换（Java特有的）中时也能表现得类型安全</p></li>
 </ul>
 <p>用<em>不可变值</em>搭配<em>引用透明性函数</em>是使Java变得更好的关键，Vavr则提供了必要的<a
 target="_blank" rel="noopener" href="http://static.javadoc.io/io.vavr/vavr/0.10.4/io/vavr/control/package-summary.html">控件</a>和<a
 target="_blank" rel="noopener" href="https://static.javadoc.io/io.vavr/vavr/0.10.4/io/vavr/collection/package-summary.html">集合</a>以在日常的Java编程中达成这一目标。</p>
 <h2 id="果壳中的数据结构">1.3. 果壳中的数据结构</h2>
-<p>Vavr的集合库包含了一组丰富的基于lambda之上的函数式数据结构，唯一个与Java原生集合共享的接口是Iterable。（没有共享其他接口的）主要原因是基于Java集合接口的更改器方法<sup id="fnref:1" class="footnote-ref"><a href="#fn:1" rel="footnote"><span
+<p>Vavr的集合库包含了一组丰富的基于lambda之上的函数式数据结构，唯一个与Java原生集合共享的接口是Iterable。（没有共享其他接口的）主要原因是基于Java集合接口的更改器方法<sup id="fnref:2" class="footnote-ref"><a href="#fn:2" rel="footnote"><span
 class="hint--top hint--rounded"
-aria-label="mutator methods：https://en.wikipedia.org/wiki/Mutator_method。">[1]</span></a></sup>无法返回一个底层集合类型的对象。</p>
+aria-label="[mutator method](https://en.wikipedia.org/wiki/Mutator_method)。">[2]</span></a></sup>无法返回一个底层集合类型的对象。</p>
 <p>下面来看看不同类型的数据结构，我们会知道为什么这（不共享集合接口）是非常必要的。</p>
 <h3 id="可变数据结构">1.3.1. 可变数据结构</h3>
 <p>Java是一门面向对象编程语言。我们通过封装对象的状态来达到数据隐藏的目的，然后提供更改器方法控制这种状态。<a
@@ -357,18 +359,18 @@ target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Stack_(abstra
 (LIFO)</a>方法的栈。</p>
 <p>在Vavr里我们可以像这样来实例化一个列表：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = List(1, 2, 3)</span><br>List&lt;Integer&gt; list1 = List.of(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>);<br></code></pre></td></tr></table></figure>
-<p>列表中的每一个元素都形成了一个独立的节点，最后一个元素的尾部指向Nil，一个空的列表。<sup id="fnref:2" class="footnote-ref"><a href="#fn:2" rel="footnote"><span
+<p>列表中的每一个元素都形成了一个独立的节点，最后一个元素的尾部指向Nil，一个空的列表。<sup id="fnref:3" class="footnote-ref"><a href="#fn:3" rel="footnote"><span
 class="hint--top hint--rounded"
-aria-label="查看源码可知，这里是按3、2、1的顺序进行构建的，对整个链表的遍历，则会按照1、2、3的顺序输出，遵循后进先出原则。整个链表遍历顺序的**头节点是1，尾节点是3**。">[2]</span></a></sup></p>
+aria-label="查看源码可知，这里是按3、2、1的顺序进行构建的，对整个链表的遍历，则会按照1、2、3的顺序输出，遵循后进先出原则。整个链表遍历顺序的**头节点是1，尾节点是3**。">[3]</span></a></sup></p>
 <figure>
 <img src="/img/vavr-list1.png" srcset="/img/loading.gif" lazyload alt="list1" />
 <figcaption aria-hidden="true">list1</figcaption>
 </figure>
 <p>这使得我们可以在列表的不同版本之间共享元素：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = List(0, 2, 3)</span><br>List&lt;Integer&gt; list2 = list1.tail().prepend(<span class="hljs-number">0</span>);<br></code></pre></td></tr></table></figure>
-<p>新的头元素0被<em>链接</em>到原列表的尾部<sup id="fnref:3" class="footnote-ref"><a href="#fn:3" rel="footnote"><span
+<p>新的头元素0被<em>链接</em>到原列表的尾部<sup id="fnref:4" class="footnote-ref"><a href="#fn:4" rel="footnote"><span
 class="hint--top hint--rounded"
-aria-label="此时的**尾部**不是按链表的遍历顺序，而是按构建链表时的顺序来定义的。**头元素0**会变成新版本链表遍历顺序的头节点。更新后的新版本链表，遍历出来的结果就是0、2、3。">[3]</span></a></sup>，原来的列表则保持不变。</p>
+aria-label="此时的**尾部**不是按链表的遍历顺序，而是按构建链表时的顺序来定义的。**头元素0**会变成新版本链表遍历顺序的头节点。更新后的新版本链表，遍历出来的结果就是0、2、3。">[4]</span></a></sup>，原来的列表则保持不变。</p>
 <figure>
 <img src="/img/vavr-list2.png" srcset="/img/loading.gif" lazyload alt="list2" />
 <figcaption aria-hidden="true">list2</figcaption>
@@ -397,10 +399,10 @@ target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Random_access
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = Some((1, Queue()))</span><br>Queue.of(<span class="hljs-number">1</span>).dequeueOption();<br><br><span class="hljs-comment">// = None</span><br>Queue.empty().dequeueOption();<br></code></pre></td></tr></table></figure>
 <p>一个可选结果可以被进一步处理，不管它是否为空。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = Queue(1)</span><br>Queue&lt;Integer&gt; queue = Queue.of(<span class="hljs-number">1</span>);<br><br><span class="hljs-comment">// = Some((1, Queue()))</span><br>Option&lt;Tuple2&lt;Integer, Queue&lt;Integer&gt;&gt;&gt; dequeued = queue.dequeueOption();<br><br><span class="hljs-comment">// = Some(1)</span><br>Option&lt;Integer&gt; element = dequeued.map(Tuple2::_1);<br><br><span class="hljs-comment">// = Some(Queue())</span><br>Option&lt;Queue&lt;Integer&gt;&gt; remaining = dequeued.map(Tuple2::_2);<br></code></pre></td></tr></table></figure>
-<h3 id="有序集合4">1.4.3.
-有序集合<sup id="fnref:4" class="footnote-ref"><a href="#fn:4" rel="footnote"><span
+<h3 id="有序集合5">1.4.3.
+有序集合<sup id="fnref:5" class="footnote-ref"><a href="#fn:5" rel="footnote"><span
 class="hint--top hint--rounded"
-aria-label="这里的集合是指Set。">[4]</span></a></sup></h3>
+aria-label="这里的集合是指**Set**。">[5]</span></a></sup></h3>
 <p>有序集合是比队列使用得更频繁的一种数据结构。我们使用二叉搜索树以函数式方式给它们建模，这些树由一些节点组成，每个节点有一个值且最多只能拥有两个孩子节点。</p>
 <p>我们会在排序的情况下 -
 使用一个元素比较器来表达，构建二叉搜索树。任何给定节点的左子树的值都严格地小于当前给定节点的值，而所有右子树的值则严格地大于。</p>
@@ -468,9 +470,9 @@ alt="collections-set-map" />
 target="_blank" rel="noopener" href="http://lampwww.epfl.ch/papers/idealhashtrees.pdf">Hash Array
 Mapped Trie (HAMT)</a>，对应的HashSet也是依赖于一个包含键键对（key-key
 pairs）的HAMT。</p>
-<p>我们的Map<em>没有</em>一个特殊的Entry类型来表示键值对，作为替代使用的是Vavr中的Tuple2。一个Tuple<sup id="fnref:5" class="footnote-ref"><a href="#fn:5" rel="footnote"><span
+<p>我们的Map<em>没有</em>一个特殊的Entry类型来表示键值对，作为替代使用的是Vavr中的Tuple2。一个Tuple<sup id="fnref:6" class="footnote-ref"><a href="#fn:6" rel="footnote"><span
 class="hint--top hint--rounded"
-aria-label="**多元组**，也称为**顺序组**（英语：Tuple），泛指有限个[元素](https://zh.m.wikipedia.org/wiki/元素_(數學))所组成的[序列](https://zh.m.wikipedia.org/wiki/序列)。在数学及计算机科学分别有其特殊的意义。">[5]</span></a></sup>中的字段总是可枚举的。</p>
+aria-label="[多元组](https://zh.wikipedia.org/wiki/%E5%A4%9A%E5%85%83%E7%BB%84)，也称为顺序组（英语：Tuple），泛指有限个元素所组成的序列。在数学及计算机科学分别有其特殊的意义。">[6]</span></a></sup>中的字段总是可枚举的。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = (1, &quot;A&quot;)</span><br>Tuple2&lt;Integer, String&gt; entry = Tuple.of(<span class="hljs-number">1</span>, <span class="hljs-string">&quot;A&quot;</span>);<br><br><span class="hljs-type">Integer</span> <span class="hljs-variable">key</span> <span class="hljs-operator">=</span> entry._1;<br><span class="hljs-type">String</span> <span class="hljs-variable">value</span> <span class="hljs-operator">=</span> entry._2;<br></code></pre></td></tr></table></figure>
 <p>Maps和Tuples在Vavr中广泛被应用。把Tuples作为处理多值返回类型的一种通用方式已经是惯例了。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = HashMap((0, List(2, 4)), (1, List(1, 3)))</span><br>List.of(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">4</span>).groupBy(i -&gt; i % <span class="hljs-number">2</span>);<br><br><span class="hljs-comment">// = List((a, 0), (b, 1), (c, 2))</span><br>List.of(<span class="hljs-string">&#x27;a&#x27;</span>, <span class="hljs-string">&#x27;b&#x27;</span>, <span class="hljs-string">&#x27;c&#x27;</span>).zipWithIndex();<br></code></pre></td></tr></table></figure>
@@ -482,34 +484,39 @@ Problems</a>来考察以及测试我们的库，这是一个很棒的概念性�
 <div class="footnote-list">
 <ol>
 <li>
-<span id="fn:1" class="footnote-text"><span>mutator
-methods：https://en.wikipedia.org/wiki/Mutator_method。
+<span id="fn:1" class="footnote-text"><span><a
+target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E5%8D%8F%E5%8F%98%E4%B8%8E%E9%80%86%E5%8F%98">协变与逆变</a>。
 <a href="#fnref:1" rev="footnote" class="footnote-backref">
 ↩︎</a></span></span>
 </li>
 <li>
 <span id="fn:2"
-class="footnote-text"><span>查看源码可知，这里是按3、2、1的顺序进行构建的，对整个链表的遍历，则会按照1、2、3的顺序输出，遵循后进先出原则。整个链表遍历顺序的<strong>头节点是1，尾节点是3</strong>。
-<a href="#fnref:2" rev="footnote" class="footnote-backref">
+class="footnote-text"><span><a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Mutator_method">mutator
+method</a>。 <a href="#fnref:2" rev="footnote" class="footnote-backref">
 ↩︎</a></span></span>
 </li>
 <li>
 <span id="fn:3"
-class="footnote-text"><span>此时的<strong>尾部</strong>不是按链表的遍历顺序，而是按构建链表时的顺序来定义的。<strong>头元素0</strong>会变成新版本链表遍历顺序的头节点。更新后的新版本链表，遍历出来的结果就是0、2、3。
+class="footnote-text"><span>查看源码可知，这里是按3、2、1的顺序进行构建的，对整个链表的遍历，则会按照1、2、3的顺序输出，遵循后进先出原则。整个链表遍历顺序的<strong>头节点是1，尾节点是3</strong>。
 <a href="#fnref:3" rev="footnote" class="footnote-backref">
 ↩︎</a></span></span>
 </li>
 <li>
-<span id="fn:4" class="footnote-text"><span>这里的集合是指Set。
+<span id="fn:4"
+class="footnote-text"><span>此时的<strong>尾部</strong>不是按链表的遍历顺序，而是按构建链表时的顺序来定义的。<strong>头元素0</strong>会变成新版本链表遍历顺序的头节点。更新后的新版本链表，遍历出来的结果就是0、2、3。
 <a href="#fnref:4" rev="footnote" class="footnote-backref">
 ↩︎</a></span></span>
 </li>
 <li>
 <span id="fn:5"
-class="footnote-text"><span><strong>多元组</strong>，也称为<strong>顺序组</strong>（英语：Tuple），泛指有限个<a
-target="_blank" rel="noopener" href="https://zh.m.wikipedia.org/wiki/元素_(數學)">元素</a>所组成的<a
-target="_blank" rel="noopener" href="https://zh.m.wikipedia.org/wiki/序列">序列</a>。在数学及计算机科学分别有其特殊的意义。
+class="footnote-text"><span>这里的集合是指<strong>Set</strong>。
 <a href="#fnref:5" rev="footnote" class="footnote-backref">
+↩︎</a></span></span>
+</li>
+<li>
+<span id="fn:6" class="footnote-text"><span><a
+target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E5%A4%9A%E5%85%83%E7%BB%84">多元组</a>，也称为顺序组（英语：Tuple），泛指有限个元素所组成的序列。在数学及计算机科学分别有其特殊的意义。
+<a href="#fnref:6" rev="footnote" class="footnote-backref">
 ↩︎</a></span></span>
 </li>
 </ol>
@@ -537,6 +544,55 @@ target="_blank" rel="noopener" href="https://zh.m.wikipedia.org/wiki/序列">序
 
 
               
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>函数式编程增强库Vavr初探（二）</div>
+      <div>https://luckycaesar.github.io/article/函数式编程增强库Vavr初探（二）/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>LuckyCaesar</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年11月11日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="SA - 相同方式共享">
+                    <i class="iconfont icon-sa"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
 
               
                 <div class="post-prevnext my-3">

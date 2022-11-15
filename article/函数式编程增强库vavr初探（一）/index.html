@@ -25,7 +25,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://luckycaesar.github.io/img/vavr00.jpeg">
 <meta property="article:published_time" content="2022-10-30T07:00:00.000Z">
-<meta property="article:modified_time" content="2022-11-15T09:21:17.066Z">
+<meta property="article:modified_time" content="2022-11-15T09:51:44.182Z">
 <meta property="article:author" content="LuckyCaesar">
 <meta property="article:tag" content="函数式编程">
 <meta property="article:tag" content="vavr">
@@ -295,7 +295,7 @@ blocks）：</p>
 <h2 id="多元组1">3.1.
 多元组<sup id="fnref:1" class="footnote-ref"><a href="#fn:1" rel="footnote"><span
 class="hint--top hint--rounded"
-aria-label="**多元组**，也称为**顺序组**（英语：Tuple），泛指有限个[元素](https://zh.m.wikipedia.org/wiki/元素_(數學))所组成的[序列](https://zh.m.wikipedia.org/wiki/序列)。在数学及计算机科学分别有其特殊的意义。">[1]</span></a></sup></h2>
+aria-label="[多元组](https://zh.wikipedia.org/wiki/%E5%A4%9A%E5%85%83%E7%BB%84)，也称为顺序组（英语：Tuple），泛指有限个元素所组成的序列。在数学及计算机科学分别有其特殊的意义。">[1]</span></a></sup></h2>
 <p>Java里面没有一个针对多元组的整体概念。一个Tuple可以将固定数量的元素组合在一起作为一个整体进行传递。不同于Array或者List，它可以持有不同类型的对象，但同时也是不可变的。</p>
 <p>多元组的类型有Tuple1，Tuple2，Tuple3等等，目前最多支持8个元素。对于一个多元组
 <code>t</code>，可以通过<code>t._1</code>方法访问它的第一个元素，<code>t._2</code>方法访问第二个，以此类推。</p>
@@ -338,9 +338,9 @@ aria-label="**多元组**，也称为**顺序组**（英语：Tuple），泛指�
 <h3 id="提升">3.2.2. 提升</h3>
 <p>我们可以把一个偏函数<sup id="fnref:2" class="footnote-ref"><a href="#fn:2" rel="footnote"><span
 class="hint--top hint--rounded"
-aria-label="偏函数和全函数的定义没有找到中文的百科，英语百科中都对应一个词条：https://en.wikipedia.org/wiki/Partial_function">[2]</span></a></sup>提升为一个返回<code>Option</code>结果的全函数<sup id="fnref:2" class="footnote-ref"><a href="#fn:2" rel="footnote"><span
+aria-label="偏函数和全函数的定义百科中都对应一个词条：https://en.wikipedia.org/wiki/Partial_function">[2]</span></a></sup>提升为一个返回<code>Option</code>结果的全函数<sup id="fnref:2" class="footnote-ref"><a href="#fn:2" rel="footnote"><span
 class="hint--top hint--rounded"
-aria-label="偏函数和全函数的定义没有找到中文的百科，英语百科中都对应一个词条：https://en.wikipedia.org/wiki/Partial_function">[2]</span></a></sup>。<em>偏函数</em>
+aria-label="偏函数和全函数的定义百科中都对应一个词条：https://en.wikipedia.org/wiki/Partial_function">[2]</span></a></sup>。<em>偏函数</em>
 是数学中的术语，一个从X到Y的偏函数就是函数 f: X' →
 Y，X'是X的某个子集。它通过不强制函数f将X中的每一个元素都映射到Y中对应的元素来概括一个函数
 f: X →
@@ -395,7 +395,7 @@ final的变量，天然具备线程安全的特性，无需花费额外的成本
 <h3 id="option">3.3.1. Option</h3>
 <p>Option是一个单子<sup id="fnref:3" class="footnote-ref"><a href="#fn:3" rel="footnote"><span
 class="hint--top hint--rounded"
-aria-label="在[函数式编程](https://zh.wikipedia.org/wiki/函数式编程)中，**单子**（monad）是一种抽象，它允许以[泛型](https://zh.wikipedia.org/wiki/泛型编程)方式构造程序。支持它的语言可以使用单子来抽象出程序逻辑需要的[样板代码](https://zh.wikipedia.org/w/index.php?title=样板代码&amp;action=edit&amp;redlink=1)。">[3]</span></a></sup>容器类型，代表着一个可选值。Option的实例要么是<code>Some</code>的实例，要么是<code>None</code>的实例。</p>
+aria-label="在函数式编程中，[单子](https://zh.wikipedia.org/wiki/单子_(函数式编程))（monad）是一种抽象，它允许以泛型方式构造程序。支持它的语言可以使用单子来抽象出程序逻辑需要的[样板代码](https://zh.wikipedia.org/w/index.php?title=样板代码&amp;action=edit&amp;redlink=1)。">[3]</span></a></sup>容器类型，代表着一个可选值。Option的实例要么是<code>Some</code>的实例，要么是<code>None</code>的实例。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// optional *value*, no more nulls</span><br>Option&lt;T&gt; option = Option.of(...);<br></code></pre></td></tr></table></figure>
 <p>如果你在使用了Java中的<code>Optional</code>类后再接触Vavr（中的<code>Option</code>），会发现一个很关键的不同点。在<code>Optional</code>里面，调用<code>.map</code>方法然后使其返回null会得到一个空的<code>Optional</code>。而在Vavr里面，会得到一个<code>Some(null)</code>然后导致<code>NullPointerException</code>。</p>
 <p>使用<code>Optional</code>，在下面的场景中是合理的。</p>
@@ -449,7 +449,7 @@ target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Referential_t
 <h3 id="validation">3.3.6. Validation</h3>
 <p>Validation控件是一个<em>应用式函子</em><sup id="fnref:4" class="footnote-ref"><a href="#fn:4" rel="footnote"><span
 class="hint--top hint--rounded"
-aria-label="在[函数式编程](https://zh.wikipedia.org/wiki/函数式编程)中， **应用式函子**，或简称应用式（applicative），是在[函子](https://zh.wikipedia.org/wiki/函子_(函数式编程))和[单子](https://zh.wikipedia.org/wiki/单子_(函数式编程))之间的中间结构。应用式函子允许函子式计算成为序列（不同于平常函子），但是不允许使用前面计算的结果于后续计算的定义之中（不同于单子）。">[4]</span></a></sup>，有助于累积错误。在我们尝试组合单子时，会在第一次遇到错误时短路。但是'Validation'可以继续这个组合过程，并累积所有错误。这在对多个字段做校验时尤其有用，比方说一个web表单，你肯定是想一次请求拿到所有可能遇见的错误，而不是一次一个。</p>
+aria-label="在函数式编程中，[应用式函子](https://zh.wikipedia.org/wiki/%E5%BA%94%E7%94%A8%E5%BC%8F%E5%87%BD%E5%AD%90)，或简称应用式（applicative），是在[函子](https://zh.wikipedia.org/wiki/函子_(函数式编程))和[单子](https://zh.wikipedia.org/wiki/单子_(函数式编程))之间的中间结构。应用式函子允许函子式计算成为序列（不同于平常函子），但是不允许使用前面计算的结果于后续计算的定义之中（不同于单子）。">[4]</span></a></sup>，有助于累积错误。在我们尝试组合单子时，会在第一次遇到错误时短路。但是'Validation'可以继续这个组合过程，并累积所有错误。这在对多个字段做校验时尤其有用，比方说一个web表单，你肯定是想一次请求拿到所有可能遇见的错误，而不是一次一个。</p>
 <p>例：在一个web表单中，有'name'和'age'两个字段，希望（提交后）要么创建一个有效的Person实例，要么返回校验的错误列表。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">PersonValidator</span> <span class="hljs-variable">personValidator</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">PersonValidator</span>();<br><br><span class="hljs-comment">// Valid(Person(John Dow, 30))</span><br>Validation&lt;Seq&lt;String&gt;, Person&gt; valid = personValidator.validatePerson(<span class="hljs-string">&quot;John Doe&quot;</span>, <span class="hljs-number">30</span>);<br><br><span class="hljs-comment">// Invalid(List(Name contains invalid characters: &#x27;!4?&#x27;, Age must be greater than 0))</span><br>Validation&lt;Seq&lt;String&gt;, Person&gt; invalid = personValidator.validatePerson(<span class="hljs-string">&quot;John? Doe!4&quot;</span>, -<span class="hljs-number">1</span>);<br></code></pre></td></tr></table></figure>
 <p><code>Validation.Valid</code>实例包含了一个有效的值，而<code>Validation.Invalid</code>实例则包含了一组校验的错误列表。</p>
@@ -657,7 +657,7 @@ target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Property_test
 <li>对象解构 <code>case Some(i) ⇒ i</code></li>
 <li>卫<sup id="fnref:7" class="footnote-ref"><a href="#fn:7" rel="footnote"><span
 class="hint--top hint--rounded"
-aria-label="在[计算机程序设计](https://zh.wikipedia.org/wiki/计算机程序设计)中，**卫**（guard）是[布尔表达式](https://zh.wikipedia.org/wiki/布尔逻辑)，其结果必须为真，程序才能执行下去。**卫语句**（**guard code**或**guard clause**）用于检查[先决条件](https://zh.wikipedia.org/wiki/先决条件)。">[7]</span></a></sup>
+aria-label="在计算机程序设计中，[卫](https://zh.wikipedia.org/wiki/%E5%8D%AB%E8%AF%AD%E5%8F%A5)（guard）是布尔表达式，其结果必须为真，程序才能执行下去。卫语句（guard code或guard clause）用于检查[先决条件](https://zh.wikipedia.org/wiki/先决条件)。">[7]</span></a></sup>
 <code>case Some(i) if i &gt; 0 ⇒ "positive " + i</code></li>
 <li>多重条件 <code>case "-h" | "--help" ⇒ displayHelp</code></li>
 <li>编译期<em>穷尽</em>检查</li>
@@ -693,7 +693,7 @@ patterns</em>：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java">Case($(isIn(<span class="hljs-string">&quot;-h&quot;</span>, <span class="hljs-string">&quot;--help&quot;</span>)), ...)<br></code></pre></td></tr></table></figure>
 <p><strong>处理副作用<sup id="fnref:6" class="footnote-ref"><a href="#fn:6" rel="footnote"><span
 class="hint--top hint--rounded"
-aria-label="在计算机科学中，**函数副作用**指当调用[函数](https://zh.wikipedia.org/wiki/函数)时，除了返回可能的函数值之外，还对主调用函数产生附加的影响。">[6]</span></a></sup></strong></p>
+aria-label="在计算机科学中，[函数副作用](https://zh.wikipedia.org/wiki/%E5%89%AF%E4%BD%9C%E7%94%A8_(%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%A7%91%E5%AD%A6))指当调用函数时，除了返回可能的函数值之外，还对主调用函数产生附加的影响。">[6]</span></a></sup></strong></p>
 <p>Match就像一个表达式，它会返回一个值。为了处理副作用我们要用到一个返回<code>Void</code>的辅助函数<code>run</code>：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java">Match(arg).of(<br>    Case($(isIn(<span class="hljs-string">&quot;-h&quot;</span>, <span class="hljs-string">&quot;--help&quot;</span>)), o -&gt; run(<span class="hljs-built_in">this</span>::displayHelp)),<br>    Case($(isIn(<span class="hljs-string">&quot;-v&quot;</span>, <span class="hljs-string">&quot;--version&quot;</span>)), o -&gt; run(<span class="hljs-built_in">this</span>::displayVersion)),<br>    Case($(), o -&gt; run(() -&gt; &#123;<br>        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalArgumentException</span>(arg);<br>    &#125;))<br>);<br></code></pre></td></tr></table></figure>
 <p>⚡
@@ -744,7 +744,7 @@ processor放了一个文件MyPatterns在同一个包中（默认是在target/gen
 <h4
 id="卫7">卫<sup id="fnref:7" class="footnote-ref"><a href="#fn:7" rel="footnote"><span
 class="hint--top hint--rounded"
-aria-label="在[计算机程序设计](https://zh.wikipedia.org/wiki/计算机程序设计)中，**卫**（guard）是[布尔表达式](https://zh.wikipedia.org/wiki/布尔逻辑)，其结果必须为真，程序才能执行下去。**卫语句**（**guard code**或**guard clause**）用于检查[先决条件](https://zh.wikipedia.org/wiki/先决条件)。">[7]</span></a></sup></h4>
+aria-label="在计算机程序设计中，[卫](https://zh.wikipedia.org/wiki/%E5%8D%AB%E8%AF%AD%E5%8F%A5)（guard）是布尔表达式，其结果必须为真，程序才能执行下去。卫语句（guard code或guard clause）用于检查[先决条件](https://zh.wikipedia.org/wiki/先决条件)。">[7]</span></a></sup></h4>
 <p>现在我们用<em>卫</em>来实现对Optionals的匹配。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java">Match(optional).of(<br>    Case($Optional($(v -&gt; v != <span class="hljs-literal">null</span>)), <span class="hljs-string">&quot;defined&quot;</span>),<br>    Case($Optional($(v -&gt; v == <span class="hljs-literal">null</span>)), <span class="hljs-string">&quot;empty&quot;</span>)<br>);<br></code></pre></td></tr></table></figure>
 <p>可以通过实现<code>isNull</code>和<code>isNotNull</code>来简化断言。</p>
@@ -756,31 +756,27 @@ aria-label="在[计算机程序设计](https://zh.wikipedia.org/wiki/计算机�
 <div class="footnote-list">
 <ol>
 <li>
-<span id="fn:1"
-class="footnote-text"><span><strong>多元组</strong>，也称为<strong>顺序组</strong>（英语：Tuple），泛指有限个<a
-target="_blank" rel="noopener" href="https://zh.m.wikipedia.org/wiki/元素_(數學)">元素</a>所组成的<a
-target="_blank" rel="noopener" href="https://zh.m.wikipedia.org/wiki/序列">序列</a>。在数学及计算机科学分别有其特殊的意义。
+<span id="fn:1" class="footnote-text"><span><a
+target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E5%A4%9A%E5%85%83%E7%BB%84">多元组</a>，也称为顺序组（英语：Tuple），泛指有限个元素所组成的序列。在数学及计算机科学分别有其特殊的意义。
 <a href="#fnref:1" rev="footnote" class="footnote-backref">
 ↩︎</a></span></span>
 </li>
 <li>
 <span id="fn:2"
-class="footnote-text"><span>偏函数和全函数的定义没有找到中文的百科，英语百科中都对应一个词条：https://en.wikipedia.org/wiki/Partial_function
+class="footnote-text"><span>偏函数和全函数的定义百科中都对应一个词条：https://en.wikipedia.org/wiki/Partial_function
 <a href="#fnref:2" rev="footnote" class="footnote-backref">
 ↩︎</a></span></span>
 </li>
 <li>
-<span id="fn:3" class="footnote-text"><span>在<a
-target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/函数式编程">函数式编程</a>中，<strong>单子</strong>（monad）是一种抽象，它允许以<a
-target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/泛型编程">泛型</a>方式构造程序。支持它的语言可以使用单子来抽象出程序逻辑需要的<a
+<span id="fn:3" class="footnote-text"><span>在函数式编程中，<a
+target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/单子_(函数式编程)">单子</a>（monad）是一种抽象，它允许以泛型方式构造程序。支持它的语言可以使用单子来抽象出程序逻辑需要的<a
 target="_blank" rel="noopener" href="https://zh.wikipedia.org/w/index.php?title=样板代码&amp;action=edit&amp;redlink=1">样板代码</a>。
 <a href="#fnref:3" rev="footnote" class="footnote-backref">
 ↩︎</a></span></span>
 </li>
 <li>
-<span id="fn:4" class="footnote-text"><span>在<a
-target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/函数式编程">函数式编程</a>中，
-<strong>应用式函子</strong>，或简称应用式（applicative），是在<a
+<span id="fn:4" class="footnote-text"><span>在函数式编程中，<a
+target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E5%BA%94%E7%94%A8%E5%BC%8F%E5%87%BD%E5%AD%90">应用式函子</a>，或简称应用式（applicative），是在<a
 target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/函子_(函数式编程)">函子</a>和<a
 target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/单子_(函数式编程)">单子</a>之间的中间结构。应用式函子允许函子式计算成为序列（不同于平常函子），但是不允许使用前面计算的结果于后续计算的定义之中（不同于单子）。
 <a href="#fnref:4" rev="footnote" class="footnote-backref">
@@ -794,17 +790,15 @@ performance）。
 ↩︎</a></span></span>
 </li>
 <li>
-<span id="fn:6"
-class="footnote-text"><span>在计算机科学中，<strong>函数副作用</strong>指当调用<a
-target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/函数">函数</a>时，除了返回可能的函数值之外，还对主调用函数产生附加的影响。
+<span id="fn:6" class="footnote-text"><span>在计算机科学中，<a
+target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E5%89%AF%E4%BD%9C%E7%94%A8_(%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%A7%91%E5%AD%A6)">函数副作用</a>指当调用函数时，除了返回可能的函数值之外，还对主调用函数产生附加的影响。
 <a href="#fnref:6" rev="footnote" class="footnote-backref">
 ↩︎</a></span></span>
 </li>
 <li>
-<span id="fn:7" class="footnote-text"><span>在<a
-target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/计算机程序设计">计算机程序设计</a>中，<strong>卫</strong>（guard）是<a
-target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/布尔逻辑">布尔表达式</a>，其结果必须为真，程序才能执行下去。<strong>卫语句</strong>（<strong>guard
-code</strong>或<strong>guard clause</strong>）用于检查<a
+<span id="fn:7" class="footnote-text"><span>在计算机程序设计中，<a
+target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E5%8D%AB%E8%AF%AD%E5%8F%A5">卫</a>（guard）是布尔表达式，其结果必须为真，程序才能执行下去。卫语句（guard
+code或guard clause）用于检查<a
 target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/先决条件">先决条件</a>。
 <a href="#fnref:7" rev="footnote" class="footnote-backref">
 ↩︎</a></span></span>
@@ -834,6 +828,55 @@ target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/先决条件"
 
 
               
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>函数式编程增强库Vavr初探（一）</div>
+      <div>https://luckycaesar.github.io/article/函数式编程增强库vavr初探（一）/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>LuckyCaesar</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2022年10月30日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="SA - 相同方式共享">
+                    <i class="iconfont icon-sa"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
 
               
                 <div class="post-prevnext my-3">
