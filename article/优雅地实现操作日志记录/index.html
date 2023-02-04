@@ -16,16 +16,16 @@
   <meta name="author" content="LuckyCaesar">
   <meta name="keywords" content="">
   
-    <meta name="description" content="参考文章：https:&#x2F;&#x2F;tech.meituan.com&#x2F;2021&#x2F;09&#x2F;16&#x2F;operational-logbook.html  背景 最近参与了系统的重构，新的版本，需要对以前操作日志的实现进行改动，以前的操作日志是基于注解实现的，能记录单据类型、操作人、操作时间、操作描述、请求参数等。现在新的日志记录需要支持更多：  新增业务唯一标识记录，即业务单号； 操作描述支持动态参数">
+    <meta name="description" content="参考文章：https:&#x2F;&#x2F;tech.meituan.com&#x2F;2021&#x2F;09&#x2F;16&#x2F;operational-logbook.html  背景 最近看到了美团的这篇文章，想起以前学习切面编程时，实现过简单的接口操作日志记录注解，能记录单据类型、操作人、操作时间、操作描述、请求参数等，但是主要的日志数据都是固定写死到注解里面的，那如果有更灵活一些的需求呢？譬如：  记录业务唯一标识，即业务">
 <meta property="og:type" content="article">
 <meta property="og:title" content="优雅地实现操作日志记录">
 <meta property="og:url" content="https://luckycaesar.github.io/article/%E4%BC%98%E9%9B%85%E5%9C%B0%E5%AE%9E%E7%8E%B0%E6%93%8D%E4%BD%9C%E6%97%A5%E5%BF%97%E8%AE%B0%E5%BD%95/index.html">
 <meta property="og:site_name" content="一日三省吾身">
-<meta property="og:description" content="参考文章：https:&#x2F;&#x2F;tech.meituan.com&#x2F;2021&#x2F;09&#x2F;16&#x2F;operational-logbook.html  背景 最近参与了系统的重构，新的版本，需要对以前操作日志的实现进行改动，以前的操作日志是基于注解实现的，能记录单据类型、操作人、操作时间、操作描述、请求参数等。现在新的日志记录需要支持更多：  新增业务唯一标识记录，即业务单号； 操作描述支持动态参数">
+<meta property="og:description" content="参考文章：https:&#x2F;&#x2F;tech.meituan.com&#x2F;2021&#x2F;09&#x2F;16&#x2F;operational-logbook.html  背景 最近看到了美团的这篇文章，想起以前学习切面编程时，实现过简单的接口操作日志记录注解，能记录单据类型、操作人、操作时间、操作描述、请求参数等，但是主要的日志数据都是固定写死到注解里面的，那如果有更灵活一些的需求呢？譬如：  记录业务唯一标识，即业务">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://luckycaesar.github.io/img/code_by_rasmusir-d4a4dj2.jpeg">
 <meta property="article:published_time" content="2022-08-21T16:00:00.000Z">
-<meta property="article:modified_time" content="2022-11-12T02:09:01.562Z">
+<meta property="article:modified_time" content="2023-02-04T03:40:08.601Z">
 <meta property="article:author" content="LuckyCaesar">
 <meta property="article:tag" content="SpEL">
 <meta property="article:tag" content="函数式接口">
@@ -280,13 +280,14 @@
 <p>参考文章：https://tech.meituan.com/2021/09/16/operational-logbook.html</p>
 </blockquote>
 <h2 id="背景">背景</h2>
-<p>最近参与了系统的重构，新的版本，需要对以前操作日志的实现进行改动，以前的操作日志是基于注解实现的，能记录单据类型、操作人、操作时间、操作描述、请求参数等。现在新的日志记录需要支持更多：</p>
+<p>最近看到了美团的这篇<a
+target="_blank" rel="noopener" href="https://tech.meituan.com/2021/09/16/operational-logbook.html">文章</a>，想起以前学习切面编程时，实现过简单的接口操作日志记录注解，能记录单据类型、操作人、操作时间、操作描述、请求参数等，但是主要的日志数据都是固定写死到注解里面的，那如果有更灵活一些的需求呢？譬如：</p>
 <ul>
-<li>新增业务唯一标识记录，即<strong>业务单号</strong>；</li>
+<li>记录业务唯一标识，即<strong>业务单号</strong>，需根据每次请求动态获取；</li>
 <li>操作描述支持<strong>动态参数</strong>填入，支持<strong>动态函数</strong>的执行和替换；</li>
 <li>针对比较多字段编辑的场景，需记录更新前的<strong>原始数据</strong>。</li>
 </ul>
-<p>于是参考了美团的这篇文章，重新实现了解析操作日志的逻辑。至于操作日志的必要性以及简单实现等就不过多赘述，原文有更详细的描述，这里重点说一下对于几个新增需求的实现。</p>
+<p>于是重新实现了一版操作日志注解。至于日志记录的必要性以及简单实现等就不过多赘述，这里重点说一下对于以上几个需求的实现。</p>
 <h2 id="流程">流程</h2>
 <figure>
 <img src="/img/操作日志动态函数注册.png" srcset="/img/loading.gif" lazyload alt="动态函数注册" />
