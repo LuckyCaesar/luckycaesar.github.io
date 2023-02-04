@@ -10,6 +10,7 @@ date: 2022-10-30 15:00:00
 [Vavr](https://github.com/vavr-io/vavr)是对Java8（及以上版本）的函数式编程体验的增强库，官方介绍如下：
 
 > Vavr is an object-functional language extension to Java 8, which aims to reduce the lines of code and increase code quality. It provides persistent collections, functional abstractions for error handling, concurrent programming, pattern matching and much more.
+>
 > Vavr是对Java8的对象-函数式语言的扩展，目的是减少代码行数并提高代码质量。提供了持久化集合，针对错误处理的函数式抽象，并发编程，模式匹配以及其他更丰富的内容。
 
 本文主要是翻译至Vavr官方文档中的[使用指南](https://docs.vavr.io/#_usage_guide)部分，会出现一些术语，主要参考维基百科。
@@ -582,11 +583,11 @@ Stream.from(1).filter(i -> i % 2 == 0);
 
 
 
-## 3.5 性能[^5]检查
+## 3.5 性质检查[^5]
 
-性能检查（也被称作[性能测试](https://en.wikipedia.org/wiki/Property_testing)）是一个很强有力的手段，可以通过函数式的方式帮助我们测试代码的性能。它基于生成的随机数据，再把这些数据传递给用户定义的检查函数。
+性质检查（也被称作[性质检验](https://en.wikipedia.org/wiki/Property_testing)）是一个很强有力的手段，可以通过函数式的方式帮助我们测试代码的性质。它基于生成的随机数据，再把这些数据传递给用户定义的检查函数。
 
-Vavr在其`io.vavr:vavr-test`模块中有对性能检查的支持，所以在测试中要使用它的话得确保引入了这个模块。
+Vavr在其`io.vavr:vavr-test`模块中有对性质检查的支持，所以在测试中要使用它的话得确保引入了这个模块。
 
 ```java
 Arbitrary<Integer> ints = Arbitrary.integer();
@@ -836,10 +837,10 @@ Match(option).of(
 
 
 
-[^1]: **多元组**，也称为**顺序组**（英语：Tuple），泛指有限个[元素](https://zh.m.wikipedia.org/wiki/元素_(數學))所组成的[序列](https://zh.m.wikipedia.org/wiki/序列)。在数学及计算机科学分别有其特殊的意义。
-[^2]:偏函数和全函数的定义没有找到中文的百科，英语百科中都对应一个词条：https://en.wikipedia.org/wiki/Partial_function
-[^3]:在[函数式编程](https://zh.wikipedia.org/wiki/函数式编程)中，**单子**（monad）是一种抽象，它允许以[泛型](https://zh.wikipedia.org/wiki/泛型编程)方式构造程序。支持它的语言可以使用单子来抽象出程序逻辑需要的[样板代码](https://zh.wikipedia.org/w/index.php?title=样板代码&action=edit&redlink=1)。
-[^4]:在[函数式编程](https://zh.wikipedia.org/wiki/函数式编程)中， **应用式函子**，或简称应用式（applicative），是在[函子](https://zh.wikipedia.org/wiki/函子_(函数式编程))和[单子](https://zh.wikipedia.org/wiki/单子_(函数式编程))之间的中间结构。应用式函子允许函子式计算成为序列（不同于平常函子），但是不允许使用前面计算的结果于后续计算的定义之中（不同于单子）。
-[^5]:注：这里的”性能（properties）“一词不同于通常所说的软件性能（software performance）。
-[^6]:在计算机科学中，**函数副作用**指当调用[函数](https://zh.wikipedia.org/wiki/函数)时，除了返回可能的函数值之外，还对主调用函数产生附加的影响。
-[^7]:在[计算机程序设计](https://zh.wikipedia.org/wiki/计算机程序设计)中，**卫**（guard）是[布尔表达式](https://zh.wikipedia.org/wiki/布尔逻辑)，其结果必须为真，程序才能执行下去。**卫语句**（**guard code**或**guard clause**）用于检查[先决条件](https://zh.wikipedia.org/wiki/先决条件)。
+[^1]: [多元组](https://zh.wikipedia.org/wiki/%E5%A4%9A%E5%85%83%E7%BB%84)，也称为顺序组（英语：Tuple），泛指有限个元素所组成的序列。在数学及计算机科学分别有其特殊的意义。
+[^2]:偏函数和全函数的定义百科中都对应一个词条：https://en.wikipedia.org/wiki/Partial_function
+[^3]:在函数式编程中，[单子](https://zh.wikipedia.org/wiki/单子_(函数式编程))（monad）是一种抽象，它允许以泛型方式构造程序。支持它的语言可以使用单子来抽象出程序逻辑需要的[样板代码](https://zh.wikipedia.org/w/index.php?title=样板代码&action=edit&redlink=1)。
+[^4]:在函数式编程中，[应用式函子](https://zh.wikipedia.org/wiki/%E5%BA%94%E7%94%A8%E5%BC%8F%E5%87%BD%E5%AD%90)，或简称应用式（applicative），是在[函子](https://zh.wikipedia.org/wiki/函子_(函数式编程))和[单子](https://zh.wikipedia.org/wiki/单子_(函数式编程))之间的中间结构。应用式函子允许函子式计算成为序列（不同于平常函子），但是不允许使用前面计算的结果于后续计算的定义之中（不同于单子）。
+[^5]:Property Checking。
+[^6]:在计算机科学中，[函数副作用](https://zh.wikipedia.org/wiki/%E5%89%AF%E4%BD%9C%E7%94%A8_(%E8%AE%A1%E7%AE%97%E6%9C%BA%E7%A7%91%E5%AD%A6))指当调用函数时，除了返回可能的函数值之外，还对主调用函数产生附加的影响。
+[^7]:在计算机程序设计中，[卫](https://zh.wikipedia.org/wiki/%E5%8D%AB%E8%AF%AD%E5%8F%A5)（guard）是布尔表达式，其结果必须为真，程序才能执行下去。卫语句（guard code或guard clause）用于检查[先决条件](https://zh.wikipedia.org/wiki/先决条件)。

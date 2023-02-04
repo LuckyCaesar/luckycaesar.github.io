@@ -81,7 +81,7 @@ Clojure语言创始人Rich Hickey，曾做过一个很棒的演讲[The Value of 
 
 - 无需克隆
 
-- 当被用在未经检查的协变转换（Java特有的）中时也能表现得类型安全
+- 当被用在未经检查的协变[^1]转换（Java特有的）中时也能表现得类型安全
 
 用*不可变值*搭配*引用透明性函数*是使Java变得更好的关键，Vavr则提供了必要的[控件](http://static.javadoc.io/io.vavr/vavr/0.10.4/io/vavr/control/package-summary.html)和[集合](https://static.javadoc.io/io.vavr/vavr/0.10.4/io/vavr/collection/package-summary.html)以在日常的Java编程中达成这一目标。
 
@@ -89,7 +89,7 @@ Clojure语言创始人Rich Hickey，曾做过一个很棒的演讲[The Value of 
 
 ## 1.3. 果壳中的数据结构
 
-Vavr的集合库包含了一组丰富的基于lambda之上的函数式数据结构，唯一个与Java原生集合共享的接口是Iterable。（没有共享其他接口的）主要原因是基于Java集合接口的更改器方法[^1]无法返回一个底层集合类型的对象。
+Vavr的集合库包含了一组丰富的基于lambda之上的函数式数据结构，唯一个与Java原生集合共享的接口是Iterable。（没有共享其他接口的）主要原因是基于Java集合接口的更改器方法[^2]无法返回一个底层集合类型的对象。
 
 下面来看看不同类型的数据结构，我们会知道为什么这（不共享集合接口）是非常必要的。
 
@@ -146,7 +146,7 @@ Vavr拥有许多很常用的函数式数据结构，接下来会用示例进行�
 List<Integer> list1 = List.of(1, 2, 3);
 ```
 
-列表中的每一个元素都形成了一个独立的节点，最后一个元素的尾部指向Nil，一个空的列表。[^2]
+列表中的每一个元素都形成了一个独立的节点，最后一个元素的尾部指向Nil，一个空的列表。[^3]
 
 ![list1](/img/vavr-list1.png)
 
@@ -157,7 +157,7 @@ List<Integer> list1 = List.of(1, 2, 3);
 List<Integer> list2 = list1.tail().prepend(0);
 ```
 
-新的头元素0被*链接*到原列表的尾部[^3]，原来的列表则保持不变。
+新的头元素0被*链接*到原列表的尾部[^4]，原来的列表则保持不变。
 
 ![list2](/img/vavr-list2.png)
 
@@ -222,7 +222,7 @@ Option<Integer> element = dequeued.map(Tuple2::_1);
 Option<Queue<Integer>> remaining = dequeued.map(Tuple2::_2);
 ```
 
-### 1.4.3. 有序集合[^4]
+### 1.4.3. 有序集合[^5]
 
 有序集合是比队列使用得更频繁的一种数据结构。我们使用二叉搜索树以函数式方式给它们建模，这些树由一些节点组成，每个节点有一个值且最多只能拥有两个孩子节点。
 
@@ -363,7 +363,7 @@ List.of(words).mkString(", ");
 
 HashMap的实现是依赖于[Hash Array Mapped Trie (HAMT)](http://lampwww.epfl.ch/papers/idealhashtrees.pdf)，对应的HashSet也是依赖于一个包含键键对（key-key pairs）的HAMT。
 
-我们的Map*没有*一个特殊的Entry类型来表示键值对，作为替代使用的是Vavr中的Tuple2。一个Tuple[^5]中的字段总是可枚举的。
+我们的Map*没有*一个特殊的Entry类型来表示键值对，作为替代使用的是Vavr中的Tuple2。一个Tuple[^6]中的字段总是可枚举的。
 
 ```java
 // = (1, "A")
@@ -387,9 +387,10 @@ List.of('a', 'b', 'c').zipWithIndex();
 
 
 
-[^1]: mutator methods：https://en.wikipedia.org/wiki/Mutator_method。
-[^2]: 查看源码可知，这里是按3、2、1的顺序进行构建的，对整个链表的遍历，则会按照1、2、3的顺序输出，遵循后进先出原则。整个链表遍历顺序的**头节点是1，尾节点是3**。
-[^3]: 此时的**尾部**不是按链表的遍历顺序，而是按构建链表时的顺序来定义的。**头元素0**会变成新版本链表遍历顺序的头节点。更新后的新版本链表，遍历出来的结果就是0、2、3。
+[^1]: [协变与逆变](https://zh.wikipedia.org/wiki/%E5%8D%8F%E5%8F%98%E4%B8%8E%E9%80%86%E5%8F%98)。
+[^2]: [mutator method](https://en.wikipedia.org/wiki/Mutator_method)。
+[^3]: 查看源码可知，这里是按3、2、1的顺序进行构建的，对整个链表的遍历，则会按照1、2、3的顺序输出，遵循后进先出原则。整个链表遍历顺序的**头节点是1，尾节点是3**。
+[^4]: 此时的**尾部**不是按链表的遍历顺序，而是按构建链表时的顺序来定义的。**头元素0**会变成新版本链表遍历顺序的头节点。更新后的新版本链表，遍历出来的结果就是0、2、3。
 
-[^4]: 这里的集合是指Set。
-[^5]: **多元组**，也称为**顺序组**（英语：Tuple），泛指有限个[元素](https://zh.m.wikipedia.org/wiki/元素_(數學))所组成的[序列](https://zh.m.wikipedia.org/wiki/序列)。在数学及计算机科学分别有其特殊的意义。
+[^5]: 这里的集合是指**Set**。
+[^6]: [多元组](https://zh.wikipedia.org/wiki/%E5%A4%9A%E5%85%83%E7%BB%84)，也称为顺序组（英语：Tuple），泛指有限个元素所组成的序列。在数学及计算机科学分别有其特殊的意义。
