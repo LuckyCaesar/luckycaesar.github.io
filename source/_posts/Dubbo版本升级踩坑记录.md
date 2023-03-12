@@ -1,7 +1,7 @@
 ---
 title: Dubbo版本升级踩坑记录
 tags: [Dubbo, Nacos]
-index_img: /img/lifeCodeTypography.jpg
+index_img: /img/dubbo_20230312155430.png
 date: 2021-03-28 20:00:00
 ---
 

@@ -1,7 +1,7 @@
 ---
 title: 敏感词检测算法 - DFA
 tags: [DFA, 状态机, 敏感词检测]
-index_img: /img/algorithm.jpeg
+index_img: /img/b4c924e2f3-DFA.jpg
 date: 2021-12-10 20:00:00
 ---
 

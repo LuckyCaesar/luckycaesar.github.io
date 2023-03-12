@@ -1,7 +1,7 @@
 ---
 title: BigDecimal使用小结
 tags: [Java, BigDecimal]
-index_img: /img/63b1b-π.jpg
+index_img: /img/384bbbdb-money.jpeg
 date: 2023-02-04 12:00:00
 ---
 
@@ -398,5 +398,5 @@ BigDecimal movePointRight = new BigDecimal("123.45612").movePointRight(2);
 
 - **除以0！除以0！除以0！**
 
-- 在计算完后必须使用`.setScale`方法来统一进行最终结果的精度约束。如果只有除法，那必须使用提供了scale和roundingMode参数的`.divide`方法。
+- 在计算完后必须使用`.setScale`方法来统一进行最终结果的精度约束。如果只有除法，那必须使用提供了scale和roundingMode参数的`.divide`方法，因为除法很容易除不尽，会产生无限循环小数。
 

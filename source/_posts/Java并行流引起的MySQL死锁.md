@@ -1,7 +1,7 @@
 ---
 title: Java并行流引起的MySQL死锁
 tags: [并行流, MySQL, 死锁, 间隙锁]
-index_img: /img/programmer_1920.png
+index_img: /img/fd889bb08df3b-deadlock.png
 date: 2021-03-24 09:00:00
 ---
 

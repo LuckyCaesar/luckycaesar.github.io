@@ -1,7 +1,7 @@
 ---
 title: Nacos不可用？服务不可用？
 tags: [Nacos, SpringCloud]
-index_img: /img/maxresdefault.jpg
+index_img: /img/a062cb66104-nacos.png
 date: 2020-11-06 07:00:00
 ---
 
