@@ -23,14 +23,14 @@
 <meta property="og:site_name" content="一日三省吾身">
 <meta property="og:description" content="这些年接触过很多不同业务类型的系统，其中对数字敏感的系统也有很多，在Java中当仁不让的会大量使用BigDecimal，过程中不乏很多踩坑之处，因此做个简单的整理。 实例化 一般我们都会使用new BigDecimal()构造器和BigDecimal.valueOf()方法来实例化一个BigDecimal对象。这里特别要注意构造器入参为double类型时： 12345678910&#x2F;&#x2F; dou">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://luckycaesar.github.io/img/63b1b-%CF%80.jpg">
+<meta property="og:image" content="https://luckycaesar.github.io/img/384bbbdb-money.jpeg">
 <meta property="article:published_time" content="2023-02-04T04:00:00.000Z">
-<meta property="article:modified_time" content="2023-02-04T04:04:23.861Z">
+<meta property="article:modified_time" content="2023-03-12T05:04:10.813Z">
 <meta property="article:author" content="LuckyCaesar">
 <meta property="article:tag" content="Java">
 <meta property="article:tag" content="BigDecimal">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://luckycaesar.github.io/img/63b1b-%CF%80.jpg">
+<meta name="twitter:image" content="https://luckycaesar.github.io/img/384bbbdb-money.jpeg">
   
   
     <meta name="referrer" content="no-referrer-when-downgrade">
@@ -348,7 +348,7 @@ T＿T）。</p>
 <p>两个点：</p>
 <ul>
 <li><p><strong>除以0！除以0！除以0！</strong></p></li>
-<li><p>在计算完后必须使用<code>.setScale</code>方法来统一进行最终结果的精度约束。如果只有除法，那必须使用提供了scale和roundingMode参数的<code>.divide</code>方法。</p></li>
+<li><p>在计算完后必须使用<code>.setScale</code>方法来统一进行最终结果的精度约束。如果只有除法，那必须使用提供了scale和roundingMode参数的<code>.divide</code>方法，因为除法很容易除不尽，会产生无限循环小数。</p></li>
 </ul>
 
                 
@@ -426,6 +426,12 @@ T＿T）。</p>
                 <div class="post-prevnext my-3">
                   <article class="post-prev col-6">
                     
+                    
+                      <a href="/article/%E5%BD%93Spring%E5%BE%AA%E7%8E%AF%E4%BE%9D%E8%B5%96%E9%81%87%E4%B8%8A%E5%8A%A8%E6%80%81%E4%BB%A3%E7%90%86/" title="再遇Spring循环依赖">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">再遇Spring循环依赖</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
                     
                   </article>
                   <article class="post-next col-6">
