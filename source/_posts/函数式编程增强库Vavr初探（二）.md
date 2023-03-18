@@ -19,7 +19,7 @@ Vavr（过去叫Javaslang）是一个为Java8+而生的函数式库，它提供�
 
 ## 1.1. 用Vavr实现Java8的函数式数据结构
 
-Java8的[lambdas (λ)](https://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html)能让我们创建出绝妙的API，这些API极大的提升了语言的表现力。
+Java8的[lambdas (λ)](https://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html)能让我们构建出很棒的API’s，这些API极大的提升了语言的表现力。
 
 Vavr利用基于函数式模型的lambdas创造了一系列的新特性，其中一个就是函数式集合库，旨在替换Java中的标准库。
 
@@ -31,13 +31,13 @@ Vavr利用基于函数式模型的lambdas创造了一系列的新特性，其中
 
 ## 1.2. 函数式编程
 
-在探讨细节之前，我想先讲一些基础知识。这能解释我为什么会设计出Vavr，特别是新的Java集合类。
+在探讨细节之前，我想先讲解一些基础知识。解释一下我为什么会设计Vavr，特别是新的Java集合类。
 
 ### 1.2.1. 副作用
 
-Java应用通常都有大量的[副作用](https://en.wikipedia.org/wiki/Side_effect_(computer_science))。它们改变了某种状态，可能是外部世界的（应用程序以外的）。常见的副作用是就地改变对象或者变量，打印到控制台，写到一个日志文件或者数据库。如果副作用以非预期的方式影响了我们程序的语义，那就被认为是有害的。
+Java应用通常都有大量的[副作用](https://en.wikipedia.org/wiki/Side_effect_(computer_science))。它们改变了某种状态，可能是外界的（程序以外的）。常见的副作用是*原地*改变对象或者变量，打印到控制台、写到日志文件或者数据库。如果副作用以非预期的方式影响了我们程序的语义，那就认为它是有害的。
 
-例如，如果一个函数抛出了异常且这个异常是*interpreted*，它就被认为是一个*影响程序*的副作用。另外，[异常类似于非本地的go-to语句](http://c2.com/cgi/wiki?DontUseExceptionsForFlowControl)，它们会破坏正常的控制流。不管怎样，实际的应用确实会产生副作用。
+例如，一个函数抛出了异常且这个异常是*interpreted*，它就被认为是一个*影响程序*的副作用。而且，[异常类似于非本地的go-to语句](http://c2.com/cgi/wiki?DontUseExceptionsForFlowControl)，它们会破坏正常的控制流。不管怎么说，实际的应用确实会产生副作用。
 
 ```java
 int divide(int dividend, int divisor) {
@@ -69,7 +69,7 @@ Math.random();
 Math.max(1, 2);
 ```
 
-如果（函数中）涉及的所有表达式都是引用透明的，则称该函数为[纯函数](https://en.wikipedia.org/wiki/Pure_function) 。一个由纯函数组成的应用大概率在编译后就*可以运行*，对此我们能解释得通。单测易于编写，而调试则成为过去式。
+如果（函数中）涉及的所有表达式都是引用透明的，则称该函数为[纯函数](https://en.wikipedia.org/wiki/Pure_function) 。一个由纯函数组成的应用大概率在编译后就可以*直接运行*，这也很容易解释。单元测试变得易于编写，而调试则成为了过去式。
 
 ### 1.2.3. 对值的思考
 
@@ -125,7 +125,7 @@ list.add("why not?");
 
 许多操作只会执行很小的改动，仅仅拷贝上一个版本并不会变得高效。要节省时间和内存，确认两个版本之间的相似之处并尽可能多的共享数据就显得尤为重要。
 
-这种模型不会强制任何实现细节，此时函数式数据结构就该登场了。
+这种模型不会强制任何实现细节，此时就该函数式数据结构登场了。
 
 
 
@@ -133,7 +133,7 @@ list.add("why not?");
 
 也被称作[*纯* 函数式数据结构](https://en.wikipedia.org/wiki/Purely_functional)，它们是*不可变*且*持久化*的。函数式数据结构的方法都是*引用透明*的。
 
-Vavr拥有许多很常用的函数式数据结构，接下来会用示例进行深入讲解。
+Vavr拥有许多很常用的函数式数据结构，接下来会举例进行深入讲解。
 
 ### 1.4.1. 链表
 
