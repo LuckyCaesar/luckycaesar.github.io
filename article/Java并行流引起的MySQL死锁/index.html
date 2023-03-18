@@ -20,7 +20,7 @@
 <meta property="og:type" content="article">
 <meta property="og:title" content="Java并行流引起的MySQL死锁">
 <meta property="og:url" content="https://luckycaesar.github.io/article/Java%E5%B9%B6%E8%A1%8C%E6%B5%81%E5%BC%95%E8%B5%B7%E7%9A%84MySQL%E6%AD%BB%E9%94%81/index.html">
-<meta property="og:site_name" content="一日三省吾身">
+<meta property="og:site_name" content="三味书屋">
 <meta property="og:description" content="问题描述 之前（半年前）有同事在代码中使用并行流来操作数据库，基于MySQL 5.7版本默认的事务隔离级别RR（Repeatable Read - 可重复读），在测试环境中出现了死锁的问题。 解决方式 经过同事排查发现是在并发写的情况下触发MySQL的间隙锁再引发的死锁，最后把并行流改为串行解决问题，主要是数据量不大没有必要使用并行。 问题一、并行流的使用 具体分析可以看看这里☞什么">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://luckycaesar.github.io/img/fd889bb08df3b-deadlock.png">
@@ -38,7 +38,7 @@
     <meta name="referrer" content="no-referrer-when-downgrade">
   
   
-  <title>Java并行流引起的MySQL死锁 - 一日三省吾身</title>
+  <title>Java并行流引起的MySQL死锁 - 三味书屋</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 

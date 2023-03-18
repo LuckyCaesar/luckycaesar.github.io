@@ -20,12 +20,12 @@
 <meta property="og:type" content="article">
 <meta property="og:title" content="函数式编程增强库Vavr初探（二）">
 <meta property="og:url" content="https://luckycaesar.github.io/article/%E5%87%BD%E6%95%B0%E5%BC%8F%E7%BC%96%E7%A8%8B%E5%A2%9E%E5%BC%BA%E5%BA%93Vavr%E5%88%9D%E6%8E%A2%EF%BC%88%E4%BA%8C%EF%BC%89/index.html">
-<meta property="og:site_name" content="一日三省吾身">
+<meta property="og:site_name" content="三味书屋">
 <meta property="og:description" content="本文是翻译Vavr官方文档的序章，上一篇的使用指南介绍了Vavr中的主要组件的定义和使用示例。其中也出现了一些函数式编程的概念，如函数副作用、引用透明性、持久化集合、不可变数据结构等等，在序言中都有更进一步的阐述。 1. 序章 Vavr（过去叫Javaslang）是一个为Java8+而生的函数式库，它提供了持久化数据类型和函数式控制结构。 1.1. 用Vavr实现Java8的函数式数据结构">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://luckycaesar.github.io/img/vavr00.jpeg">
 <meta property="article:published_time" content="2022-11-11T02:00:00.000Z">
-<meta property="article:modified_time" content="2022-11-15T09:55:05.740Z">
+<meta property="article:modified_time" content="2023-03-18T03:09:09.816Z">
 <meta property="article:author" content="LuckyCaesar">
 <meta property="article:tag" content="函数式编程">
 <meta property="article:tag" content="vavr">
@@ -36,7 +36,7 @@
     <meta name="referrer" content="no-referrer-when-downgrade">
   
   
-  <title>函数式编程增强库Vavr初探（二） - 一日三省吾身</title>
+  <title>函数式编程增强库Vavr初探（二） - 三味书屋</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -284,7 +284,7 @@ href="https://luckycaesar.github.io/article/%E5%87%BD%E6%95%B0%E5%BC%8F%E7%BC%96
 用Vavr实现Java8的函数式数据结构</h2>
 <p>Java8的<a
 target="_blank" rel="noopener" href="https://docs.oracle.com/javase/tutorial/java/javaOO/lambdaexpressions.html">lambdas
-(λ)</a>能让我们创建出绝妙的API，这些API极大的提升了语言的表现力。</p>
+(λ)</a>能让我们构建出很棒的API’s，这些API极大的提升了语言的表现力。</p>
 <p>Vavr利用基于函数式模型的lambdas创造了一系列的新特性，其中一个就是函数式集合库，旨在替换Java中的标准库。</p>
 <figure>
 <img src="/img/vavr-collections.png" srcset="/img/loading.gif" lazyload alt="collections" />
@@ -292,12 +292,12 @@ target="_blank" rel="noopener" href="https://docs.oracle.com/javase/tutorial/jav
 </figure>
 <p><em>（这只是一张鸟瞰图，接下来会有更易于阅读的版本。）</em></p>
 <h2 id="函数式编程">1.2. 函数式编程</h2>
-<p>在探讨细节之前，我想先讲一些基础知识。这能解释我为什么会设计出Vavr，特别是新的Java集合类。</p>
+<p>在探讨细节之前，我想先讲解一些基础知识。解释一下我为什么会设计Vavr，特别是新的Java集合类。</p>
 <h3 id="副作用">1.2.1. 副作用</h3>
 <p>Java应用通常都有大量的<a
-target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Side_effect_(computer_science)">副作用</a>。它们改变了某种状态，可能是外部世界的（应用程序以外的）。常见的副作用是就地改变对象或者变量，打印到控制台，写到一个日志文件或者数据库。如果副作用以非预期的方式影响了我们程序的语义，那就被认为是有害的。</p>
-<p>例如，如果一个函数抛出了异常且这个异常是<em>interpreted</em>，它就被认为是一个<em>影响程序</em>的副作用。另外，<a
-target="_blank" rel="noopener" href="http://c2.com/cgi/wiki?DontUseExceptionsForFlowControl">异常类似于非本地的go-to语句</a>，它们会破坏正常的控制流。不管怎样，实际的应用确实会产生副作用。</p>
+target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Side_effect_(computer_science)">副作用</a>。它们改变了某种状态，可能是外界的（程序以外的）。常见的副作用是<em>原地</em>改变对象或者变量，打印到控制台、写到日志文件或者数据库。如果副作用以非预期的方式影响了我们程序的语义，那就认为它是有害的。</p>
+<p>例如，一个函数抛出了异常且这个异常是<em>interpreted</em>，它就被认为是一个<em>影响程序</em>的副作用。而且，<a
+target="_blank" rel="noopener" href="http://c2.com/cgi/wiki?DontUseExceptionsForFlowControl">异常类似于非本地的go-to语句</a>，它们会破坏正常的控制流。不管怎么说，实际的应用确实会产生副作用。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">int</span> <span class="hljs-title function_">divide</span><span class="hljs-params">(<span class="hljs-type">int</span> dividend, <span class="hljs-type">int</span> divisor)</span> &#123;<br>    <span class="hljs-comment">// throws if divisor is zero</span><br>    <span class="hljs-keyword">return</span> dividend / divisor;<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>在函数环境下，可以用Try来封装副作用使我们（的程序）处于一个良好的状态：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = Success(result) or Failure(exception)</span><br>Try&lt;Integer&gt; <span class="hljs-title function_">divide</span><span class="hljs-params">(Integer dividend, Integer divisor)</span> &#123;<br>    <span class="hljs-keyword">return</span> Try.of(() -&gt; dividend / divisor);<br>&#125;<br></code></pre></td></tr></table></figure>
@@ -308,7 +308,7 @@ target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Referential_t
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// not referentially transparent</span><br>Math.random();<br><br><span class="hljs-comment">// referentially transparent</span><br>Math.max(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>);<br></code></pre></td></tr></table></figure>
 <p>如果（函数中）涉及的所有表达式都是引用透明的，则称该函数为<a
 target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Pure_function">纯函数</a>
-。一个由纯函数组成的应用大概率在编译后就<em>可以运行</em>，对此我们能解释得通。单测易于编写，而调试则成为过去式。</p>
+。一个由纯函数组成的应用大概率在编译后就可以<em>直接运行</em>，这也很容易解释。单元测试变得易于编写，而调试则成为了过去式。</p>
 <h3 id="对值的思考">1.2.3. 对值的思考</h3>
 <p>Clojure语言创始人Rich Hickey，曾做过一个很棒的演讲<a
 target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=-6BsiVyC1kM">The Value of
@@ -346,12 +346,12 @@ target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Immutable_obj
 <p>一个<a
 target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Persistent_data_structure">持久化数据结构</a>在被修改时，会保留它以往的版本，也因此形成了<em>事实上</em>的不可变。完全地持久化数据结构允许对任何版本进行更新和查询。</p>
 <p>许多操作只会执行很小的改动，仅仅拷贝上一个版本并不会变得高效。要节省时间和内存，确认两个版本之间的相似之处并尽可能多的共享数据就显得尤为重要。</p>
-<p>这种模型不会强制任何实现细节，此时函数式数据结构就该登场了。</p>
+<p>这种模型不会强制任何实现细节，此时就该函数式数据结构登场了。</p>
 <h2 id="函数式数据结构">1.4. 函数式数据结构</h2>
 <p>也被称作<a
 target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Purely_functional"><em>纯</em>
 函数式数据结构</a>，它们是<em>不可变</em>且<em>持久化</em>的。函数式数据结构的方法都是<em>引用透明</em>的。</p>
-<p>Vavr拥有许多很常用的函数式数据结构，接下来会用示例进行深入讲解。</p>
+<p>Vavr拥有许多很常用的函数式数据结构，接下来会举例进行深入讲解。</p>
 <h3 id="链表">1.4.1. 链表</h3>
 <p>最受欢迎当然也是最简单的一种函数式数据结构就是 <a
 target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Linked_list">（单）链表</a>，它有一个<em>头</em>元素和一个<em>尾</em>列表。链表的行为类似于遵循<a
