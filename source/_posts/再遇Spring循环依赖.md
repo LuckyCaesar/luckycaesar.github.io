@@ -1,13 +1,13 @@
 ---
 title: 再遇Spring循环依赖
 tags: [Spring, 循环依赖, 动态代理]
-index_img: /img/a25d229007-mobiwusi.jpg
+index_img: /img/f0a7032e67d09-spring.jpeg
 date: 2023-03-12 13:00:00
 ---
 
 
 
-## 闲话
+## 前言
 
 说起Spring中的循环依赖，相信所有的Spring Javaer们都耳熟能详，不论是作为面试八股文死记硬背过，还是在实际项目中踩过坑。我也一样，本以为有Spring来解决这个问题就万事大吉了。然而，这次遇到的却不大一样。
 
@@ -415,7 +415,7 @@ public void setAllowRawInjectionDespiteWrapping(boolean allowRawInjectionDespite
 }
 ```
 
-可以看出Spring也特别提醒（NOTE）了涉及自动代理的情况，不要出现循环依赖，但也没有详细说明，类似那种example代码的。那就只能我们自己来找了，一番debug下来，其实原因也很简单，看下截图就明白了：
+可以看出Spring也特别提醒（NOTE）了涉及自动代理的情况，不要出现循环依赖，但也没有伪代码的例子。那就只能我们自己来找了，一番debug下来，其实原因也很简单，看下截图就明白了：
 
 ![bbb中依赖的aaa对象](/img/b_a20230312112052.png)
 

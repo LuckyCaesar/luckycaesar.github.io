@@ -1,7 +1,7 @@
 ---
 title: BigDecimal使用小结
 tags: [Java, BigDecimal]
-index_img: /img/384bbbdb-money.jpeg
+index_img: /img/566dc6e8a0e82-qianbag.jpeg
 date: 2023-02-04 12:00:00
 ---
 
