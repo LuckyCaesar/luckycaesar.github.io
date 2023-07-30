@@ -392,9 +392,15 @@ BigDecimal movePointRight = new BigDecimal("123.45612").movePointRight(2);
 
 
 
-## 乘除
+## 转字符串
 
-两个点：
+- toString()：返回此｛@code BigDecimal｝的字符串表示形式，如果需要指数，则使用科学记数法。
+- toEngineeringString()：返回此｛@code BigDecimal｝的字符串表示形式，如果需要指数，则使用工程符号。类似于科学计数法，但指数的幂都是3的倍数。
+- toPlainString()：没有任何计数法表示，返回一个不包含指数的字符串。
+
+
+
+## 乘除
 
 - **除以0！除以0！除以0！**
 
