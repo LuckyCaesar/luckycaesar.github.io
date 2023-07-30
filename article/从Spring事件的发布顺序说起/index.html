@@ -1,0 +1,821 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/rose.png">
+  <link rel="icon" href="/img/rose.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="LuckyCaesar">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="最近在解决一个有趣的issue时，利用到了Spring中生命周期事件的发布顺序。主要就是根据不同事件的发布顺序不同，在SpringBoot应用启动的某些阶段触发框架的动态优化逻辑，替换一些bean，并且替换后的bean也能正常监听后续阶段发布的事件并执行替换后的逻辑。 说起这些启动时的生命周期事件，我们都耳熟能详。在研究Spring刷新或者SpringBoot启动流程的源码时都能看到它们的身影，">
+<meta property="og:type" content="article">
+<meta property="og:title" content="从Spring事件的发布顺序说起">
+<meta property="og:url" content="https://luckycaesar.github.io/article/%E4%BB%8ESpring%E4%BA%8B%E4%BB%B6%E7%9A%84%E5%8F%91%E5%B8%83%E9%A1%BA%E5%BA%8F%E8%AF%B4%E8%B5%B7/index.html">
+<meta property="og:site_name" content="三味书屋">
+<meta property="og:description" content="最近在解决一个有趣的issue时，利用到了Spring中生命周期事件的发布顺序。主要就是根据不同事件的发布顺序不同，在SpringBoot应用启动的某些阶段触发框架的动态优化逻辑，替换一些bean，并且替换后的bean也能正常监听后续阶段发布的事件并执行替换后的逻辑。 说起这些启动时的生命周期事件，我们都耳熟能详。在研究Spring刷新或者SpringBoot启动流程的源码时都能看到它们的身影，">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://luckycaesar.github.io/img/220368ab-event.jpeg">
+<meta property="article:published_time" content="2023-07-30T08:00:00.000Z">
+<meta property="article:modified_time" content="2023-07-30T10:11:44.672Z">
+<meta property="article:author" content="LuckyCaesar">
+<meta property="article:tag" content="Spring">
+<meta property="article:tag" content="SpringBoot">
+<meta property="article:tag" content="Event">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://luckycaesar.github.io/img/220368ab-event.jpeg">
+  
+  
+    <meta name="referrer" content="no-referrer-when-downgrade">
+  
+  
+  <title>从Spring事件的发布顺序说起 - 三味书屋</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"luckycaesar.github.io","root":"/","version":"1.9.3","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"left","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>三味书屋</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/image-202208220aa.jpeg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="从Spring事件的发布顺序说起"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-07-30 16:00" pubdate>
+          2023年7月30日 下午
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          11k 字
+        
+      </span>
+    
+
+    
+
+    
+    
+      
+        <span id="busuanzi_container_page_pv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="busuanzi_value_page_pv"></span> 次
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="padding-left: 2rem; margin-right: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">从Spring事件的发布顺序说起</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>最近在解决一个有趣的<a
+target="_blank" rel="noopener" href="https://github.com/Tencent/spring-cloud-tencent/issues/954">issue</a>时，利用到了Spring中生命周期事件的发布顺序。主要就是根据不同事件的发布顺序不同，在SpringBoot应用启动的某些阶段触发框架的动态优化逻辑，替换一些bean，并且替换后的bean也能正常监听后续阶段发布的事件并执行替换后的逻辑。</p>
+<p>说起这些启动时的生命周期事件，我们都耳熟能详。在研究Spring刷新或者SpringBoot启动流程的源码时都能看到它们的身影，或者也监听过某些事件来实现一些业务逻辑。但是，对于整个的生命周期事件的分类、顺序等的逻辑我其实是一直比较模糊的，需要用到时才会去研究一番。故而，想借此机会来简单梳理一下这些事件，也加深对其背后所代表的应用启动流程原理的了解和理解。</p>
+<h2 id="有哪些事件">有哪些事件</h2>
+<p>先来看看Spring（6.0.11）和SpringBoot（3.1.0）中到底有哪些生命周期相关的事件，这里是参照的较新的版本的文档和源码：</p>
+<figure>
+<img src="/img/SpringEvent.jpg" srcset="/img/loading.gif" lazyload alt="事件" />
+<figcaption aria-hidden="true">事件</figcaption>
+</figure>
+<ul>
+<li>EventObject：顶层父类为<code>java.util.EventObject</code>，是基于Java的事件机制。</li>
+<li>ApplicationEvent：
+Spring的顶层抽象类，所有扩展的应用事件类都必须继承它。</li>
+</ul>
+<p>接下来就是Spring和SpringBoot的不同实现，从事件名称也可以看出它们的侧重点不一样，也反应了二者（Spring和SpringBoot）的区别：Spring的核心是应用上下文（<em>ApplicationContextEvent</em>），而SpringBoot的侧重点则是应用本身（<em>SpringApplicationEvent</em>）。</p>
+<p>先贴一下官方说明文档，再简单做一下说明：</p>
+<ul>
+<li>Spring的事件介绍文档：<a
+target="_blank" rel="noopener" href="https://docs.spring.io/spring-framework/reference/core/beans/context-introduction.html#context-functionality-events">context-introduction</a></li>
+<li>SpringBoot的事件介绍文档：<a
+target="_blank" rel="noopener" href="https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#features.spring-application.application-events-and-listeners">application-events-and-listeners</a></li>
+</ul>
+<h3 id="springcontextrefreshedevent">Spring#ContextRefreshedEvent</h3>
+<blockquote>
+<p>Published when the <code>ApplicationContext</code> is initialized or
+refreshed.</p>
+</blockquote>
+<p>Spring上下文初始化完毕或者刷新完毕，即Environment、BeanFactory、PostProcessor、MessageSource、Listener、Singletons等等都准备完毕之后，会发布此事件。</p>
+<p><em>它也是绝大部分应用走Spring自动加载刷新流程时所关注的核心事件，后面的几个事件都不同于它。</em></p>
+<h3 id="springcontextstartedevent">Spring#ContextStartedEvent</h3>
+<blockquote>
+<p>Published when the <code>ApplicationContext</code> is started by
+using the <code>start()</code> method on the
+<code>ConfigurableApplicationContext</code> interface. Here, “started”
+means that all <code>Lifecycle</code> beans receive an explicit start
+signal.</p>
+</blockquote>
+<p>文档中明确说明，是在<em>显式</em>的调用<code>ConfigurableApplicationContext#start()</code>方法后上下文启动完成时发布，所以一般我们正常的自动启动流程是监听不到此事件的。</p>
+<h3 id="springcontextclosedevent">Spring#ContextClosedEvent</h3>
+<blockquote>
+<p>Published when the <code>ApplicationContext</code> is being closed by
+using the <code>close()</code> method on the
+<code>ConfigurableApplicationContext</code> interface or via a JVM
+shutdown hook. Here, "closed" means that all singleton beans will be
+destroyed.</p>
+</blockquote>
+<p>同上，对应上下文关闭的事件。</p>
+<h3 id="springcontextstoppedevent">Spring#ContextStoppedEvent</h3>
+<blockquote>
+<p>Published when the <code>ApplicationContext</code> is stopped by
+using the <code>stop()</code> method on the
+<code>ConfigurableApplicationContext</code> interface. Here, “stopped”
+means that all <code>Lifecycle</code> beans receive an explicit stop
+signal.</p>
+</blockquote>
+<p>同上，对应上下文结束的事件。</p>
+<h3
+id="springbootapplicationstartingevent">SpringBoot#ApplicationStartingEvent</h3>
+<blockquote>
+<p>An <code>ApplicationStartingEvent</code> is sent at the start of a
+run but before any processing, except for the registration of listeners
+and initializers.</p>
+</blockquote>
+<p>应用启动但未做任何处理（除了一些listener和initializer的注册）时会发送此事件。</p>
+<h3
+id="springbootapplicationenvironmentpreparedevent">SpringBoot#ApplicationEnvironmentPreparedEvent</h3>
+<blockquote>
+<p>An <code>ApplicationEnvironmentPreparedEvent</code> is sent when the
+<code>Environment</code> to be used in the context is known but before
+the context is created.</p>
+</blockquote>
+<p>环境已经准备完成但上下文还未创建时发送此事件。</p>
+<h3
+id="springbootapplicationcontextinitializedevent">SpringBoot#ApplicationContextInitializedEvent</h3>
+<blockquote>
+<p>An <code>ApplicationContextInitializedEvent</code> is sent when the
+<code>ApplicationContext</code> is prepared and
+ApplicationContextInitializers have been called but before any bean
+definitions are loaded.</p>
+</blockquote>
+<p>在上下文准备完成之后，加载bean definitions之前发送此事件。</p>
+<h3
+id="springbootapplicationpreparedevent">SpringBoot#ApplicationPreparedEvent</h3>
+<blockquote>
+<p>An <code>ApplicationPreparedEvent</code> is sent just before the
+refresh is started but after bean definitions have been loaded.</p>
+</blockquote>
+<p>在上下文准备完成且加载bean
+definitions完成之后，刷新上下文之前发送此事件。</p>
+<h3
+id="springbootapplicationstartedevent">SpringBoot#ApplicationStartedEvent</h3>
+<blockquote>
+<p>An <code>ApplicationStartedEvent</code> is sent after the context has
+been refreshed but before any application and command-line runners have
+been called.</p>
+</blockquote>
+<p>在上下文刷新完成之后，调用<a
+target="_blank" rel="noopener" href="https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#features.spring-application.command-line-runner">ApplicationRunner和CommandLineRunner</a>之前发送此事件。</p>
+<h3
+id="springbootavailabilitychangeevent">SpringBoot#AvailabilityChangeEvent</h3>
+<blockquote>
+<p>An <code>AvailabilityChangeEvent</code> is sent right after with
+<code>LivenessState.CORRECT</code> to indicate that the application is
+considered as live.</p>
+</blockquote>
+<p>在Runner调用完毕后立即发送，表示当前应用已处于活动状态：<code>LivenessState.CORRECT</code>。</p>
+<h3
+id="springbootapplicationreadyevent">SpringBoot#ApplicationReadyEvent</h3>
+<blockquote>
+<p>An <code>ApplicationReadyEvent</code> is sent after any application
+and command-line runners have been called.</p>
+</blockquote>
+<p>在Runner调用完毕后发送，表示应用已经准备完毕。</p>
+<h3
+id="springbootavailabilitychangeevent-1">SpringBoot#AvailabilityChangeEvent</h3>
+<blockquote>
+<p>An <code>AvailabilityChangeEvent</code> is sent right after with
+<code>ReadinessState.ACCEPTING_TRAFFIC</code> to indicate that the
+application is ready to service requests.</p>
+</blockquote>
+<p>应用准备完毕后，还会发送一次此事件，表示当前应用已经可以接收请求了：<code>ReadinessState.ACCEPTING_TRAFFIC</code>。</p>
+<h3
+id="springbootapplicationfailedevent">SpringBoot#ApplicationFailedEvent</h3>
+<blockquote>
+<p>An <code>ApplicationFailedEvent</code> is sent if there is an
+exception on startup.</p>
+</blockquote>
+<p>启动过程中出现异常时，会发送此事件。</p>
+<h2 id="从源码来看">从源码来看</h2>
+<p>在梳理完上面的这些事件后，其实基本上对Spring和SpringBoot启动流程中一些重要的节点有了初步的印象。那现在就直接从源码来看，会更加清晰。</p>
+<h3
+id="abstractapplicationcontextrefresh">AbstractApplicationContext#refresh</h3>
+<p>Spring启动刷新上下文的核心方法，都很熟悉。步骤分明，注释清晰，优雅的代码：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">refresh</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> BeansException, IllegalStateException &#123;<br>    <span class="hljs-keyword">synchronized</span> (<span class="hljs-built_in">this</span>.startupShutdownMonitor) &#123;<br>        <span class="hljs-type">StartupStep</span> <span class="hljs-variable">contextRefresh</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">this</span>.applicationStartup.start(<span class="hljs-string">&quot;spring.context.refresh&quot;</span>);<br><br>        <span class="hljs-comment">// Prepare this context for refreshing.</span><br>        <span class="hljs-comment">// 记录刷新开始时间、初始化PropertySources、记录刷新之前注册的监听器（如果有）</span><br>        prepareRefresh();<br><br>        <span class="hljs-comment">// Tell the subclass to refresh the internal bean factory.</span><br>        <span class="hljs-comment">// 获取实例化的BeanFactory。默认的实现是 DefaultListableBeanFactory</span><br>        <span class="hljs-type">ConfigurableListableBeanFactory</span> <span class="hljs-variable">beanFactory</span> <span class="hljs-operator">=</span> obtainFreshBeanFactory();<br><br>        <span class="hljs-comment">// Prepare the bean factory for use in this context.</span><br>        <span class="hljs-comment">// 向BeanFactory中填充属性/配置/组件等等</span><br>        <span class="hljs-comment">// 如ClassLoader、某些post-processors、bean的表达式解析器（StandardBeanExpressionResolver）、environment beans</span><br>        prepareBeanFactory(beanFactory);<br><br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-comment">// Allows post-processing of the bean factory in context subclasses.</span><br>            <span class="hljs-comment">// BeanFactory初始化完成后，执行一些固定的后置处理。</span><br>            <span class="hljs-comment">// 这里用最常见的Web应用来说明：</span><br>            <span class="hljs-comment">// Web应用在此处会向BeanFactory中添加一些Servlet相关类的依赖解析，以便于处理它们的自动注入。</span><br>            <span class="hljs-comment">// 因为像ServletRequest和HttpSession是动态变化的，并不是单例bean，这里Spring是利用ObjectFactory来实现的</span><br>            <span class="hljs-comment">// 也就是说实际上注入的ServletRequest是一个对象工厂，每次取HttpServletRequest时是调用的此ObjectFactory来从请求上下文取值</span><br>            postProcessBeanFactory(beanFactory);<br><br>            <span class="hljs-type">StartupStep</span> <span class="hljs-variable">beanPostProcess</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">this</span>.applicationStartup.start(<span class="hljs-string">&quot;spring.context.beans.post-process&quot;</span>);<br>            <span class="hljs-comment">// Invoke factory processors registered as beans in the context.</span><br>            <span class="hljs-comment">// 执行为BeanFactory准备的后置处理器</span><br>            invokeBeanFactoryPostProcessors(beanFactory);<br><br>            <span class="hljs-comment">// Register bean processors that intercept bean creation.</span><br>            <span class="hljs-comment">// 注册为bean准备的后置处理器</span><br>            registerBeanPostProcessors(beanFactory);<br>            beanPostProcess.end();<br><br>            <span class="hljs-comment">// Initialize message source for this context.</span><br>            <span class="hljs-comment">// 初始化MessageSource，国际化的标准实现就是利用MessageSource，还有就是像javax Validation的自定义消息也可以用它实现</span><br>            initMessageSource();<br><br>            <span class="hljs-comment">// Initialize event multicaster for this context.</span><br>            <span class="hljs-comment">// 初始化事件多播器，默认SimpleApplicationEventMulticaster</span><br>            initApplicationEventMulticaster();<br><br>            <span class="hljs-comment">// Initialize other special beans in specific context subclasses.</span><br>            <span class="hljs-comment">// 默认空，子类重写，初始化子context独有的类</span><br>            <span class="hljs-comment">// SpringBoot中的ServletWebServerApplicationContext就会重写它，用来初始化内置的Tomcat或其它WebServer</span><br>            onRefresh();<br><br>            <span class="hljs-comment">// Check for listener beans and register them.</span><br>            <span class="hljs-comment">// 把事件监听器注册到EventMulticaster中去，且在此时会发布在EventMulticaster初始化之前的事件</span><br>            registerListeners();<br><br>            <span class="hljs-comment">// Instantiate all remaining (non-lazy-init) singletons.</span><br>            <span class="hljs-comment">// 主要是初始化我们通常所说的单例bean</span><br>            finishBeanFactoryInitialization(beanFactory);<br><br>            <span class="hljs-comment">// Last step: publish corresponding event.</span><br>            <span class="hljs-comment">// 最后结束的时候发布了ContextRefreshedEvent事件</span><br>            finishRefresh();<br>        &#125;<br>        <span class="hljs-keyword">catch</span> (BeansException ex) &#123;<br>            <span class="hljs-keyword">if</span> (logger.isWarnEnabled()) &#123;<br>                logger.warn(<span class="hljs-string">&quot;Exception encountered during context initialization - &quot;</span> +<br>                            <span class="hljs-string">&quot;cancelling refresh attempt: &quot;</span> + ex);<br>            &#125;<br><br>            <span class="hljs-comment">// Destroy already created singletons to avoid dangling resources.</span><br>            <span class="hljs-comment">// 销毁单例bean，移除内存中的单例bean并回调bean的`destroy()`方法</span><br>            destroyBeans();<br><br>            <span class="hljs-comment">// Reset &#x27;active&#x27; flag.</span><br>            cancelRefresh(ex);<br><br>            <span class="hljs-comment">// Propagate exception to caller.</span><br>            <span class="hljs-keyword">throw</span> ex;<br>        &#125;<br>        <span class="hljs-keyword">finally</span> &#123;<br>            <span class="hljs-comment">// Reset common introspection caches in Spring&#x27;s core, since we</span><br>            <span class="hljs-comment">// might not ever need metadata for singleton beans anymore...</span><br>            resetCommonCaches();<br>            contextRefresh.end();<br>        &#125;<br>    &#125;<br>&#125;<br>...<br><span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">finishRefresh</span><span class="hljs-params">()</span> &#123;<br>    <span class="hljs-comment">// Clear context-level resource caches (such as ASM metadata from scanning).</span><br>    clearResourceCaches();<br><br>    <span class="hljs-comment">// Initialize lifecycle processor for this context.</span><br>    initLifecycleProcessor();<br><br>    <span class="hljs-comment">// Propagate refresh to lifecycle processor first.</span><br>    <span class="hljs-comment">// 在初始化上面的LifecycleProcessor后，走的逻辑跟显式调用`start`方法的逻辑一样。当然start的bean就不一定一样了，且不会发布任何事件</span><br>    getLifecycleProcessor().onRefresh();<br><br>    <span class="hljs-comment">// Publish the final event.</span><br>    publishEvent(<span class="hljs-keyword">new</span> <span class="hljs-title class_">ContextRefreshedEvent</span>(<span class="hljs-built_in">this</span>));<br>&#125;<br></code></pre></td></tr></table></figure>
+<h3
+id="abstractapplicationcontextstart">AbstractApplicationContext#start</h3>
+<p>显式调用的<code>start()</code>和<code>stop()</code>方法，可以看到会发布<code>ContextStartedEvent</code>和<code>ContextStoppedEvent</code>：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Override</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">start</span><span class="hljs-params">()</span> &#123;<br>    getLifecycleProcessor().start();<br>    publishEvent(<span class="hljs-keyword">new</span> <span class="hljs-title class_">ContextStartedEvent</span>(<span class="hljs-built_in">this</span>));<br>&#125;<br><br><span class="hljs-meta">@Override</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">stop</span><span class="hljs-params">()</span> &#123;<br>    getLifecycleProcessor().stop();<br>    publishEvent(<span class="hljs-keyword">new</span> <span class="hljs-title class_">ContextStoppedEvent</span>(<span class="hljs-built_in">this</span>));<br>&#125;<br></code></pre></td></tr></table></figure>
+<h3 id="springapplicationrun">SpringApplication#run</h3>
+<p>SpringBoot的应用启动核心流程如下：</p>
+<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> ConfigurableApplicationContext <span class="hljs-title function_">run</span><span class="hljs-params">(String... args)</span> &#123;<br>    <span class="hljs-type">long</span> <span class="hljs-variable">startTime</span> <span class="hljs-operator">=</span> System.nanoTime();<br>    <span class="hljs-comment">// 创建一个BootstrapContext：引导上下文，在ApplicationContext真正刷新完成前可用</span><br>    <span class="hljs-type">DefaultBootstrapContext</span> <span class="hljs-variable">bootstrapContext</span> <span class="hljs-operator">=</span> createBootstrapContext();<br>    <span class="hljs-type">ConfigurableApplicationContext</span> <span class="hljs-variable">context</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-comment">// 声明当前应用使用headless模式：表示应用处于服务器模式下，无法调用外接设备，如显示器、鼠标等，主要是针对awt的使用场景。</span><br>   	<span class="hljs-comment">// SpringBoot当然默认是非交互式、非可视化的服务器应用</span><br>    configureHeadlessProperty();<br>    <span class="hljs-comment">// 注册SpringApplicationRunListener</span><br>    <span class="hljs-comment">// 加载应用本身的监听器（主要是EventPublishingRunListener，生命周期相关的事件由它来发布）</span><br>    <span class="hljs-comment">// 以及一些扩展的hookListener，用于自定义监听某些启动阶段</span><br>    <span class="hljs-type">SpringApplicationRunListeners</span> <span class="hljs-variable">listeners</span> <span class="hljs-operator">=</span> getRunListeners(args);<br>    <br>    <span class="hljs-comment">// 发布 ApplicationStartingEvent</span><br>    listeners.starting(bootstrapContext, <span class="hljs-built_in">this</span>.mainApplicationClass);<br>    <br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-type">ApplicationArguments</span> <span class="hljs-variable">applicationArguments</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">DefaultApplicationArguments</span>(args);<br>        <br>        <span class="hljs-comment">// environment的加载准备，会发布 ApplicationEnvironmentPreparedEvent</span><br>        <span class="hljs-type">ConfigurableEnvironment</span> <span class="hljs-variable">environment</span> <span class="hljs-operator">=</span> prepareEnvironment(listeners, bootstrapContext, applicationArguments);<br>        <br>        <span class="hljs-comment">// 打印banner信息</span><br>        <span class="hljs-type">Banner</span> <span class="hljs-variable">printedBanner</span> <span class="hljs-operator">=</span> printBanner(environment);<br>        <span class="hljs-comment">// 根据当前应用类型（Servlet、Reactive）创建一个 ConfigurableApplicationContext</span><br>        context = createApplicationContext();<br>        context.setApplicationStartup(<span class="hljs-built_in">this</span>.applicationStartup);<br>        <br>        <span class="hljs-comment">// 刷新应用上下文前的准备工作：</span><br>        <span class="hljs-comment">// 1.注册environment（避免重复加载）、应用上下文的后置处理、执行应用上下文刷新前的initializer</span><br>        <span class="hljs-comment">// 2.发布 ApplicationContextInitializedEvent</span><br>        <span class="hljs-comment">// 3.关闭BootstrapContext：这里会发布一个BootstrapContextClosedEvent，监听它能拿到BootstrapContext和ApplicationContext。如果需要做一些bean的迁移可以在此处实现</span><br>        <span class="hljs-comment">// 4.向BeanFactory中添加一些配置属性，往ApplicationContext中添加一些BeanFactory的后置处理</span><br>        <span class="hljs-comment">// 5.核心步骤，加载BeanDefinition</span><br>        <span class="hljs-comment">// 6.加载完毕后，发布 ApplicationPreparedEvent</span><br>        prepareContext(bootstrapContext, context, environment, listeners, applicationArguments, printedBanner);<br>        <br>        <span class="hljs-comment">// 调用Spring的`AbstractApplicationContext#refresh()`方法，刷新上下文</span><br>        refreshContext(context);<br>        <span class="hljs-comment">// 默认空实现，预留的钩子</span><br>        afterRefresh(context, applicationArguments);<br>        <span class="hljs-type">Duration</span> <span class="hljs-variable">timeTakenToStartup</span> <span class="hljs-operator">=</span> Duration.ofNanos(System.nanoTime() - startTime);<br>        <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>.logStartupInfo) &#123;<br>            <span class="hljs-keyword">new</span> <span class="hljs-title class_">StartupInfoLogger</span>(<span class="hljs-built_in">this</span>.mainApplicationClass).logStarted(getApplicationLog(), timeTakenToStartup);<br>        &#125;<br>        <br>        <span class="hljs-comment">// 发布 ApplicationStartedEvent和AvailabilityChangeEvent(LivenessState.CORRECT)</span><br>        listeners.started(context, timeTakenToStartup);<br>        <span class="hljs-comment">// 调用ApplicationRunner和CommandLineRunner的实现</span><br>        <span class="hljs-comment">// 譬如seata-server的启动就是一个SpringBoot应用，实现了CommandLineRunner来触发调用Server.start</span><br>        callRunners(context, applicationArguments);<br>    &#125;<br>    <span class="hljs-keyword">catch</span> (Throwable ex) &#123;<br>        <span class="hljs-keyword">if</span> (ex <span class="hljs-keyword">instanceof</span> AbandonedRunException) &#123;<br>            <span class="hljs-keyword">throw</span> ex;<br>        &#125;<br>        <span class="hljs-comment">// 失败后会发布 ApplicationFailedEvent</span><br>        handleRunFailure(context, ex, listeners);<br>        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalStateException</span>(ex);<br>    &#125;<br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-keyword">if</span> (context.isRunning()) &#123;<br>            <span class="hljs-type">Duration</span> <span class="hljs-variable">timeTakenToReady</span> <span class="hljs-operator">=</span> Duration.ofNanos(System.nanoTime() - startTime);<br>            <span class="hljs-comment">// 发布 AvailabilityChangeEvent(ReadinessState.ACCEPTING_TRAFFIC)</span><br>            listeners.ready(context, timeTakenToReady);<br>        &#125;<br>    &#125;<br>    <span class="hljs-keyword">catch</span> (Throwable ex) &#123;<br>        <span class="hljs-keyword">if</span> (ex <span class="hljs-keyword">instanceof</span> AbandonedRunException) &#123;<br>            <span class="hljs-keyword">throw</span> ex;<br>        &#125;<br>        <span class="hljs-comment">// 失败后会发布 ApplicationFailedEvent</span><br>        handleRunFailure(context, ex, <span class="hljs-literal">null</span>);<br>        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalStateException</span>(ex);<br>    &#125;<br>    <span class="hljs-keyword">return</span> context;<br>&#125;<br><br>...<br><br><span class="hljs-keyword">private</span> DefaultBootstrapContext <span class="hljs-title function_">createBootstrapContext</span><span class="hljs-params">()</span> &#123;<br>    <span class="hljs-comment">// SpringBoot中的另一个IOC容器，在刷新应用容器之前，可以通过它来创建一些组件实例，通过BootstrapRegistryInitializer接口来实现</span><br>    <span class="hljs-comment">// 譬如说SpringCloud的ConfigServer会在此时注册一些组件</span><br>    <span class="hljs-type">DefaultBootstrapContext</span> <span class="hljs-variable">bootstrapContext</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">DefaultBootstrapContext</span>();<br>    <span class="hljs-built_in">this</span>.bootstrapRegistryInitializers.forEach((initializer) -&gt; initializer.initialize(bootstrapContext));<br>    <span class="hljs-keyword">return</span> bootstrapContext;<br>&#125;<br></code></pre></td></tr></table></figure>
+<h2 id="小结">小结</h2>
+<p>在整理完事件顺序和阅读完源码之后，Spring及SpringBoot的启动流程就一目了然了。流程的各个关键阶段都发布了对应的事件来方便做监听和扩展。而且在梳理整个流程的过程中，也会发现一些其它很优秀、很巧妙的设计，比如：</p>
+<ul>
+<li>钩子函数：如AbstractApplicationContext#onRefresh、SpringApplication#afterRefresh</li>
+<li>对象工厂：ObjectFactory替代实际的单例bean，再真正需要的时候从工厂灵活获取真实的bean对象</li>
+<li>BeanPostProcessor：后置处理器接口，Spring实现AOP的经典设计</li>
+<li>PropertySource：应用的键值配置都转换成了这个抽象类。还可以基于它做自定义组件的属性源，如NacosPropertySource</li>
+<li>SpEL：强大的Spring表达式语言。之前也基于它实现过一个<a
+href="https://luckycaesar.github.io/article/%E4%BC%98%E9%9B%85%E5%9C%B0%E5%AE%9E%E7%8E%B0%E6%93%8D%E4%BD%9C%E6%97%A5%E5%BF%97%E8%AE%B0%E5%BD%95/">操作日志组件</a></li>
+</ul>
+<p>除了Spring和SpringBoot本身之外，在SpringCloud以及各家大厂的不同版本中，也有一些常见事件，比如SpringCloud#RefreshEvent、SpringCloud#EnvironmentChangeEvent、SpringCloud#RefreshScopeRefreshedEvent，在使用SpringCloud标准的<code>@RefreshScope</code>实现远程配置动态刷新时相关的几个事件。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Spring/">#Spring</a>
+      
+        <a href="/tags/SpringBoot/">#SpringBoot</a>
+      
+        <a href="/tags/Event/">#Event</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>从Spring事件的发布顺序说起</div>
+      <div>https://luckycaesar.github.io/article/从Spring事件的发布顺序说起/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>LuckyCaesar</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2023年7月30日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="SA - 相同方式共享">
+                    <i class="iconfont icon-sa"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/article/%E5%90%8E%E5%8F%B0%E7%B3%BB%E7%BB%9F%E6%8E%A5%E5%8F%A3%E4%BC%98%E5%8C%96%E6%B5%85%E8%B0%88/" title="后台系统接口优化浅谈">
+                        <span class="hidden-mobile">后台系统接口优化浅谈</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            loader : {
+              load: ['ui/lazy']
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.2/es5/tex-mml-chtml.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+  <script defer src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>
