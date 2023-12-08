@@ -291,7 +291,7 @@ public Object postProcessAfterInitialization(@Nullable Object bean, String beanN
 
 exposedObject最终就指向上面这个方法返回的bean，所以如果被代理了，那exposedObject肯定是不等于正在创建的原始bean的。
 
-到这里我以为找到问题原因了，是版本不一致导致的。然而仔细比对了两个分支的版本后，发现都是使用的*5.0.19.RELEASE*版本，也就是说执行的都是新逻辑。问题分支出现的旧版本并不是当前业务类所在module依赖的。
+到这里本以为找到问题原因了，是版本不一致导致的。然而仔细比对了两个分支的版本后，发现都是使用的*5.0.19.RELEASE*版本，也就是说执行的都是新逻辑。问题分支出现的旧版本并不是当前业务类所在module依赖的。
 
 这就有点奇怪了，于是再到没有报错的分支上继续调试。这一调试果然就发现了不一样的地方。
 

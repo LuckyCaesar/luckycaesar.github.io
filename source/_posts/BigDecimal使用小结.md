@@ -54,6 +54,8 @@ BigDecimal doubleValueDecimal = BigDecimal.valueOf(1.234d);
 
 所以并不是精度真的丢失了，而是BigDecimal原原本本的返回了0.1 double数的真正值，只不过在程序代码逻辑里，我们要的是这个效果：`0.1d = 0.1`。
 
+> 至于为何在计算机中，0.1并不等于0.1，可以看这里：[0.1 + 0.2 不等于 0.3？原来是因为这个](https://juejin.cn/post/7203622312871231525)
+
 可以反过来看看这个例子，`.valueOf()`和`.toString()`会对 `d` 这个double数字进行近似运算，认为这个数字就是等于 0.1，在程序中会看起来更合理：
 
 ```java
