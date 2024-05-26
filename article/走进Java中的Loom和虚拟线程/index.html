@@ -25,10 +25,10 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://luckycaesar.github.io/img/project-loom-image.png">
 <meta property="article:published_time" content="2023-12-09T17:00:00.000Z">
-<meta property="article:modified_time" content="2024-01-08T13:42:53.493Z">
+<meta property="article:modified_time" content="2024-05-26T14:09:59.270Z">
 <meta property="article:author" content="LuckyCaesar">
-<meta property="article:tag" content="虚拟线程">
 <meta property="article:tag" content="协程">
+<meta property="article:tag" content="虚拟线程">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://luckycaesar.github.io/img/project-loom-image.png">
   
@@ -297,7 +297,7 @@ JVM中如此（其它JVM的实现可能有差别）。所以操作系统层面�
 <p>顺带一提，创建一个线程的开销也比创建一个进程来得小。当然，实际情况是否如此确定仍取决于操作系统的实现细节。</p>
 <p><em>Java语言规范</em><sup id="fnref:3" class="footnote-ref"><a href="#fn:3" rel="footnote"><span
 class="hint--top hint--rounded"
-aria-label="参见Java SE 21的语言规范文档：https://docs.oracle.com/javase/specs/jls/se21/html/index.html">[3]</span></a></sup>并未在操作系统线程和Java线程之间强制指定任何特殊的映射，这是假定主机操作系统恰好有类似线程的概念
+aria-label="参见Java SE 21的语言规范文档：[https://docs.oracle.com/javase/specs/jls/se21/html/index.html](https://docs.oracle.com/javase/specs/jls/se21/html/index.html)">[3]</span></a></sup>并未在操作系统线程和Java线程之间强制指定任何特殊的映射，这是假定主机操作系统恰好有类似线程的概念
 - 而实际上并不总是如此。</p>
 <p>实际上，在Java很早期的一些版本当中，JVM线程被<a
 target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E5%A4%9A%E8%B7%AF%E5%A4%8D%E7%94%A8">多路复用</a>到了操作系统的线程（也被称为<em>平台线程</em>）上，即所谓的<em>绿色线程</em>，因为那些最早的JVM实现实际上仅利用到了一个平台线程。</p>
@@ -415,7 +415,7 @@ aspect of fork/join</a>是如何变得远比递归分解任务更重要的）</p
 <p>虚拟线程能在偶现大量的CPU密集型线程时仍运转良好。这让工作窃取调度器能平滑CPU的利用率，且代码最终会调用一个通过yield
 point<sup id="fnref:4" class="footnote-ref"><a href="#fn:4" rel="footnote"><span
 class="hint--top hint--rounded"
-aria-label="yield point，类似于safe point：https://zhuanlan.zhihu.com/p/114540016">[4]</span></a></sup>的操作（比如阻塞I/O）。</p>
+aria-label="yield point，类似于safe point：[https://zhuanlan.zhihu.com/p/114540016](https://zhuanlan.zhihu.com/p/114540016)">[4]</span></a></sup>的操作（比如阻塞I/O）。</p>
 <h2 id="一则警示寓言">一则警示“寓言”</h2>
 <p>接下来展示一个例子，当自定义调度虚拟线程时，Loom的设计也会出现一些难以预料的结果。</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TangledLoom</span> &#123;<br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;<br>        <span class="hljs-type">var</span> <span class="hljs-variable">scheduler</span> <span class="hljs-operator">=</span> Executors.newFixedThreadPool(<span class="hljs-number">2</span>);<br>        <span class="hljs-type">Runnable</span> <span class="hljs-variable">r</span> <span class="hljs-operator">=</span> () -&gt; &#123;<br>            System.out.println(Thread.currentThread().getName() +<span class="hljs-string">&quot; starting &quot;</span>);<br>            <span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>) &#123;<br>                <span class="hljs-type">int</span> <span class="hljs-variable">total</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br>                <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">10</span>; i++) &#123;<br>                    total = total + hashing(i, <span class="hljs-string">&#x27;X&#x27;</span>);<br>                &#125;<br>                System.out.println(Thread.currentThread().getName() +<span class="hljs-string">&quot; : &quot;</span>+ total);<br>            &#125;<br>        &#125;;<br>        <span class="hljs-type">var</span> <span class="hljs-variable">tA</span> <span class="hljs-operator">=</span> Thread.builder().virtual(scheduler).name(<span class="hljs-string">&quot;A&quot;</span>).task(r).build();<br>        <span class="hljs-type">var</span> <span class="hljs-variable">tB</span> <span class="hljs-operator">=</span> Thread.builder().virtual(scheduler).name(<span class="hljs-string">&quot;B&quot;</span>).task(r).build();<br>        <span class="hljs-type">var</span> <span class="hljs-variable">tC</span> <span class="hljs-operator">=</span> Thread.builder().virtual(scheduler).name(<span class="hljs-string">&quot;C&quot;</span>).task(r).build();<br>        tA.start();<br>        tB.start();<br>        tC.start();<br>        <span class="hljs-keyword">try</span> &#123;<br>            tA.join();<br>            tB.join();<br>            tC.join();<br>        &#125; <span class="hljs-keyword">catch</span> (Throwable tx) &#123;<br>            tx.printStackTrace();<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-type">int</span> <span class="hljs-title function_">hashing</span><span class="hljs-params">(<span class="hljs-type">int</span> length, <span class="hljs-type">char</span> c)</span> &#123;<br>        <span class="hljs-keyword">final</span> <span class="hljs-type">StringBuilder</span> <span class="hljs-variable">sb</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">StringBuilder</span>();<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">j</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; j &lt; length * <span class="hljs-number">1_000_000</span>; j++) &#123;<br>            sb.append(c);<br>        &#125;<br>        <span class="hljs-keyword">final</span> <span class="hljs-type">String</span> <span class="hljs-variable">s</span> <span class="hljs-operator">=</span> sb.toString();<br>        <span class="hljs-keyword">return</span> s.hashCode();<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
@@ -466,13 +466,15 @@ class="footnote-text"><span>核心语言是编程语言本身和相关标准库�
 </li>
 <li>
 <span id="fn:3" class="footnote-text"><span>参见Java SE
-21的语言规范文档：https://docs.oracle.com/javase/specs/jls/se21/html/index.html
+21的语言规范文档：<a
+target="_blank" rel="noopener" href="https://docs.oracle.com/javase/specs/jls/se21/html/index.html">https://docs.oracle.com/javase/specs/jls/se21/html/index.html</a>
 <a href="#fnref:3" rev="footnote" class="footnote-backref">
 ↩︎</a></span></span>
 </li>
 <li>
 <span id="fn:4" class="footnote-text"><span>yield point，类似于safe
-point：https://zhuanlan.zhihu.com/p/114540016
+point：<a
+target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/114540016">https://zhuanlan.zhihu.com/p/114540016</a>
 <a href="#fnref:4" rev="footnote" class="footnote-backref">
 ↩︎</a></span></span>
 </li>
@@ -498,9 +500,9 @@ target="_blank" rel="noopener" href="https://openjdk.org/jeps/444">Virtual Threa
     <div class="post-meta">
       <i class="iconfont icon-tags"></i>
       
-        <a href="/tags/%E8%99%9A%E6%8B%9F%E7%BA%BF%E7%A8%8B/">#虚拟线程</a>
-      
         <a href="/tags/%E5%8D%8F%E7%A8%8B/">#协程</a>
+      
+        <a href="/tags/%E8%99%9A%E6%8B%9F%E7%BA%BF%E7%A8%8B/">#虚拟线程</a>
       
     </div>
   

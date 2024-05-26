@@ -25,7 +25,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://luckycaesar.github.io/img/f0a7032e67d09-spring.jpeg">
 <meta property="article:published_time" content="2023-03-12T05:00:00.000Z">
-<meta property="article:modified_time" content="2023-08-05T04:17:22.667Z">
+<meta property="article:modified_time" content="2024-05-02T07:43:38.911Z">
 <meta property="article:author" content="LuckyCaesar">
 <meta property="article:tag" content="Spring">
 <meta property="article:tag" content="循环依赖">
@@ -213,7 +213,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          13k 字
+          14k 字
         
       </span>
     
@@ -365,12 +365,12 @@ version</strong>等，猜测跟代理有关。那循环依赖时如果存在被�
 <p>到这里本以为找到问题原因了，是版本不一致导致的。然而仔细比对了两个分支的版本后，发现都是使用的<em>5.0.19.RELEASE</em>版本，也就是说执行的都是新逻辑。问题分支出现的旧版本并不是当前业务类所在module依赖的。</p>
 <p>这就有点奇怪了，于是再到没有报错的分支上继续调试。这一调试果然就发现了不一样的地方。</p>
 <h3 id="aspectj增强器和advice增强器">AspectJ增强器和Advice增强器</h3>
-<p>两个分支都出现了一个一样的后置处理<code>AnnotationAwareAspectJAutoProxyCreator</code>，但是它并没有触发代理。而在出现问题的分支上，<em>多执行了一个<code>DefaultAdvisorAutoProxyCreator</code>的后置处理器，就是它执行完后会进行代理操作</em>。它们都继承了<code>AbstractAutoProxyCreator</code>类，所以在进行后置增强时都会走到上面的<code>postProcessAfterInitialization</code>逻辑中去。关于这两个类的部分注释如下。</p>
+<p>两个分支都出现了一个一样的后置处理<code>AnnotationAwareAspectJAutoProxyCreator</code>（Spring默认），它进行了AOP代理，但是对循环引用的处理逻辑无任何影响。而在出现问题的分支上，<em>多执行了一个<code>DefaultAdvisorAutoProxyCreator</code>的后置处理器，就是它执行完后会进行重复的代理操作，导致bean被</em>二次代理。它们都继承了<code>AbstractAutoProxyCreator</code>类，所以在进行后置增强时都会走到上面的<code>postProcessAfterInitialization</code>逻辑中去。关于这两个类的部分注释如下。</p>
 <p>DefaultAdvisorAutoProxyCreator：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java">&#123;<span class="hljs-meta">@code</span> BeanPostProcessor&#125; implementation that creates AOP proxies based on all<br>candidate &#123;<span class="hljs-meta">@code</span> Advisor&#125;s in the current &#123;<span class="hljs-meta">@code</span> BeanFactory&#125;. This <span class="hljs-keyword">class</span> <span class="hljs-title class_">is</span><br>completely generic; it contains no special code to handle any particular aspects,<br>such as pooling aspects.<br></code></pre></td></tr></table></figure>
 <p>AnnotationAwareAspectJAutoProxyCreator：</p>
 <figure class="highlight kotlin"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs kotlin">&#123;<span class="hljs-meta">@link</span> AspectJAwareAdvisorAutoProxyCreator&#125; sub<span class="hljs-keyword">class</span> <span class="hljs-title class_">that</span> <span class="hljs-title">processes</span> <span class="hljs-title">all</span> <span class="hljs-title">AspectJ</span><br><span class="hljs-keyword">annotation</span> aspects <span class="hljs-keyword">in</span> the current application context, <span class="hljs-keyword">as</span> well <span class="hljs-keyword">as</span> Spring Advisors.<br></code></pre></td></tr></table></figure>
-<p>可以看出分别是处理基于Spring原生的Advice接口的增强和基于AspectJ注解的增强。而在当前场景下，两个类并没有AspectJ的注解，也就没有需要<code>AnnotationAwareAspectJAutoProxyCreator</code>来处理的增强了。</p>
+<p>可以看出分别是处理基于Spring原生的Advice接口的增强和基于AspectJ注解的增强（也能处理Spring的Advisor）。<strong>在默认情况下，Spring是开启<code>AnnotationAwareAspectJAutoProxyCreator</code>增强器，而不是DefaultAdvisorAutoProxyCreator</strong>，因为前者可以处理不同实现的切面增强。</p>
 <p>找到具体的类就好办了，全局搜索后发现是业务框架层权限jar包里面自动装配的bean：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Bean</span><br><span class="hljs-meta">@DependsOn(&quot;lifecycleBeanPostProcessor&quot;)</span><br><span class="hljs-keyword">public</span> DefaultAdvisorAutoProxyCreator <span class="hljs-title function_">getDefaultAdvisorAutoProxyCreator</span><span class="hljs-params">()</span> &#123;<br>    <span class="hljs-type">DefaultAdvisorAutoProxyCreator</span> <span class="hljs-variable">creator</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">DefaultAdvisorAutoProxyCreator</span>();<br>    creator.setProxyTargetClass(<span class="hljs-literal">true</span>);<br>    <span class="hljs-keyword">return</span> creator;<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>我们的权限框架使用的是Shiro，在外面封装了一层，使之更适配本地业务。那么加这样的自动装配肯定就跟Shiro的一些增强有关，很明显装配这个bean跟它依赖的<code>lifecycleBeanPostProcessor</code>生命周期增强bean息息相关。但是这里不再去深究Shiro相关的代码和配置，只需要知道确实是这个配置引发了问题即可。</p>

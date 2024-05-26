@@ -25,12 +25,12 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://luckycaesar.github.io/img/transaction-those-things.jpg">
 <meta property="article:published_time" content="2024-01-13T08:00:00.000Z">
-<meta property="article:modified_time" content="2024-01-13T08:21:28.023Z">
+<meta property="article:modified_time" content="2024-05-26T14:13:32.189Z">
 <meta property="article:author" content="LuckyCaesar">
 <meta property="article:tag" content="事务">
 <meta property="article:tag" content="Spring">
 <meta property="article:tag" content="MyBatis">
-<meta property="article:tag" content="ShardingSphere">
+<meta property="article:tag" content="ShardingJdbc">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:image" content="https://luckycaesar.github.io/img/transaction-those-things.jpg">
   
@@ -279,7 +279,7 @@
                 
                 <p>事务，保证数据一致性，非常重要，开发人员必备知识点。看看它的定义<sup id="fnref:1" class="footnote-ref"><a href="#fn:1" rel="footnote"><span
 class="hint--top hint--rounded"
-aria-label="https://zh.wikipedia.org/wiki/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1">[1]</span></a></sup>：</p>
+aria-label="[数据库事务](https://zh.wikipedia.org/wiki/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1)">[1]</span></a></sup>：</p>
 <blockquote>
 <p><strong>数据库事务</strong>（简称：<strong>事务</strong>）是<a
 target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/数据库管理系统">数据库管理系统</a>执行过程中的一个逻辑单位，由一个有限的<a
@@ -311,7 +311,7 @@ target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/ACID">ACID特
 <p>这两种情况事务都不会生效（默认Spring
 AOP的动态代理机制下）。直接看官方说明<sup id="fnref:2" class="footnote-ref"><a href="#fn:2" rel="footnote"><span
 class="hint--top hint--rounded"
-aria-label="https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html#page-title">[2]</span></a></sup>：</p>
+aria-label="[Using `@Transactional`](https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html#page-title)">[2]</span></a></sup>：</p>
 <blockquote>
 <p>Method visibility and <code>@Transactional</code> in proxy mode</p>
 <p>The <code>@Transactional</code> annotation is typically used on
@@ -360,15 +360,15 @@ target="_blank" rel="noopener" href="https://www.huangchaoyu.com/2022/01/11/myba
 <figure class="highlight tex"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs tex">current transaction is aborted, commands ignored until end of transaction block.<br></code></pre></td></tr></table></figure>
 <p>PostgreSQL数据库事务有一个特性，如果一个SQL出错后，事务就会变成<em>aborted</em>的状态，此时必须调用<code>rollback</code>或者<code>abort</code><sup id="fnref:3" class="footnote-ref"><a href="#fn:3" rel="footnote"><span
 class="hint--top hint--rounded"
-aria-label="https://www.postgresql.org/docs/current/sql-abort.html">[3]</span></a></sup>命令来回滚事务。所以，如果想实现类似下面这种功能，那必须得提前设置一个savepoint便于回滚或者<a
+aria-label="[sql-abort](https://www.postgresql.org/docs/current/sql-abort.html)">[3]</span></a></sup>命令来回滚事务。所以，如果想实现类似下面这种功能，那必须得提前设置一个savepoint便于回滚或者<a
 target="_blank" rel="noopener" href="https://www.modb.pro/db/82136">修改数据库连接参数</a>：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">doSomething</span><span class="hljs-params">(SqlSession sqlSession)</span> &#123;<br>    <span class="hljs-comment">// 第一个更新操作</span><br>    mapper1.update(...);<br>    <span class="hljs-comment">// 第一个更新之后设置一个savePoint</span><br>    <span class="hljs-type">Connection</span> <span class="hljs-variable">connection</span> <span class="hljs-operator">=</span> sqlSession.getConnection();<br>    <span class="hljs-type">Savepoint</span> <span class="hljs-variable">savepoint</span> <span class="hljs-operator">=</span> connection.getSavepoint();<br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-comment">// 尝试插入，如果抛出DuplicateKey的异常，则更新</span><br>        mapper2.insert(...);<br>    &#125; <span class="hljs-keyword">catch</span>(DuplicateKeyException ex) &#123;<br>        <span class="hljs-comment">// 先rollback至savepoint，再更新。否则会抛错</span><br>        connection.rollback(savepoint);<br>        mapper2.update(...);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 <h2
-id="mybatis事务管理器和shardingsphere">MyBatis事务管理器和ShardingSphere</h2>
+id="mybatis事务管理器和shardingjdbc">MyBatis事务管理器和ShardingJdbc</h2>
 <p>MyBatis提供了几种事务管理器，常用的可能就是<code>JdbcTransaction</code>和<code>SpringManagedTransaction</code>，后者在引入了mybatis-spring的整合包之后才会有。</p>
 <p>一般情况下Spring和MyBatis集成，默认都是使用的<code>SpringManagedTransaction</code>。实例化<code>org.mybatis.spring.SqlSessionFactoryBean</code>的时候可以看出来：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// SqlSessionFactoryBean#buildSqlSessionFactory</span><br><br><span class="hljs-keyword">protected</span> SqlSessionFactory <span class="hljs-title function_">buildSqlSessionFactory</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> Exception &#123;<br>    ...<br>    <span class="hljs-comment">// 默认情况下指定SpringManagedTransactionFactory</span><br>    targetConfiguration.setEnvironment(<span class="hljs-keyword">new</span> <span class="hljs-title class_">Environment</span>(<span class="hljs-built_in">this</span>.environment,<br>            <span class="hljs-built_in">this</span>.transactionFactory == <span class="hljs-literal">null</span> ? <span class="hljs-keyword">new</span> <span class="hljs-title class_">SpringManagedTransactionFactory</span>() : <span class="hljs-built_in">this</span>.transactionFactory,<br>            <span class="hljs-built_in">this</span>.dataSource));<br>    ...<br>&#125;<br></code></pre></td></tr></table></figure>
-<p>所以，如果集成了mybatis-spring，但又想要手动控制SqlSession（<code>autoCommit</code>置为false，在需要的时候手动提交和回滚），那么一定记得使用<code>JdbcTransaction</code>。因为<code>SpringManagedTransaction</code>每次开启connection时，总是会从connection中取<code>autoCommit</code>值，<em>可能导致手动控制事务失效（和ShardingSphere的集成有关）</em>。</p>
+<p>所以，如果集成了mybatis-spring，但又想要手动控制SqlSession（<code>autoCommit</code>置为false，在需要的时候手动提交和回滚），<strong>那么一定记得使用<code>JdbcTransaction</code></strong>。因为<code>SpringManagedTransaction</code>每次开启connection时，总是会从connection中取<code>autoCommit</code>值，<em>可能导致手动控制事务失效（目前此处的问题是和ShardingJdbc的集成有关）</em>。下面来追踪一下。</p>
 <p>先来看看<code>JdbcTransaction</code>的源码：</p>
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">JdbcTransaction</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Transaction</span> &#123;<br>  <br>  <span class="hljs-comment">// 持有autoCommit属性，未指定默认值</span><br>  <span class="hljs-keyword">protected</span> <span class="hljs-type">boolean</span> autoCommit<br><br>  <span class="hljs-comment">// 构造器提供了autoCommit参数</span><br>  <span class="hljs-keyword">public</span> <span class="hljs-title function_">JdbcTransaction</span><span class="hljs-params">(DataSource ds, TransactionIsolationLevel desiredLevel, <span class="hljs-type">boolean</span> desiredAutoCommit)</span> &#123;<br>    <span class="hljs-built_in">this</span>(ds, desiredLevel, desiredAutoCommit, <span class="hljs-literal">false</span>);<br>  &#125;<br><br>  <span class="hljs-keyword">public</span> <span class="hljs-title function_">JdbcTransaction</span><span class="hljs-params">(DataSource ds, TransactionIsolationLevel desiredLevel, <span class="hljs-type">boolean</span> desiredAutoCommit, <span class="hljs-type">boolean</span> skipSetAutoCommitOnClose)</span> &#123;<br>    dataSource = ds;<br>    level = desiredLevel;<br>    autoCommit = desiredAutoCommit;<br>    <span class="hljs-built_in">this</span>.skipSetAutoCommitOnClose = skipSetAutoCommitOnClose;<br>  &#125;<br><br>  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">openConnection</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> SQLException &#123;<br>    <span class="hljs-keyword">if</span> (log.isDebugEnabled()) &#123;<br>      log.debug(<span class="hljs-string">&quot;Opening JDBC Connection&quot;</span>);<br>    &#125;<br>    connection = dataSource.getConnection();<br>    <span class="hljs-keyword">if</span> (level != <span class="hljs-literal">null</span>) &#123;<br>      connection.setTransactionIsolation(level.getLevel());<br>    &#125;<br>    setDesiredAutoCommit(autoCommit);<br>  &#125;<br><br>  <span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">setDesiredAutoCommit</span><span class="hljs-params">(<span class="hljs-type">boolean</span> desiredAutoCommit)</span> &#123;<br>    <span class="hljs-keyword">try</span> &#123;<br>      <span class="hljs-keyword">if</span> (connection.getAutoCommit() != desiredAutoCommit) &#123;<br>        <span class="hljs-keyword">if</span> (log.isDebugEnabled()) &#123;<br>          log.debug(<span class="hljs-string">&quot;Setting autocommit to &quot;</span> + desiredAutoCommit + <span class="hljs-string">&quot; on JDBC Connection [&quot;</span> + connection + <span class="hljs-string">&quot;]&quot;</span>);<br>        &#125; <br>        <span class="hljs-comment">// 此处会重置autoCommit的值为transaction实例化时指定的值。如果手动开启事务时指定了false，那么这里就一定会被置为false</span><br>        connection.setAutoCommit(desiredAutoCommit);<br>      &#125;<br>    &#125; <span class="hljs-keyword">catch</span> (SQLException e) &#123;<br>      <span class="hljs-comment">// Only a very poorly implemented driver would fail here,</span><br>      <span class="hljs-comment">// and there&#x27;s not much we can do about that.</span><br>      <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">TransactionException</span>(<span class="hljs-string">&quot;Error configuring AutoCommit.  &quot;</span><br>          + <span class="hljs-string">&quot;Your driver may not support getAutoCommit() or setAutoCommit(). &quot;</span><br>          + <span class="hljs-string">&quot;Requested setting: &quot;</span> + desiredAutoCommit + <span class="hljs-string">&quot;.  Cause: &quot;</span> + e, e);<br>    &#125;<br>  &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
 <p>再来<code>SpringManagedTransaction</code>的源码：</p>
@@ -381,7 +381,14 @@ id="mybatis事务管理器和shardingsphere">MyBatis事务管理器和ShardingSp
 target="_blank" rel="noopener" href="https://github.com/apache/shardingsphere/issues/7374">issue</a>上找到一些官方的回复，可以知道此处的默认值跟其底层设计理念有关：</p>
 <p><img src="/img/image-20240113111229890.png" srcset="/img/loading.gif" lazyload /></p>
 <p><img src="/img/image-20240113111242267.png" srcset="/img/loading.gif" lazyload /></p>
-<p>当然，除了替换<code>Transaction</code>的实现，也可以通过下面这种方式，直接使用connection来手动控制：</p>
+<p>最后再梳理下，可以看出其实MyBatis配置错误才是根因：</p>
+<ol type="1">
+<li><p>MyBatis指定事务控制实现时，<strong>未正确配置对应的实现类，想手动控制事务却指定了<code>SpringManagedTransaction</code>的实现</strong></p>
+<ol start="2" type="1">
+<li>在配置错误的情况下，引入ShardingJdbc，再由于<code>ShardingSphereConnection</code>的实现对于<code>autoCommit</code>值的处理有其特殊性，最终导致事务失效</li>
+</ol></li>
+</ol>
+<p>当然，除了替换<code>Transaction</code>的实现，也可以通过下面这种方式，直接使用connection来手动控制（并不推荐）：</p>
 <p><img src="/img/image-20240113111515177.png" srcset="/img/loading.gif" lazyload /></p>
 <p><img src="/img/image-20240113130222094.png" srcset="/img/loading.gif" lazyload /></p>
 <h1 id="要点">要点</h1>
@@ -390,7 +397,7 @@ target="_blank" rel="noopener" href="https://github.com/apache/shardingsphere/is
 <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">enum</span> <span class="hljs-title class_">Propagation</span> &#123;<br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * Support a current transaction, create a new one if none exists.</span><br><span class="hljs-comment">	 * Analogous to EJB transaction attribute of the same name.</span><br><span class="hljs-comment">	 * &lt;p&gt;This is the default setting of a transaction annotation.</span><br><span class="hljs-comment">	 */</span><br>    <span class="hljs-comment">// 如果上下文存在事务，则加入当前事务。如果不存在，则创建一个新事务并执行</span><br>	REQUIRED(TransactionDefinition.PROPAGATION_REQUIRED),<br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * Support a current transaction, execute non-transactionally if none exists.</span><br><span class="hljs-comment">	 * Analogous to EJB transaction attribute of the same name.</span><br><span class="hljs-comment">	 * &lt;p&gt;Note: For transaction managers with transaction synchronization,</span><br><span class="hljs-comment">	 * &#123;<span class="hljs-doctag">@code</span> SUPPORTS&#125; is slightly different from no transaction at all,</span><br><span class="hljs-comment">	 * as it defines a transaction scope that synchronization will apply for.</span><br><span class="hljs-comment">	 * As a consequence, the same resources (JDBC Connection, Hibernate Session, etc)</span><br><span class="hljs-comment">	 * will be shared for the entire specified scope. Note that this depends on</span><br><span class="hljs-comment">	 * the actual synchronization configuration of the transaction manager.</span><br><span class="hljs-comment">	 * <span class="hljs-doctag">@see</span> org.springframework.transaction.support.AbstractPlatformTransactionManager#setTransactionSynchronization</span><br><span class="hljs-comment">	 */</span><br>    <span class="hljs-comment">// 如果上下文存在事务，则加入当前事务。如果不存在，则以非事务的方式执行</span><br>	SUPPORTS(TransactionDefinition.PROPAGATION_SUPPORTS),<br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * Support a current transaction, throw an exception if none exists.</span><br><span class="hljs-comment">	 * Analogous to EJB transaction attribute of the same name.</span><br><span class="hljs-comment">	 */</span><br>    <span class="hljs-comment">// 如果上下文存在事务，则加入当前事务。如果不存在，则抛出异常</span><br>	MANDATORY(TransactionDefinition.PROPAGATION_MANDATORY),<br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * Create a new transaction, and suspend the current transaction if one exists.</span><br><span class="hljs-comment">	 * Analogous to the EJB transaction attribute of the same name.</span><br><span class="hljs-comment">	 * &lt;p&gt;&lt;b&gt;<span class="hljs-doctag">NOTE:</span>&lt;/b&gt; Actual transaction suspension will not work out-of-the-box</span><br><span class="hljs-comment">	 * on all transaction managers. This in particular applies to</span><br><span class="hljs-comment">	 * &#123;<span class="hljs-doctag">@link</span> org.springframework.transaction.jta.JtaTransactionManager&#125;,</span><br><span class="hljs-comment">	 * which requires the &#123;<span class="hljs-doctag">@code</span> jakarta.transaction.TransactionManager&#125; to be</span><br><span class="hljs-comment">	 * made available to it (which is server-specific in standard Jakarta EE).</span><br><span class="hljs-comment">	 * <span class="hljs-doctag">@see</span> org.springframework.transaction.jta.JtaTransactionManager#setTransactionManager</span><br><span class="hljs-comment">	 */</span><br>    <span class="hljs-comment">// 总是创建一个新事务（完全与上下文隔离的事务），不管上下文是否已存在事务。如果上下文已存在事务，则挂起它，等待新事务执行完毕再恢复执行</span><br>	REQUIRES_NEW(TransactionDefinition.PROPAGATION_REQUIRES_NEW),<br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * Execute non-transactionally, suspend the current transaction if one exists.</span><br><span class="hljs-comment">	 * Analogous to EJB transaction attribute of the same name.</span><br><span class="hljs-comment">	 * &lt;p&gt;&lt;b&gt;<span class="hljs-doctag">NOTE:</span>&lt;/b&gt; Actual transaction suspension will not work out-of-the-box</span><br><span class="hljs-comment">	 * on all transaction managers. This in particular applies to</span><br><span class="hljs-comment">	 * &#123;<span class="hljs-doctag">@link</span> org.springframework.transaction.jta.JtaTransactionManager&#125;,</span><br><span class="hljs-comment">	 * which requires the &#123;<span class="hljs-doctag">@code</span> jakarta.transaction.TransactionManager&#125; to be</span><br><span class="hljs-comment">	 * made available to it (which is server-specific in standard Jakarta EE).</span><br><span class="hljs-comment">	 * <span class="hljs-doctag">@see</span> org.springframework.transaction.jta.JtaTransactionManager#setTransactionManager</span><br><span class="hljs-comment">	 */</span><br>    <span class="hljs-comment">// 总是以非事务方式执行。如果上下文已存在事务，则挂起它</span><br>	NOT_SUPPORTED(TransactionDefinition.PROPAGATION_NOT_SUPPORTED),<br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * Execute non-transactionally, throw an exception if a transaction exists.</span><br><span class="hljs-comment">	 * Analogous to EJB transaction attribute of the same name.</span><br><span class="hljs-comment">	 */</span><br>    <span class="hljs-comment">//总是以非事务方式执行。如果上下文已存在事务，则抛出异常</span><br>	NEVER(TransactionDefinition.PROPAGATION_NEVER),<br><br>	<span class="hljs-comment">/**</span><br><span class="hljs-comment">	 * Execute within a nested transaction if a current transaction exists,</span><br><span class="hljs-comment">	 * behave like &#123;<span class="hljs-doctag">@code</span> REQUIRED&#125; otherwise. There is no analogous feature in EJB.</span><br><span class="hljs-comment">	 * &lt;p&gt;Note: Actual creation of a nested transaction will only work on specific</span><br><span class="hljs-comment">	 * transaction managers. Out of the box, this only applies to the JDBC</span><br><span class="hljs-comment">	 * DataSourceTransactionManager. Some JTA providers might support nested</span><br><span class="hljs-comment">	 * transactions as well.</span><br><span class="hljs-comment">	 * <span class="hljs-doctag">@see</span> org.springframework.jdbc.datasource.DataSourceTransactionManager</span><br><span class="hljs-comment">	 */</span><br>    <span class="hljs-comment">// 如果上下文存在事务，则以嵌套子事务的方式执行。否则就同PROPAGATION_REQUIRED</span><br>	NESTED(TransactionDefinition.PROPAGATION_NESTED);<br><br>&#125;<br></code></pre></td></tr></table></figure>
 <p>关于最后一个<code>NESTED</code>的解释，可以看看官方文档<sup id="fnref:4" class="footnote-ref"><a href="#fn:4" rel="footnote"><span
 class="hint--top hint--rounded"
-aria-label="https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/tx-propagation.html#tx-propagation-nested">[4]</span></a></sup>的说明：</p>
+aria-label="[tx-propagation-nested](https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/tx-propagation.html#tx-propagation-nested)">[4]</span></a></sup>的说明：</p>
 <blockquote>
 <p><code>PROPAGATION_NESTED</code> uses a single physical transaction
 with multiple savepoints that it can roll back to. Such partial
@@ -406,7 +413,7 @@ target="_blank" rel="noopener" href="https://docs.spring.io/spring-framework/doc
 <h2
 id="数据库事务隔离5">数据库事务隔离<sup id="fnref:5" class="footnote-ref"><a href="#fn:5" rel="footnote"><span
 class="hint--top hint--rounded"
-aria-label="https://zh.wikipedia.org/wiki/%E4%BA%8B%E5%8B%99%E9%9A%94%E9%9B%A2">[5]</span></a></sup></h2>
+aria-label="[事务隔离](https://zh.wikipedia.org/wiki/%E4%BA%8B%E5%8B%99%E9%9A%94%E9%9B%A2)">[5]</span></a></sup></h2>
 <blockquote>
 <p><strong>事务隔离</strong>（英语：Transaction Isolation）定义了<a
 target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/数据库">数据库</a>系统中一个事务中操作的结果在何时以何种方式对其他<a
@@ -449,32 +456,34 @@ href="https://luckycaesar.github.io/article/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96
 <div class="footnote-list">
 <ol>
 <li>
-<span id="fn:1"
-class="footnote-text"><span>https://zh.wikipedia.org/wiki/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1
+<span id="fn:1" class="footnote-text"><span><a
+target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E6%95%B0%E6%8D%AE%E5%BA%93%E4%BA%8B%E5%8A%A1">数据库事务</a>
 <a href="#fnref:1" rev="footnote" class="footnote-backref">
 ↩︎</a></span></span>
 </li>
 <li>
-<span id="fn:2"
-class="footnote-text"><span>https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html#page-title
+<span id="fn:2" class="footnote-text"><span><a
+target="_blank" rel="noopener" href="https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/annotations.html#page-title">Using
+<code><span class="citation"
+data-cites="Transactional">@Transactional</span></code></a>
 <a href="#fnref:2" rev="footnote" class="footnote-backref">
 ↩︎</a></span></span>
 </li>
 <li>
-<span id="fn:3"
-class="footnote-text"><span>https://www.postgresql.org/docs/current/sql-abort.html
+<span id="fn:3" class="footnote-text"><span><a
+target="_blank" rel="noopener" href="https://www.postgresql.org/docs/current/sql-abort.html">sql-abort</a>
 <a href="#fnref:3" rev="footnote" class="footnote-backref">
 ↩︎</a></span></span>
 </li>
 <li>
-<span id="fn:4"
-class="footnote-text"><span>https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/tx-propagation.html#tx-propagation-nested
+<span id="fn:4" class="footnote-text"><span><a
+target="_blank" rel="noopener" href="https://docs.spring.io/spring-framework/reference/data-access/transaction/declarative/tx-propagation.html#tx-propagation-nested">tx-propagation-nested</a>
 <a href="#fnref:4" rev="footnote" class="footnote-backref">
 ↩︎</a></span></span>
 </li>
 <li>
-<span id="fn:5"
-class="footnote-text"><span>https://zh.wikipedia.org/wiki/%E4%BA%8B%E5%8B%99%E9%9A%94%E9%9B%A2
+<span id="fn:5" class="footnote-text"><span><a
+target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E4%BA%8B%E5%8B%99%E9%9A%94%E9%9B%A2">事务隔离</a>
 <a href="#fnref:5" rev="footnote" class="footnote-backref">
 ↩︎</a></span></span>
 </li>
@@ -499,7 +508,7 @@ class="footnote-text"><span>https://zh.wikipedia.org/wiki/%E4%BA%8B%E5%8B%99%E9%
       
         <a href="/tags/MyBatis/">#MyBatis</a>
       
-        <a href="/tags/ShardingSphere/">#ShardingSphere</a>
+        <a href="/tags/ShardingJdbc/">#ShardingJdbc</a>
       
     </div>
   
@@ -561,6 +570,12 @@ class="footnote-text"><span>https://zh.wikipedia.org/wiki/%E4%BA%8B%E5%8B%99%E9%
                 <div class="post-prevnext my-3">
                   <article class="post-prev col-6">
                     
+                    
+                      <a href="/article/Loom%20-%20Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E4%B8%AD%E7%9A%84%E7%BA%A4%E7%A8%8B%E5%92%8C%E7%BB%AD%E4%BD%93/" title="Loom - Java虚拟机中的纤程和续体">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Loom - Java虚拟机中的纤程和续体</span>
+                        <span class="visible-mobile">上一篇</span>
+                      </a>
                     
                   </article>
                   <article class="post-next col-6">

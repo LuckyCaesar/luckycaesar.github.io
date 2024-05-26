@@ -25,7 +25,7 @@
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://luckycaesar.github.io/img/java.jpg">
 <meta property="article:published_time" content="2020-06-24T16:00:00.000Z">
-<meta property="article:modified_time" content="2022-11-11T15:12:20.753Z">
+<meta property="article:modified_time" content="2024-05-26T13:49:39.775Z">
 <meta property="article:author" content="LuckyCaesar">
 <meta property="article:tag" content="Java8">
 <meta property="article:tag" content="ParallelStream">
@@ -339,7 +339,7 @@ IO的Stream源（例如<code>BufferedReader.lines()</code>）主要用于顺序�
 <p>如果你遵循这些准则，通常来说都是很值得的。但是可预测性并不是现代硬件和系统的强项，所以不可能给出普适性的答案。缓存位置、GC效率、JIT编译、内存争用、数据布局、操作系统定时调度策略以及虚拟机监视器的存在都是可能产生重大影响的因素。这些也在顺序执行的性能中发挥作用，但是通常会在并行设置中被放大：在顺序执行中造成10%的差异的问题会在并行执行中产生10倍的差异。</p>
 <p>Stream框架囊括了一些能帮助你提高执行速度的工具。比如，像<code>IntStream</code>这样的原语使用了一些特殊的手段，在并行执行上比顺序执行更具效率，因为它不仅减少了开销（以及空间占用），还增强了缓存的局部性。并且，使用<code>ConcurrentHashMap</code>而不是<code>HashMap</code>作为并行“collect”操作的目标集合能减少内部的开销（<em>注：这里理解为<code>ConcurrentHashMap</code>是数据源集合，而不是collect到<code>ConcurrentHashMap</code>中</em>）。伴随着大家对框架的使用经验的累积，将会出现更多的技巧和指导。</p></li>
 <li><p><strong>这一切都太可怕了！难道我们不应该制定一个使用JVM参数的策略来禁用并行化操作么？</strong></p>
-<p>我们不想告诉你该怎么做，为程序员引入新的会使事情出错的方法是很可怕的。在编码、设计和决策上的错误肯定时有发生。但是有些人几十年来一直在预言，启用应用程序级别的并行会导致不可预知的重大灾难。（<em>这段感觉不太能明白</em>）</p></li>
+<p>我们不想告诉你该怎么做，为程序员引入新的会使事情出错的方法是很可怕的。在编码、设计和决策上的错误肯定时有发生。但是有些人几十年来一直在预言，启用应用程序级别的并行会导致不可预知的重大灾难。</p></li>
 </ul>
 
                 
