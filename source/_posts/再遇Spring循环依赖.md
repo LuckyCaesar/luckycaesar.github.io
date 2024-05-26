@@ -299,7 +299,7 @@ exposedObject最终就指向上面这个方法返回的bean，所以如果被代
 
 ### AspectJ增强器和Advice增强器
 
-两个分支都出现了一个一样的后置处理`AnnotationAwareAspectJAutoProxyCreator`，但是它并没有触发代理。而在出现问题的分支上，*多执行了一个`DefaultAdvisorAutoProxyCreator`的后置处理器，就是它执行完后会进行代理操作*。它们都继承了`AbstractAutoProxyCreator`类，所以在进行后置增强时都会走到上面的`postProcessAfterInitialization`逻辑中去。关于这两个类的部分注释如下。
+两个分支都出现了一个一样的后置处理`AnnotationAwareAspectJAutoProxyCreator`（Spring默认），它进行了AOP代理，但是对循环引用的处理逻辑无任何影响。而在出现问题的分支上，*多执行了一个`DefaultAdvisorAutoProxyCreator`的后置处理器，就是它执行完后会进行重复的代理操作，导致bean被*二次代理。它们都继承了`AbstractAutoProxyCreator`类，所以在进行后置增强时都会走到上面的`postProcessAfterInitialization`逻辑中去。关于这两个类的部分注释如下。
 
 DefaultAdvisorAutoProxyCreator：
 
@@ -317,7 +317,7 @@ AnnotationAwareAspectJAutoProxyCreator：
 annotation aspects in the current application context, as well as Spring Advisors.
 ```
 
-可以看出分别是处理基于Spring原生的Advice接口的增强和基于AspectJ注解的增强。而在当前场景下，两个类并没有AspectJ的注解，也就没有需要`AnnotationAwareAspectJAutoProxyCreator`来处理的增强了。
+可以看出分别是处理基于Spring原生的Advice接口的增强和基于AspectJ注解的增强（也能处理Spring的Advisor）。**在默认情况下，Spring是开启`AnnotationAwareAspectJAutoProxyCreator`增强器，而不是DefaultAdvisorAutoProxyCreator**，因为前者可以处理不同实现的切面增强。
 
 找到具体的类就好办了，全局搜索后发现是业务框架层权限jar包里面自动装配的bean：
 

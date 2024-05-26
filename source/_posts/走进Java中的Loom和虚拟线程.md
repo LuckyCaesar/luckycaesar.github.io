@@ -333,8 +333,8 @@ C : -1830232064
 [^1]:  绿色线程（Green Thread）：[Green vs Native Threads and Deprecated Methods in Java](https://www.geeksforgeeks.org/green-vs-native-threads-and-deprecated-methods-in-java/)
 [^2]: 核心语言是编程语言本身和相关标准库的总称
 
-[^3]: 参见Java SE 21的语言规范文档：https://docs.oracle.com/javase/specs/jls/se21/html/index.html
+[^3]: 参见Java SE 21的语言规范文档：[https://docs.oracle.com/javase/specs/jls/se21/html/index.html](https://docs.oracle.com/javase/specs/jls/se21/html/index.html)
 
-[^4]: yield point，类似于safe point：https://zhuanlan.zhihu.com/p/114540016
+[^4]: yield point，类似于safe point：[https://zhuanlan.zhihu.com/p/114540016](https://zhuanlan.zhihu.com/p/114540016)
 [^5]: 2023年9月19日，[Java21](https://openjdk.org/projects/jdk/21/)正式发布，带来了[Virtual Threads](https://openjdk.org/jeps/444)的特性
 
