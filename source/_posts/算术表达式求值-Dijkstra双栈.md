@@ -25,12 +25,10 @@ public class FormulaCalculate {
         List<String> formulaList = parseFormula(formula);
         BigDecimal result = calcFormulaWithoutBrackets(formulaList);
         System.out.println(result.toPlainString()); // = 9.04
-        /*
-         * 额外示例：
-         * (11 - 2 + (15 / 3 + 12 / 2)) * 99 = -198.00
-         * (101 * 88 + (15 / 3 + 12 / 2)) / 1888 = 4.71
-         * 11 * 2 - (15 / 3 + 12 * 2) * 99 = -2849.00
-         */
+        // 其他示例：
+        // (11 - 2 + (15 / 3 + 12 / 2)) * 99 = -198.00
+        // (101 * 88 + (15 / 3 + 12 / 2)) / 1888 = 4.71
+        // 11 * 2 - (15 / 3 + 12 * 2) * 99 = -2849.00
     }
 
     private static List<String> parseFormula(String formula) {
