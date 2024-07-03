@@ -1,6 +1,6 @@
 ---
-title: 大数据基数统计算法-Count-Min Sketch
-tags: [算法，Count-Min Sketch]
+title: 大数据下的频数统计算法-Count-Min Sketch
+tags: [算法，频数统计，Count-Min Sketch]
 index_img: /img/Count-Min-Sketch.jpg
 date: 2024-06-09 22:00:00
 ---
