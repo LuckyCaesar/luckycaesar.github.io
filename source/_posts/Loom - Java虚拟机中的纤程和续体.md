@@ -1,5 +1,5 @@
 ---
-title: Loom - Java虚拟机中的纤程和续体
+title: （译）Loom - Java虚拟机中的纤程和续体
 tags: [Loom, 纤程, 协程, 续体, 虚拟线程]
 index_img: /img/project-loom-image.png
 date: 2024-05-26 23:00:00

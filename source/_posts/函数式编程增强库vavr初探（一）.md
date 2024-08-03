@@ -1,5 +1,5 @@
 ---
-title: 函数式编程增强库Vavr初探（一）
+title: （译）函数式编程增强库Vavr初探（一）
 tags: [函数式编程, vavr]
 index_img: /img/vavr00.jpeg
 date: 2022-10-30 15:00:00

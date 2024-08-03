@@ -1,5 +1,5 @@
 ---
-title: 走进Java中的Loom和虚拟线程
+title: （译）走进Java中的Loom和虚拟线程
 tags: [虚拟线程, 协程]
 index_img: /img/project-loom-image.png
 date: 2023-12-10 01:00:00

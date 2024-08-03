@@ -1,5 +1,5 @@
 ---
-title: RedLock，红锁？
+title: （译）RedLock，红锁？
 tags: [Redis, 分布式锁]
 index_img: /img/74975f9992-redlock.jpeg
 date: 2020-11-01 00:00:00
