@@ -16,16 +16,16 @@
   <meta name="author" content="LuckyCaesar">
   <meta name="keywords" content="">
   
-    <meta name="description" content="开头闲言 通常我们在谈到接口性能优化的时候，更多地是针对2C的、拥有大量用户的业务接口。这些接口的持续优化必不可少，因为用户流量就意味着收入，用户体验的优先级自然是非常高的。然而针对后台运营类的系统接口，通常都比较“包容”，可能大部分系统能做到所谓的2-5-10原则中的2秒级（甚至部分场景是5秒、10秒级）的响应即可。一是因为查询的数据量较大，二是后台运营场景下，并不是特别需要那么快速的响应，且">
+    <meta name="description" content="开头闲言  此后台非彼“后台”，这里想说的是一些后台运营支撑类的系统，结合个人的经验之谈。  通常我们在谈到接口性能优化的时候，更多地是针对2C的、拥有大量用户的业务接口。这些接口的持续优化必不可少，因为用户流量就意味着收入，用户体验的优先级自然是非常高的。然而针对后台运营类的系统接口，通常都比较“包容”，可能大部分系统能做到所谓的2-5-10原则中的2秒级（甚至部分场景是5秒、10秒级）">
 <meta property="og:type" content="article">
 <meta property="og:title" content="后台系统接口优化杂谈">
 <meta property="og:url" content="https://luckycaesar.github.io/article/%E5%90%8E%E5%8F%B0%E7%B3%BB%E7%BB%9F%E4%BC%98%E5%8C%96%E6%9D%82%E8%B0%88/index.html">
 <meta property="og:site_name" content="三味书屋">
-<meta property="og:description" content="开头闲言 通常我们在谈到接口性能优化的时候，更多地是针对2C的、拥有大量用户的业务接口。这些接口的持续优化必不可少，因为用户流量就意味着收入，用户体验的优先级自然是非常高的。然而针对后台运营类的系统接口，通常都比较“包容”，可能大部分系统能做到所谓的2-5-10原则中的2秒级（甚至部分场景是5秒、10秒级）的响应即可。一是因为查询的数据量较大，二是后台运营场景下，并不是特别需要那么快速的响应，且">
+<meta property="og:description" content="开头闲言  此后台非彼“后台”，这里想说的是一些后台运营支撑类的系统，结合个人的经验之谈。  通常我们在谈到接口性能优化的时候，更多地是针对2C的、拥有大量用户的业务接口。这些接口的持续优化必不可少，因为用户流量就意味着收入，用户体验的优先级自然是非常高的。然而针对后台运营类的系统接口，通常都比较“包容”，可能大部分系统能做到所谓的2-5-10原则中的2秒级（甚至部分场景是5秒、10秒级）">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://luckycaesar.github.io/img/dcf37cc6ff-manager.jpg">
 <meta property="article:published_time" content="2023-03-31T16:00:00.000Z">
-<meta property="article:modified_time" content="2023-12-30T05:57:55.352Z">
+<meta property="article:modified_time" content="2024-08-03T06:38:31.578Z">
 <meta property="article:author" content="LuckyCaesar">
 <meta property="article:tag" content="后台">
 <meta property="article:tag" content="性能优化">
@@ -68,6 +68,10 @@
     <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
   
 
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
 
 
 
@@ -212,7 +216,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          7.6k 字
+          7.5k 字
         
       </span>
     
@@ -276,6 +280,9 @@
               <div class="markdown-body">
                 
                 <h2 id="开头闲言">开头闲言</h2>
+<blockquote>
+<p>此后台非彼“后台”，这里想说的是一些后台运营支撑类的系统，结合个人的经验之谈。</p>
+</blockquote>
 <p>通常我们在谈到接口性能优化的时候，更多地是针对2C的、拥有大量用户的业务接口。这些接口的持续优化必不可少，因为用户流量就意味着收入，用户体验的优先级自然是非常高的。然而针对后台运营类的系统接口，通常都比较“包容”，可能大部分系统能做到所谓的<a
 target="_blank" rel="noopener" href="https://blog.51cto.com/zdytesting/1734583">2-5-10原则</a>中的2秒级（甚至部分场景是5秒、10秒级）的响应即可。一是因为查询的数据量较大，二是后台运营场景下，并不是特别需要那么快速的响应，且运营人员的关注重点主要是在数据的完整性、准确性上。</p>
 <p>当然，这并不意味着这些接口就可以“摆烂”。尤其是随着业务的扩张，运营效率的提升势在必行，而后端接口的优化首当其冲。在绝大部分业务场景下，查询无疑是最最最频繁的，后台系统当然也不例外。而且还多了一种形式
@@ -343,7 +350,10 @@ VO的转换。</p>
 <p>一般是在导入/导出时使用。面对大量数据的导入/导出，可能还需要在循环中做一些校验/信息填充，即使是分页或者循环外批量查询映射后，也有可能还是达不到一个理想的响应速度，这时候就该并行处理登场了。</p>
 <ul>
 <li><p>并行流/线程池：最标准的就是使用这两种方式。<em>但是并行流的使用要注意，其底层默认提供的线程池的并行度是跟CPU核心数挂钩的</em>。尤其是目前盛行微服务的容器化部署，可能单个pod的资源只有1个核心甚至少于1个核心，那“并行”其实就还是一个串行：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// ForkJoinPool#makeCommonPool() 并行度兜底设置</span><br><span class="hljs-keyword">if</span> (parallelism &lt; <span class="hljs-number">0</span> &amp;&amp; <span class="hljs-comment">// default 1 less than #cores</span><br>    (parallelism = Runtime.getRuntime().availableProcessors() - <span class="hljs-number">1</span>) &lt;= <span class="hljs-number">0</span>)<span class="hljs-comment">// availableProcessors - JVM可用的处理器数量</span><br>    parallelism = <span class="hljs-number">1</span>;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">// ForkJoinPool#makeCommonPool() 并行度兜底设置</span>
+<span class="hljs-keyword">if</span> (parallelism &lt; <span class="hljs-number">0</span> &amp;&amp; <span class="hljs-comment">// default 1 less than #cores</span>
+    (parallelism = Runtime.getRuntime().availableProcessors() - <span class="hljs-number">1</span>) &lt;= <span class="hljs-number">0</span>)<span class="hljs-comment">// availableProcessors - JVM可用的处理器数量</span>
+    parallelism = <span class="hljs-number">1</span>;</code></pre></div>
 <p>而且这个默认的池是整个应用程序通用的，所以如果代码中大量的使用并行流且不手动调整并行度（通过系统变量<code>java.util.concurrent.ForkJoinPool.common.parallelism</code>来调整，不推荐）的话，并不能提升处理效率。所以请在条件允许的情况下使用并行流，推荐还是自定义线程池。</p>
 <ul>
 <li><p><a
@@ -360,7 +370,86 @@ target="_blank" rel="noopener" href="https://github.com/Tencent/TencentKona-8/wi
 <p>我尝试了一下，使用协程池可以将并行度提高至线程池的几十上百倍，基本上普通场景下的导入都可以做到<em>整个文件的处理时间
 ≈
 单笔数据的处理时间</em>。当然作为池，在后台系统的使用场景中没必要设置如此之高的常驻核心线程数，仅作为测试。贴一下demo代码：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Bean(&quot;fiberDemoExecutor&quot;)</span><br><span class="hljs-keyword">public</span> Executor <span class="hljs-title function_">fiberDemoExecutor</span><span class="hljs-params">(FiberProperties fiberProperties)</span> &#123;<br>    <span class="hljs-type">ThreadPoolTaskExecutor</span> <span class="hljs-variable">poolExecutor</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ThreadPoolTaskExecutor</span>();<br>    <span class="hljs-comment">// 这里设置的coreSize=2000</span><br>    poolExecutor.setCorePoolSize(fiberProperties.getCoreSize());<br>    poolExecutor.setMaxPoolSize(fiberProperties.getMaxSize());<br>    poolExecutor.setKeepAliveSeconds(fiberProperties.getKeepAliveSeconds());<br>    poolExecutor.setQueueCapacity(fiberProperties.getQueueSize());<br>    poolExecutor.setThreadFactory(newThreadFactory(fiberProperties.getEnabled()));<br>    poolExecutor.setTaskDecorator((r) -&gt; r);<br>    poolExecutor.setRejectedExecutionHandler(<span class="hljs-keyword">new</span> <span class="hljs-title class_">ThreadPoolExecutor</span>.CallerRunsPolicy() &#123;<br>        <span class="hljs-meta">@Override</span><br>        <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">rejectedExecution</span><span class="hljs-params">(Runnable r, ThreadPoolExecutor e)</span> &#123;<br>            <span class="hljs-type">String</span> <span class="hljs-variable">poolName</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">this</span>.getClass().getSimpleName();<br>            log.warn(poolName + <span class="hljs-string">&quot; is full, caller run&quot;</span>);<br>            <span class="hljs-built_in">super</span>.rejectedExecution(r, e);<br>        &#125;<br>    &#125;);<br>    poolExecutor.initialize();<br>    <span class="hljs-keyword">return</span> poolExecutor;<br>&#125;<br><br><span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> ThreadFactory <span class="hljs-title function_">newThreadFactory</span><span class="hljs-params">(<span class="hljs-type">boolean</span> enabled)</span> &#123;<br>    <span class="hljs-keyword">if</span> (enabled) &#123;<br>        <span class="hljs-comment">// 创建虚拟线程</span><br>        <span class="hljs-keyword">return</span> Thread.ofVirtual()<br>            .name(<span class="hljs-string">&quot;fiber-demo-&quot;</span>, <span class="hljs-number">0</span>)<br>            .uncaughtExceptionHandler((t, e) -&gt;<br>                log.error(<span class="hljs-string">&quot;thread [&#123;&#125;] got an unexpected exception.&quot;</span>, t.getName(), e))<br>            .factory();<br>    &#125;<br>    <span class="hljs-comment">// 创建线程</span><br>    <span class="hljs-keyword">return</span> Thread.ofPlatform()<br>        .name(<span class="hljs-string">&quot;fiber-demo-&quot;</span>, <span class="hljs-number">0</span>)<br>        .factory();<br>&#125;<br><br><span class="hljs-meta">@Component</span><br><span class="hljs-keyword">class</span> <span class="hljs-title class_">ParallelDemo</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">ApplicationListener</span>&lt;ApplicationStartedEvent&gt; &#123;<br><br>    <span class="hljs-meta">@Resource</span><br>    <span class="hljs-keyword">private</span> ThreadPoolTaskExecutor fiberDemoExecutor;<br>    <br>    <span class="hljs-meta">@Override</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">onApplicationEvent</span><span class="hljs-params">(ApplicationStartedEvent event)</span> &#123;<br>        <span class="hljs-comment">// 协程模型</span><br>        <span class="hljs-type">CountDownLatch</span> <span class="hljs-variable">countDownLatch</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">CountDownLatch</span>(<span class="hljs-number">2000</span>);<br>        <span class="hljs-type">StopWatch</span> <span class="hljs-variable">stopWatch</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">StopWatch</span>();<br>        stopWatch.start();<br>        IntStream.range(<span class="hljs-number">0</span>, <span class="hljs-number">2000</span>).forEach(value -&gt; fiberDemoExecutor.execute(() -&gt; &#123;<br>            <span class="hljs-keyword">try</span> &#123;<br>                <span class="hljs-comment">// 模拟业务逻辑执行时长</span><br>                TimeUnit.MILLISECONDS.sleep(<span class="hljs-number">200</span>);<br>            &#125; <span class="hljs-keyword">catch</span> (InterruptedException ignore) &#123;<br>            &#125;<br>            countDownLatch.countDown();<br>        &#125;));<br>        <span class="hljs-keyword">try</span> &#123;<br>            countDownLatch.await();<br>        &#125; <span class="hljs-keyword">catch</span> (InterruptedException ignore) &#123;<br>        &#125;<br>        stopWatch.stop();<br>        <span class="hljs-comment">// timespan-virtual-thread: 229ms</span><br>        System.out.println(<span class="hljs-string">&quot;timespan-virtual-thread: &quot;</span> + stopWatch.getTotalTimeMillis() + <span class="hljs-string">&quot;ms&quot;</span>);<br><br>        <span class="hljs-comment">// 线程模型，并行流默认分配，i7-10700 8核16线程</span><br>        <span class="hljs-type">StopWatch</span> <span class="hljs-variable">stopWatch1</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">StopWatch</span>();<br>        stopWatch1.start();<br>        IntStream.range(<span class="hljs-number">0</span>, <span class="hljs-number">2000</span>).parallel().forEach(value -&gt; &#123;<br>            <span class="hljs-keyword">try</span> &#123;<br>                <span class="hljs-comment">// 模拟业务逻辑执行时长</span><br>                TimeUnit.MILLISECONDS.sleep(<span class="hljs-number">200</span>);<br>            &#125; <span class="hljs-keyword">catch</span> (InterruptedException ignore) &#123;<br>            &#125;<br>        &#125;);<br>        stopWatch1.stop();<br>        <span class="hljs-comment">// timespan-thread: 31712ms</span><br>        System.out.println(<span class="hljs-string">&quot;timespan-thread: &quot;</span> + stopWatch1.getTotalTimeMillis());<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure></li>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-meta">@Bean(&quot;fiberDemoExecutor&quot;)</span>
+<span class="hljs-keyword">public</span> Executor <span class="hljs-title function_">fiberDemoExecutor</span><span class="hljs-params">(FiberProperties fiberProperties)</span> &#123;
+    <span class="hljs-type">ThreadPoolTaskExecutor</span> <span class="hljs-variable">poolExecutor</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ThreadPoolTaskExecutor</span>();
+    <span class="hljs-comment">// 这里设置的coreSize=2000</span>
+    poolExecutor.setCorePoolSize(fiberProperties.getCoreSize());
+    poolExecutor.setMaxPoolSize(fiberProperties.getMaxSize());
+    poolExecutor.setKeepAliveSeconds(fiberProperties.getKeepAliveSeconds());
+    poolExecutor.setQueueCapacity(fiberProperties.getQueueSize());
+    poolExecutor.setThreadFactory(newThreadFactory(fiberProperties.getEnabled()));
+    poolExecutor.setTaskDecorator((r) -&gt; r);
+    poolExecutor.setRejectedExecutionHandler(<span class="hljs-keyword">new</span> <span class="hljs-title class_">ThreadPoolExecutor</span>.CallerRunsPolicy() &#123;
+        <span class="hljs-meta">@Override</span>
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">rejectedExecution</span><span class="hljs-params">(Runnable r, ThreadPoolExecutor e)</span> &#123;
+            <span class="hljs-type">String</span> <span class="hljs-variable">poolName</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">this</span>.getClass().getSimpleName();
+            log.warn(poolName + <span class="hljs-string">&quot; is full, caller run&quot;</span>);
+            <span class="hljs-built_in">super</span>.rejectedExecution(r, e);
+        &#125;
+    &#125;);
+    poolExecutor.initialize();
+    <span class="hljs-keyword">return</span> poolExecutor;
+&#125;
+
+<span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> ThreadFactory <span class="hljs-title function_">newThreadFactory</span><span class="hljs-params">(<span class="hljs-type">boolean</span> enabled)</span> &#123;
+    <span class="hljs-keyword">if</span> (enabled) &#123;
+        <span class="hljs-comment">// 创建虚拟线程</span>
+        <span class="hljs-keyword">return</span> Thread.ofVirtual()
+            .name(<span class="hljs-string">&quot;fiber-demo-&quot;</span>, <span class="hljs-number">0</span>)
+            .uncaughtExceptionHandler((t, e) -&gt;
+                log.error(<span class="hljs-string">&quot;thread [&#123;&#125;] got an unexpected exception.&quot;</span>, t.getName(), e))
+            .factory();
+    &#125;
+    <span class="hljs-comment">// 创建线程</span>
+    <span class="hljs-keyword">return</span> Thread.ofPlatform()
+        .name(<span class="hljs-string">&quot;fiber-demo-&quot;</span>, <span class="hljs-number">0</span>)
+        .factory();
+&#125;
+
+<span class="hljs-meta">@Component</span>
+<span class="hljs-keyword">class</span> <span class="hljs-title class_">ParallelDemo</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">ApplicationListener</span>&lt;ApplicationStartedEvent&gt; &#123;
+
+    <span class="hljs-meta">@Resource</span>
+    <span class="hljs-keyword">private</span> ThreadPoolTaskExecutor fiberDemoExecutor;
+    
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">onApplicationEvent</span><span class="hljs-params">(ApplicationStartedEvent event)</span> &#123;
+        <span class="hljs-comment">// 协程模型</span>
+        <span class="hljs-type">CountDownLatch</span> <span class="hljs-variable">countDownLatch</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">CountDownLatch</span>(<span class="hljs-number">2000</span>);
+        <span class="hljs-type">StopWatch</span> <span class="hljs-variable">stopWatch</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">StopWatch</span>();
+        stopWatch.start();
+        IntStream.range(<span class="hljs-number">0</span>, <span class="hljs-number">2000</span>).forEach(value -&gt; fiberDemoExecutor.execute(() -&gt; &#123;
+            <span class="hljs-keyword">try</span> &#123;
+                <span class="hljs-comment">// 模拟业务逻辑执行时长</span>
+                TimeUnit.MILLISECONDS.sleep(<span class="hljs-number">200</span>);
+            &#125; <span class="hljs-keyword">catch</span> (InterruptedException ignore) &#123;
+            &#125;
+            countDownLatch.countDown();
+        &#125;));
+        <span class="hljs-keyword">try</span> &#123;
+            countDownLatch.await();
+        &#125; <span class="hljs-keyword">catch</span> (InterruptedException ignore) &#123;
+        &#125;
+        stopWatch.stop();
+        <span class="hljs-comment">// timespan-virtual-thread: 229ms</span>
+        System.out.println(<span class="hljs-string">&quot;timespan-virtual-thread: &quot;</span> + stopWatch.getTotalTimeMillis() + <span class="hljs-string">&quot;ms&quot;</span>);
+
+        <span class="hljs-comment">// 线程模型，并行流默认分配，i7-10700 8核16线程</span>
+        <span class="hljs-type">StopWatch</span> <span class="hljs-variable">stopWatch1</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">StopWatch</span>();
+        stopWatch1.start();
+        IntStream.range(<span class="hljs-number">0</span>, <span class="hljs-number">2000</span>).parallel().forEach(value -&gt; &#123;
+            <span class="hljs-keyword">try</span> &#123;
+                <span class="hljs-comment">// 模拟业务逻辑执行时长</span>
+                TimeUnit.MILLISECONDS.sleep(<span class="hljs-number">200</span>);
+            &#125; <span class="hljs-keyword">catch</span> (InterruptedException ignore) &#123;
+            &#125;
+        &#125;);
+        stopWatch1.stop();
+        <span class="hljs-comment">// timespan-thread: 31712ms</span>
+        System.out.println(<span class="hljs-string">&quot;timespan-thread: &quot;</span> + stopWatch1.getTotalTimeMillis());
+    &#125;
+&#125;</code></pre></div></li>
 </ul>
 <h2 id="方案设计">方案设计</h2>
 <p>跳出具体实现，从更高一层的方案设计上的改进也是很有必要的。</p>
@@ -559,6 +648,19 @@ to work at our scale, as reliability remains the primary concern.</p>
 
 
 
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('mermaid' in window) {
+        mermaid.init();
+      }
+    });
+  });
+</script>
 
 
 

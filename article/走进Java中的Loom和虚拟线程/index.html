@@ -70,6 +70,10 @@
 
 
 
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+
 
   <script id="fluid-configs">
     var Fluid = window.Fluid || {};
@@ -212,7 +216,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          8.9k 字
+          8.7k 字
         
       </span>
     
@@ -314,7 +318,50 @@ Beans，以前也称作Enterprise
 JavaBeans）当作是一种雄心勃勃试图将环境虚拟化的受限环境形式。那它是否可被视为日后在现代PaaS系统或更小范围的Docker和Kubernetes中广受青睐的环境形式的原型呢？</p>
 <p>所以，如果Loom（部分地）重拾绿色线程的理念，那么实现它的一种方式可能就是解决这样一个问题：环境到底发生了何种变化使得回归以往被证明未见成效的旧思路变得极具吸引力？</p>
 <p>要稍微地探讨下这个问题，我们得先看一个例子。具体一点，我们需要创建大量的线程来使JVM崩溃：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">//</span><br><span class="hljs-comment">// Please do not actually run this code... it may crash your VM or laptop</span><br><span class="hljs-comment">//</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CrashTheVM</span> &#123;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">looper</span><span class="hljs-params">(<span class="hljs-type">int</span> count)</span> &#123;<br>        <span class="hljs-type">var</span> <span class="hljs-variable">tid</span> <span class="hljs-operator">=</span> Thread.currentThread().getId();<br>        <span class="hljs-keyword">if</span> (count &gt; <span class="hljs-number">500</span>) &#123;<br>            <span class="hljs-keyword">return</span>;<br>        &#125;<br>        <span class="hljs-keyword">try</span> &#123;<br>            Thread.sleep(<span class="hljs-number">10</span>);<br>            <span class="hljs-keyword">if</span> (count % <span class="hljs-number">100</span> == <span class="hljs-number">0</span>) &#123;<br>                System.out.println(<span class="hljs-string">&quot;Thread id: &quot;</span>+ tid +<span class="hljs-string">&quot; : &quot;</span>+ count);<br>            &#125;<br>        &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>            e.printStackTrace();<br>        &#125;<br>        looper(count + <span class="hljs-number">1</span>);<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> Thread <span class="hljs-title function_">makeThread</span><span class="hljs-params">(Runnable r)</span> &#123;<br>        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(r);<br>    &#125;<br><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;<br>        <span class="hljs-type">var</span> <span class="hljs-variable">threads</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ArrayList</span>&lt;Thread&gt;();<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">20_000</span>; i = i + <span class="hljs-number">1</span>) &#123;<br>            <span class="hljs-type">var</span> <span class="hljs-variable">t</span> <span class="hljs-operator">=</span> makeThread(() -&gt; looper(<span class="hljs-number">1</span>));<br>            t.start();<br>            threads.add(t);<br>            <span class="hljs-keyword">if</span> (i % <span class="hljs-number">1_000</span> == <span class="hljs-number">0</span>) &#123;<br>                System.out.println(i + <span class="hljs-string">&quot; thread started&quot;</span>);<br>            &#125;<br>        &#125;<br>        <span class="hljs-comment">// Join all the threads</span><br>        threads.forEach(t -&gt; &#123;<br>            <span class="hljs-keyword">try</span> &#123;<br>                t.join();<br>            &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;<br>                e.printStackTrace();<br>            &#125;<br>        &#125;);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">//</span>
+<span class="hljs-comment">// Please do not actually run this code... it may crash your VM or laptop</span>
+<span class="hljs-comment">//</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">CrashTheVM</span> &#123;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">looper</span><span class="hljs-params">(<span class="hljs-type">int</span> count)</span> &#123;
+        <span class="hljs-type">var</span> <span class="hljs-variable">tid</span> <span class="hljs-operator">=</span> Thread.currentThread().getId();
+        <span class="hljs-keyword">if</span> (count &gt; <span class="hljs-number">500</span>) &#123;
+            <span class="hljs-keyword">return</span>;
+        &#125;
+        <span class="hljs-keyword">try</span> &#123;
+            Thread.sleep(<span class="hljs-number">10</span>);
+            <span class="hljs-keyword">if</span> (count % <span class="hljs-number">100</span> == <span class="hljs-number">0</span>) &#123;
+                System.out.println(<span class="hljs-string">&quot;Thread id: &quot;</span>+ tid +<span class="hljs-string">&quot; : &quot;</span>+ count);
+            &#125;
+        &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;
+            e.printStackTrace();
+        &#125;
+        looper(count + <span class="hljs-number">1</span>);
+    &#125;
+
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> Thread <span class="hljs-title function_">makeThread</span><span class="hljs-params">(Runnable r)</span> &#123;
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Thread</span>(r);
+    &#125;
+
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;
+        <span class="hljs-type">var</span> <span class="hljs-variable">threads</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">ArrayList</span>&lt;Thread&gt;();
+        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">20_000</span>; i = i + <span class="hljs-number">1</span>) &#123;
+            <span class="hljs-type">var</span> <span class="hljs-variable">t</span> <span class="hljs-operator">=</span> makeThread(() -&gt; looper(<span class="hljs-number">1</span>));
+            t.start();
+            threads.add(t);
+            <span class="hljs-keyword">if</span> (i % <span class="hljs-number">1_000</span> == <span class="hljs-number">0</span>) &#123;
+                System.out.println(i + <span class="hljs-string">&quot; thread started&quot;</span>);
+            &#125;
+        &#125;
+        <span class="hljs-comment">// Join all the threads</span>
+        threads.forEach(t -&gt; &#123;
+            <span class="hljs-keyword">try</span> &#123;
+                t.join();
+            &#125; <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;
+                e.printStackTrace();
+            &#125;
+        &#125;);
+    &#125;
+&#125;</code></pre></div>
 <p>这段代码会启动20,000个线程且每个线程尽可能做到最小的处理占用。实际上去运行它的话，应用很可能在远未达到稳定状态时就停止运行或者卡死。当然也有这种可能，由于机器或操作系统受到了限制，无法快速创建线程耗尽资源，使得它能够正常运行完成。</p>
 <p><strong>图1</strong>展示了我使用2019 MacBook
 Pro运行这段代码时，在电脑彻底失去响应之前的情形。这上面的一些计数不是很准确，比如线程数量，因为操作系统此时已处于崩溃边缘。</p>
@@ -354,7 +401,17 @@ target="_blank" rel="noopener" href="https://cr.openjdk.java.net/~rpressler/loom
 <p>接下来我们将在实践中观察虚拟线程。下载<a
 target="_blank" rel="noopener" href="https://jdk.java.net/loom/">Project Loom beta
 build</a>并启动<code>jshell</code>，如下所示：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">$ </span><span class="language-bash">jshell</span> <br>|  Welcome to JShell -- Version 16-loom<br>|  For an introduction type: /help intro<br><span class="hljs-meta prompt_"></span><br><span class="hljs-meta prompt_">jshell&gt; </span><span class="language-bash">Thread.startVirtualThread(() -&gt; &#123;</span><br>   ...&gt;     System.out.println(&quot;Hello World&quot;);<br>   ...&gt; &#125;);<br>Hello World<br><span class="hljs-meta prompt_">$</span><span class="language-bash">1 ==&gt; VirtualThread[&lt;unnamed&gt;,&lt;no carrier thread&gt;]</span><br><span class="hljs-meta prompt_"></span><br><span class="hljs-meta prompt_">jshell&gt;</span><br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs shell"><span class="hljs-meta prompt_">$ </span><span class="language-bash">jshell</span> 
+|  Welcome to JShell -- Version 16-loom
+|  For an introduction type: /help intro
+<span class="hljs-meta prompt_"></span>
+<span class="hljs-meta prompt_">jshell&gt; </span><span class="language-bash">Thread.startVirtualThread(() -&gt; &#123;</span>
+   ...&gt;     System.out.println(&quot;Hello World&quot;);
+   ...&gt; &#125;);
+Hello World
+<span class="hljs-meta prompt_">$</span><span class="language-bash">1 ==&gt; VirtualThread[&lt;unnamed&gt;,&lt;no carrier thread&gt;]</span>
+<span class="hljs-meta prompt_"></span>
+<span class="hljs-meta prompt_">jshell&gt;</span></code></pre></div>
 <p>从输出可以很直观的看到虚拟线程的构造。这段代码也用到了一个最新的static方法<code>startVirtualThread()</code>，它在新的执行上下文
 - 即虚拟线程中，执行了一段lambda表达式。简单明了！</p>
 <p>虚拟线程的引入必须遵循这样的原则：已有的代码库必须<em>完全地</em>按照虚拟线程出现之前的方式继续运行。这一原则决不能违背，而且我们必须作出这样一个保守的假设，所有已有的Java代码都确实需要一个常设的“基于操作系统的轻量级包装器”的线程架构，这也是到目前为止的唯一方案。</p>
@@ -366,7 +423,9 @@ build</a>并启动<code>jshell</code>，如下所示：</p>
 <p>由于线程的概念正在变化，那么重新审视创建线程的方式自然也很有必要。刚刚我们使用了一个新的静态工厂方法来创建即用即弃的虚拟线程，但是对于已存在的线程API也需要通过另一些方式进行改进。</p>
 <h2 id="线程构建器">线程构建器</h2>
 <p>一个新的很重要的概念就是<code>Thread.Builder</code>类，它作为<code>Thread</code>类的一个内部类被添加进来。用以下代码替换上面例子（第一个示例）中的<code>makeThread()</code>方法看看：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> Thread <span class="hljs-title function_">makeThread</span><span class="hljs-params">(Runnable r)</span> &#123;<br>    <span class="hljs-keyword">return</span> Thread.builder().virtual().task(r).build();<br>&#125;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> Thread <span class="hljs-title function_">makeThread</span><span class="hljs-params">(Runnable r)</span> &#123;
+    <span class="hljs-keyword">return</span> Thread.builder().virtual().task(r).build();
+&#125;</code></pre></div>
 <p>这段代码会调用builder中的<code>virtual()</code>方法来显式的创建一个能够执行<code>Runnable</code>的虚拟线程。当然，我们也可以去掉对<code>virtual()</code>的调用，这样会转而创建一个传统的，由操作系统调度的线程对象。但意义何在？</p>
 <p>如果你把<code>makeThread()</code>方法替换成虚拟线程的版本并用支持Loom的Java重新编译一遍（第一个示例的代码），然后执行生成的二进制文件。</p>
 <p>此时，程序会顺利运行，整体的负载情况如<strong>图2</strong>。</p>
@@ -381,7 +440,14 @@ alt="java-loom-virt-figure2" />
 target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Principle_of_least_astonishment">最小意外原则</a>。</p>
 <p>时至今日，虚拟线程变得越来越寻常，开发者们也不再那么关注操作系统线程和虚拟线程之间的差异，这会反过来阻止这种子类机制的继续使用，因为它总会创建一个由操作系统调度的线程。</p>
 <p>要注意的是线程库的其他部分也需要升级以更好的支撑Loom。例如，<code>ThreadBuilder</code>也支持构建可以作为参数被传递到<code>Executors</code>的<code>ThreadFactory</code>实例，如下所示：</p>
-<figure class="highlight shell"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs shell"><span class="hljs-meta prompt_">jshell&gt; </span><span class="language-bash">var tb = Thread.builder();</span><br>tb ==&gt; java.lang.Thread$BuilderImpl@2e0fa5d3<br><span class="hljs-meta prompt_"></span><br><span class="hljs-meta prompt_">jshell&gt; </span><span class="language-bash">var tf = tb.factory();</span><br>tf ==&gt; java.lang.Thread$KernelThreadFactory@2e5d6d97<br><span class="hljs-meta prompt_"></span><br><span class="hljs-meta prompt_">jshell&gt; </span><span class="language-bash">var vtf = tb.virtual().factory();</span><br>vtf ==&gt; java.lang.Thread$VirtualThreadFactory@377dca04<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs shell"><span class="hljs-meta prompt_">jshell&gt; </span><span class="language-bash">var tb = Thread.builder();</span>
+tb ==&gt; java.lang.Thread$BuilderImpl@2e0fa5d3
+<span class="hljs-meta prompt_"></span>
+<span class="hljs-meta prompt_">jshell&gt; </span><span class="language-bash">var tf = tb.factory();</span>
+tf ==&gt; java.lang.Thread$KernelThreadFactory@2e5d6d97
+<span class="hljs-meta prompt_"></span>
+<span class="hljs-meta prompt_">jshell&gt; </span><span class="language-bash">var vtf = tb.virtual().factory();</span>
+vtf ==&gt; java.lang.Thread$VirtualThreadFactory@377dca04</code></pre></div>
 <p>当然，在某个阶段，虚拟线程必须依赖一个真正的操作系统线程来执行。这些能让虚拟线程运行在其上的操作系统线程叫做<em>载体线程</em>。纵观整个生命周期，一个虚拟线程可能会运行在多个不同的载体线程之上。这不由得让人想起了普通线程会随着时间的推移运行在不同物理CPU核心上的情况
 - 二者都是执行调度的示范。</p>
 <p>在之前的一个例子的<code>jshell</code>输出中我们已经见过载体线程了。</p>
@@ -418,9 +484,56 @@ class="hint--top hint--rounded"
 aria-label="yield point，类似于safe point：[https://zhuanlan.zhihu.com/p/114540016](https://zhuanlan.zhihu.com/p/114540016)">[4]</span></a></sup>的操作（比如阻塞I/O）。</p>
 <h2 id="一则警示寓言">一则警示“寓言”</h2>
 <p>接下来展示一个例子，当自定义调度虚拟线程时，Loom的设计也会出现一些难以预料的结果。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TangledLoom</span> &#123;<br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;<br>        <span class="hljs-type">var</span> <span class="hljs-variable">scheduler</span> <span class="hljs-operator">=</span> Executors.newFixedThreadPool(<span class="hljs-number">2</span>);<br>        <span class="hljs-type">Runnable</span> <span class="hljs-variable">r</span> <span class="hljs-operator">=</span> () -&gt; &#123;<br>            System.out.println(Thread.currentThread().getName() +<span class="hljs-string">&quot; starting &quot;</span>);<br>            <span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>) &#123;<br>                <span class="hljs-type">int</span> <span class="hljs-variable">total</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;<br>                <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">10</span>; i++) &#123;<br>                    total = total + hashing(i, <span class="hljs-string">&#x27;X&#x27;</span>);<br>                &#125;<br>                System.out.println(Thread.currentThread().getName() +<span class="hljs-string">&quot; : &quot;</span>+ total);<br>            &#125;<br>        &#125;;<br>        <span class="hljs-type">var</span> <span class="hljs-variable">tA</span> <span class="hljs-operator">=</span> Thread.builder().virtual(scheduler).name(<span class="hljs-string">&quot;A&quot;</span>).task(r).build();<br>        <span class="hljs-type">var</span> <span class="hljs-variable">tB</span> <span class="hljs-operator">=</span> Thread.builder().virtual(scheduler).name(<span class="hljs-string">&quot;B&quot;</span>).task(r).build();<br>        <span class="hljs-type">var</span> <span class="hljs-variable">tC</span> <span class="hljs-operator">=</span> Thread.builder().virtual(scheduler).name(<span class="hljs-string">&quot;C&quot;</span>).task(r).build();<br>        tA.start();<br>        tB.start();<br>        tC.start();<br>        <span class="hljs-keyword">try</span> &#123;<br>            tA.join();<br>            tB.join();<br>            tC.join();<br>        &#125; <span class="hljs-keyword">catch</span> (Throwable tx) &#123;<br>            tx.printStackTrace();<br>        &#125;<br>    &#125;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-type">int</span> <span class="hljs-title function_">hashing</span><span class="hljs-params">(<span class="hljs-type">int</span> length, <span class="hljs-type">char</span> c)</span> &#123;<br>        <span class="hljs-keyword">final</span> <span class="hljs-type">StringBuilder</span> <span class="hljs-variable">sb</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">StringBuilder</span>();<br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">j</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; j &lt; length * <span class="hljs-number">1_000_000</span>; j++) &#123;<br>            sb.append(c);<br>        &#125;<br>        <span class="hljs-keyword">final</span> <span class="hljs-type">String</span> <span class="hljs-variable">s</span> <span class="hljs-operator">=</span> sb.toString();<br>        <span class="hljs-keyword">return</span> s.hashCode();<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">TangledLoom</span> &#123;
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> &#123;
+        <span class="hljs-type">var</span> <span class="hljs-variable">scheduler</span> <span class="hljs-operator">=</span> Executors.newFixedThreadPool(<span class="hljs-number">2</span>);
+        <span class="hljs-type">Runnable</span> <span class="hljs-variable">r</span> <span class="hljs-operator">=</span> () -&gt; &#123;
+            System.out.println(Thread.currentThread().getName() +<span class="hljs-string">&quot; starting &quot;</span>);
+            <span class="hljs-keyword">while</span> (<span class="hljs-literal">true</span>) &#123;
+                <span class="hljs-type">int</span> <span class="hljs-variable">total</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;
+                <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; <span class="hljs-number">10</span>; i++) &#123;
+                    total = total + hashing(i, <span class="hljs-string">&#x27;X&#x27;</span>);
+                &#125;
+                System.out.println(Thread.currentThread().getName() +<span class="hljs-string">&quot; : &quot;</span>+ total);
+            &#125;
+        &#125;;
+        <span class="hljs-type">var</span> <span class="hljs-variable">tA</span> <span class="hljs-operator">=</span> Thread.builder().virtual(scheduler).name(<span class="hljs-string">&quot;A&quot;</span>).task(r).build();
+        <span class="hljs-type">var</span> <span class="hljs-variable">tB</span> <span class="hljs-operator">=</span> Thread.builder().virtual(scheduler).name(<span class="hljs-string">&quot;B&quot;</span>).task(r).build();
+        <span class="hljs-type">var</span> <span class="hljs-variable">tC</span> <span class="hljs-operator">=</span> Thread.builder().virtual(scheduler).name(<span class="hljs-string">&quot;C&quot;</span>).task(r).build();
+        tA.start();
+        tB.start();
+        tC.start();
+        <span class="hljs-keyword">try</span> &#123;
+            tA.join();
+            tB.join();
+            tC.join();
+        &#125; <span class="hljs-keyword">catch</span> (Throwable tx) &#123;
+            tx.printStackTrace();
+        &#125;
+    &#125;
+
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-type">int</span> <span class="hljs-title function_">hashing</span><span class="hljs-params">(<span class="hljs-type">int</span> length, <span class="hljs-type">char</span> c)</span> &#123;
+        <span class="hljs-keyword">final</span> <span class="hljs-type">StringBuilder</span> <span class="hljs-variable">sb</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">StringBuilder</span>();
+        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">j</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; j &lt; length * <span class="hljs-number">1_000_000</span>; j++) &#123;
+            sb.append(c);
+        &#125;
+        <span class="hljs-keyword">final</span> <span class="hljs-type">String</span> <span class="hljs-variable">s</span> <span class="hljs-operator">=</span> sb.toString();
+        <span class="hljs-keyword">return</span> s.hashCode();
+    &#125;
+&#125;</code></pre></div>
 <p>运行这段代码，会得到以下输出：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs java">$ java TangledLoom<br>B starting <br>A starting <br>B : -<span class="hljs-number">1830232064</span><br>C starting <br>C : -<span class="hljs-number">1830232064</span><br>B : -<span class="hljs-number">1830232064</span><br>C : -<span class="hljs-number">1830232064</span><br>B : -<span class="hljs-number">1830232064</span><br>C : -<span class="hljs-number">1830232064</span><br>B : -<span class="hljs-number">1830232064</span><br>C : -<span class="hljs-number">1830232064</span><br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java">$ java TangledLoom
+B starting 
+A starting 
+B : -<span class="hljs-number">1830232064</span>
+C starting 
+C : -<span class="hljs-number">1830232064</span>
+B : -<span class="hljs-number">1830232064</span>
+C : -<span class="hljs-number">1830232064</span>
+B : -<span class="hljs-number">1830232064</span>
+C : -<span class="hljs-number">1830232064</span>
+B : -<span class="hljs-number">1830232064</span>
+C : -<span class="hljs-number">1830232064</span></code></pre></div>
 <p>此即所谓的<em>线程饥饿</em>，线程<code>A</code>看上去永远无法执行。</p>
 <p>久而久之，当Loom被越来越多的Java开发者们所熟悉时，肯定会出现一系列通用的最佳实践的范式。但目前为止，大家都还处于探索新技术的早期阶段，须注意上述问题。</p>
 <h2
@@ -627,6 +740,19 @@ target="_blank" rel="noopener" href="https://openjdk.org/jeps/444">Virtual Threa
 
 
 
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('mermaid' in window) {
+        mermaid.init();
+      }
+    });
+  });
+</script>
 
 
 

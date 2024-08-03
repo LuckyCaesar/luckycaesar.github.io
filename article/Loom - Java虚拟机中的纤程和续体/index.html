@@ -73,6 +73,10 @@
 
 
 
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+
 
   <script id="fluid-configs">
     var Fluid = window.Fluid || {};
@@ -396,11 +400,62 @@ construct）而滥用了。在纤程里，这两种不同的用法可能需要�
 <p>不管怎样，一个纤程阻塞了其所在的底层内核线程就会触发一些能被JFR/Mbeans监控到的系统事件。</p>
 <p>虽然纤程鼓励使用寻常、简单且自然的同步阻塞代码，但其实适配现有的异步APIs也很简单，会把它们转换成纤程阻塞的模式。假定有这么一个库提供了下面这样一个为了某些长耗时操作而设计的异步API
 - <code>foo</code>，然后返回了一个<code>String</code>：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">interface</span> <span class="hljs-title class_">AsyncFoo</span> &#123;<br>   <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">asyncFoo</span><span class="hljs-params">(FooCompletion callback)</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-keyword">interface</span> <span class="hljs-title class_">AsyncFoo</span> &#123;
+   <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">asyncFoo</span><span class="hljs-params">(FooCompletion callback)</span>;
+&#125;</code></pre></div>
 <p>其中的回调或者完结处理器<code>FooCompletion</code>有如下定义：
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">interface</span> <span class="hljs-title class_">FooCompletion</span> &#123;<br>  <span class="hljs-keyword">void</span> <span class="hljs-title function_">success</span><span class="hljs-params">(String result)</span>;<br>  <span class="hljs-keyword">void</span> <span class="hljs-title function_">failure</span><span class="hljs-params">(FooException exception)</span>;<br>&#125;<br></code></pre></td></tr></table></figure> 我们会提供一个异步转纤程阻塞的结构，如下所示：
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><code class="hljs java"> <br><span class="hljs-keyword">abstract</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">_AsyncToBlocking</span>&lt;T, E <span class="hljs-keyword">extends</span> <span class="hljs-title class_">Throwable</span>&gt; &#123;<br>    <span class="hljs-keyword">private</span> _Fiber f;<br>    <span class="hljs-keyword">private</span> T result;<br>    <span class="hljs-keyword">private</span> E exception;<br>  <br>    <span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">_complete</span><span class="hljs-params">(T result)</span> &#123;<br>        <span class="hljs-built_in">this</span>.result = result;<br>        unpark f<br>    &#125;<br>  <br>    <span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">_fail</span><span class="hljs-params">(E exception)</span> &#123; <br>        <span class="hljs-built_in">this</span>.exception = exception;<br>        unpark f<br>    &#125;<br>  <br>    <span class="hljs-keyword">public</span> T <span class="hljs-title function_">run</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> E &#123; <br>        <span class="hljs-built_in">this</span>.f = current fiber<br>        <span class="hljs-title function_">register</span><span class="hljs-params">()</span>;<br>        park<br>        <span class="hljs-title function_">if</span> <span class="hljs-params">(exception != <span class="hljs-literal">null</span>)</span><br>           <span class="hljs-keyword">throw</span> exception;<br>        <span class="hljs-keyword">return</span> result;<br>    &#125;<br>  <br>    <span class="hljs-keyword">public</span> T <span class="hljs-title function_">run</span><span class="hljs-params">(_timeout)</span> <span class="hljs-keyword">throws</span> E, TimeoutException &#123; ... &#125;<br>  <br>    <span class="hljs-keyword">abstract</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">register</span><span class="hljs-params">()</span>;<br>&#125;<br></code></pre></td></tr></table></figure> 然后我们可以通过定义以下的类来创建一个阻塞版本的API：
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">abstract</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">AsyncFooToBlocking</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">_AsyncToBlocking</span>&lt;String, FooException&gt; <br>     <span class="hljs-keyword">implements</span> <span class="hljs-title class_">FooCompletion</span> &#123;<br>  <span class="hljs-meta">@Override</span><br>  <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">success</span><span class="hljs-params">(String result)</span> &#123;<br>    _complete(result);<br>  &#125;<br>  <span class="hljs-meta">@Override</span><br>  <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">failure</span><span class="hljs-params">(FooException exception)</span> &#123;<br>    _fail(exception);<br>  &#125;<br>&#125;<br></code></pre></td></tr></table></figure> 再然后我们就可以把异步API封装成同步版本： <figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">class</span> <span class="hljs-title class_">SyncFoo</span> &#123;<br>    <span class="hljs-type">AsyncFoo</span> <span class="hljs-variable">foo</span> <span class="hljs-operator">=</span> get instance;<br>  <br>    String <span class="hljs-title function_">syncFoo</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> FooException &#123;<br>        <span class="hljs-keyword">new</span> <span class="hljs-title class_">AsyncFooToBlocking</span>() &#123;<br>          <span class="hljs-meta">@Override</span> <span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">register</span><span class="hljs-params">()</span> &#123; foo.asyncFoo(<span class="hljs-built_in">this</span>); &#125;<br>        &#125;.run();<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-keyword">interface</span> <span class="hljs-title class_">FooCompletion</span> &#123;
+  <span class="hljs-keyword">void</span> <span class="hljs-title function_">success</span><span class="hljs-params">(String result)</span>;
+  <span class="hljs-keyword">void</span> <span class="hljs-title function_">failure</span><span class="hljs-params">(FooException exception)</span>;
+&#125;</code></pre></div> 我们会提供一个异步转纤程阻塞的结构，如下所示：
+<div class="code-wrapper"><pre><code class="hljs java"> 
+<span class="hljs-keyword">abstract</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">_AsyncToBlocking</span>&lt;T, E <span class="hljs-keyword">extends</span> <span class="hljs-title class_">Throwable</span>&gt; &#123;
+    <span class="hljs-keyword">private</span> _Fiber f;
+    <span class="hljs-keyword">private</span> T result;
+    <span class="hljs-keyword">private</span> E exception;
+  
+    <span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">_complete</span><span class="hljs-params">(T result)</span> &#123;
+        <span class="hljs-built_in">this</span>.result = result;
+        unpark f
+    &#125;
+  
+    <span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">_fail</span><span class="hljs-params">(E exception)</span> &#123; 
+        <span class="hljs-built_in">this</span>.exception = exception;
+        unpark f
+    &#125;
+  
+    <span class="hljs-keyword">public</span> T <span class="hljs-title function_">run</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> E &#123; 
+        <span class="hljs-built_in">this</span>.f = current fiber
+        <span class="hljs-title function_">register</span><span class="hljs-params">()</span>;
+        park
+        <span class="hljs-title function_">if</span> <span class="hljs-params">(exception != <span class="hljs-literal">null</span>)</span>
+           <span class="hljs-keyword">throw</span> exception;
+        <span class="hljs-keyword">return</span> result;
+    &#125;
+  
+    <span class="hljs-keyword">public</span> T <span class="hljs-title function_">run</span><span class="hljs-params">(_timeout)</span> <span class="hljs-keyword">throws</span> E, TimeoutException &#123; ... &#125;
+  
+    <span class="hljs-keyword">abstract</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">register</span><span class="hljs-params">()</span>;
+&#125;</code></pre></div> 然后我们可以通过定义以下的类来创建一个阻塞版本的API：
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-keyword">abstract</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">AsyncFooToBlocking</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">_AsyncToBlocking</span>&lt;String, FooException&gt; 
+     <span class="hljs-keyword">implements</span> <span class="hljs-title class_">FooCompletion</span> &#123;
+  <span class="hljs-meta">@Override</span>
+  <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">success</span><span class="hljs-params">(String result)</span> &#123;
+    _complete(result);
+  &#125;
+  <span class="hljs-meta">@Override</span>
+  <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">failure</span><span class="hljs-params">(FooException exception)</span> &#123;
+    _fail(exception);
+  &#125;
+&#125;</code></pre></div> 再然后我们就可以把异步API封装成同步版本： <div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-keyword">class</span> <span class="hljs-title class_">SyncFoo</span> &#123;
+    <span class="hljs-type">AsyncFoo</span> <span class="hljs-variable">foo</span> <span class="hljs-operator">=</span> get instance;
+  
+    String <span class="hljs-title function_">syncFoo</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> FooException &#123;
+        <span class="hljs-keyword">new</span> <span class="hljs-title class_">AsyncFooToBlocking</span>() &#123;
+          <span class="hljs-meta">@Override</span> <span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">register</span><span class="hljs-params">()</span> &#123; foo.asyncFoo(<span class="hljs-built_in">this</span>); &#125;
+        &#125;.run();
+    &#125;
+&#125;</code></pre></div>
 可以用这种方式把一些通用的异步类都涵盖进来，比如<code>CompletableFuture</code>。</p>
 <h1 id="续体">续体</h1>
 <p>向Java平台中添加续体的初始动机是实现纤程，但续体也有一些其他有趣的用途，这也是把续体作为公共API暴露出来的次要目的。当然，这些其他用途带来的好处预期肯定是远不如纤程的。实际上，续体不会在纤程之上增加表达力<sup id="fnref:10" class="footnote-ref"><a href="#fn:10" rel="footnote"><span
@@ -414,7 +469,23 @@ point）的串行子程序（就像线程一样），这里我们简单地称其
 point）），它可以在某些时候挂起或者让出执行，所以我们也可以叫做<em>挂起点</em>（suspension
 point）或者<em>让出点</em>（yield
 point）。当一个定界续体挂起时，控制权会转移到续体之外。而当它恢复时，控制权会回到上次的让出点，那么执行上下文会完好无损地到达入口点。有多种方式可以表达定界续体，但对于Java编程人员来说，以下粗略的伪代码能最好地诠释：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br></pre></td><td class="code"><pre><code class="hljs java">foo() &#123; <span class="hljs-comment">// (2)</span><br>  ... <br>  bar()<br>  ...<br>&#125;<br><br>bar() &#123;<br>  ...<br>  suspend <span class="hljs-comment">// (3)</span><br>  ... <span class="hljs-comment">// (5)</span><br>&#125;<br><br>main() &#123;<br>  c = continuation(foo) <span class="hljs-comment">// (0)</span><br>  c.<span class="hljs-keyword">continue</span>() <span class="hljs-comment">// (1)</span><br>  c.<span class="hljs-keyword">continue</span>() <span class="hljs-comment">// (4)</span><br>&#125;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java">foo() &#123; <span class="hljs-comment">// (2)</span>
+  ... 
+  bar()
+  ...
+&#125;
+
+bar() &#123;
+  ...
+  suspend <span class="hljs-comment">// (3)</span>
+  ... <span class="hljs-comment">// (5)</span>
+&#125;
+
+main() &#123;
+  c = continuation(foo) <span class="hljs-comment">// (0)</span>
+  c.<span class="hljs-keyword">continue</span>() <span class="hljs-comment">// (1)</span>
+  c.<span class="hljs-keyword">continue</span>() <span class="hljs-comment">// (4)</span>
+&#125;</code></pre></div>
 <p>在(0)处创建了一个续体，入口点是<code>foo</code>。然后执行(1)把控制权传递给续体的入口点(2)处。再然后继续执行直至遇到子程序<code>bar</code>内部的挂起点(3)，此时会返回并重新指向(1)处的调用。当在(4)这个地方再次调用续体时，控制权会返回到后续的让出点(5)这一行。</p>
 <p>此处讨论的续体是“堆叠的”，因为续体可能会阻塞在调用栈的任意嵌套深度之内（在上面的例子中，是阻塞在被<code>foo</code>
 -
@@ -422,7 +493,17 @@ point）。当一个定界续体挂起时，控制权会转移到续体之外。
 <p>实现续体最主要的技术任务 -
 实际上，也是整个项目最主要的任务，是向HotSpot中添加捕获、存储和恢复调用栈的能力，而不是作为内核线程的一部分。且JNI栈帧很大可能也<em>不再支持</em>。</p>
 <p>续体是纤程的基础，如果续体要作为一个公共API暴露出来，那么就需要我们支持嵌套续体。这就意味着在续体内部运行的代码不仅需要能够挂起续体本身，还要能挂起封装它的代码（比如，挂起封装了它的纤程）。举例，续体常见的用途是generators的实现。一个generator会提供一个迭代器，每当generator让出执行时，运行在generator中的代码会给这个迭代器生成另一个值。因此可以用以下代码来表示：
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">new</span> <span class="hljs-title class_">_Fiber</span>(() -&gt; &#123;<br>  <span class="hljs-keyword">for</span> (Object x : <span class="hljs-keyword">new</span> <span class="hljs-title class_">_Generator</span>(() -&gt; &#123;<br>      produce <span class="hljs-number">1</span><br>      fiber sleep 100ms<br>      produce <span class="hljs-number">2</span><br>      fiber sleep 100ms<br>      produce <span class="hljs-number">3</span><br>  &#125;)) &#123;<br>      System.out.println(<span class="hljs-string">&quot;Next: &quot;</span> + x);<br>  &#125;<br>&#125;)<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-keyword">new</span> <span class="hljs-title class_">_Fiber</span>(() -&gt; &#123;
+  <span class="hljs-keyword">for</span> (Object x : <span class="hljs-keyword">new</span> <span class="hljs-title class_">_Generator</span>(() -&gt; &#123;
+      produce <span class="hljs-number">1</span>
+      fiber sleep 100ms
+      produce <span class="hljs-number">2</span>
+      fiber sleep 100ms
+      produce <span class="hljs-number">3</span>
+  &#125;)) &#123;
+      System.out.println(<span class="hljs-string">&quot;Next: &quot;</span> + x);
+  &#125;
+&#125;)</code></pre></div>
 在一些参考资料中，表现出此种行为的嵌套续体有时也被叫做“带多具名提示信息的定界续体”（delimited
 continuations with multiple named
 prompts），但是我们还是把它称作<em>作用域续体</em>（scoped
@@ -435,10 +516,77 @@ effect），可以用来达成任意效应 -
 happens-before
 关系。纤程实现时需要负责建立当续体从一个内核线程迁移到另一个内核线程时必要的内存可见性保证。</p>
 <p>可能会新增的API大致如下所示。续体是非常低级别的原语，可能只会被一些库的作者用来构建更高级别的组件（就像<code>java.util.Stream</code>的实现利用了<code>Spliterator</code>一样）。我们期望用到了续体的类会持有一个续体类的私有实例，或者更有可能就是续体的子类，这样续体的实例就不会直接暴露给这些组件的消费者。
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">class</span> <span class="hljs-title class_">_Continuation</span> &#123;<br>    <span class="hljs-keyword">public</span> <span class="hljs-title function_">_Continuation</span><span class="hljs-params">(_Scope scope, Runnable target)</span> <br>    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">run</span><span class="hljs-params">()</span><br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> _Continuation <span class="hljs-title function_">suspend</span><span class="hljs-params">(_Scope scope, Consumer&lt;_Continuation&gt; ccc)</span><br>    <br>    <span class="hljs-keyword">public</span> ? getStackTrace()<br>&#125;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-keyword">class</span> <span class="hljs-title class_">_Continuation</span> &#123;
+    <span class="hljs-keyword">public</span> <span class="hljs-title function_">_Continuation</span><span class="hljs-params">(_Scope scope, Runnable target)</span> 
+    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">run</span><span class="hljs-params">()</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> _Continuation <span class="hljs-title function_">suspend</span><span class="hljs-params">(_Scope scope, Consumer&lt;_Continuation&gt; ccc)</span>
+    
+    <span class="hljs-keyword">public</span> ? getStackTrace()
+&#125;</code></pre></div>
 当续体终止时，<code>run</code>方法会返回<code>true</code>。挂起时，会返回<code>false</code>。<code>suspend</code>方法允许在让出点传递数据给续体（使用<code>ccc</code>回调可以向给定的续体实例中注入数据），然后续体也可以返回数据到挂起点（使用返回值，即续体实例本身，可以从中查询一些信息）。</p>
 <p>为了演示通过续体来实现纤程的简易性，这里提供如下示例，部分地、简单地实现了一个代表纤程的<code>_Fiber</code>类。我们可以注意到，大部分的代码都是在维护纤程的状态，以保证它不会被多个并发所调度：
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">class</span> <span class="hljs-title class_">_Fiber</span> &#123;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> _Continuation cont;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Executor scheduler;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">volatile</span> State state;<br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Runnable task;<br><br>    <span class="hljs-keyword">private</span> <span class="hljs-keyword">enum</span> <span class="hljs-title class_">State</span> &#123; NEW, LEASED, RUNNABLE, PAUSED, DONE; &#125;<br>  <br>    <span class="hljs-keyword">public</span> <span class="hljs-title function_">_Fiber</span><span class="hljs-params">(Runnable target, Executor scheduler)</span> &#123;<br>        <span class="hljs-built_in">this</span>.scheduler = scheduler;<br>        <span class="hljs-built_in">this</span>.cont = <span class="hljs-keyword">new</span> <span class="hljs-title class_">_Continuation</span>(_FIBER_SCOPE, target);<br>      <br>        <span class="hljs-built_in">this</span>.state = State.NEW;<br>        <span class="hljs-built_in">this</span>.task = () -&gt; &#123;<br>              <span class="hljs-keyword">while</span> (!cont.run()) &#123;<br>                  <span class="hljs-keyword">if</span> (park0())<br>                     <span class="hljs-keyword">return</span>; <span class="hljs-comment">// parking; otherwise, had lease -- continue</span><br>              &#125;<br>              state = State.DONE;<br>        &#125;;<br>    &#125;<br>  <br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">start</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">if</span> (!casState(State.NEW, State.RUNNABLE))<br>            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalStateException</span>();<br>        scheduler.execute(task);<br>    &#125;<br>  <br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">park</span><span class="hljs-params">()</span> &#123;<br>        _Continuation.suspend(_FIBER_SCOPE, <span class="hljs-literal">null</span>);<br>    &#125;<br>  <br>    <span class="hljs-keyword">private</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">park0</span><span class="hljs-params">()</span> &#123;<br>        State st, nst;<br>        <span class="hljs-keyword">do</span> &#123;<br>            st = state;<br>            <span class="hljs-keyword">switch</span> (st) &#123;<br>              <span class="hljs-keyword">case</span> LEASED:   nst = State.RUNNABLE; <span class="hljs-keyword">break</span>;<br>              <span class="hljs-keyword">case</span> RUNNABLE: nst = State.PAUSED;   <span class="hljs-keyword">break</span>;<br>              <span class="hljs-keyword">default</span>:       <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalStateException</span>();<br>            &#125;<br>        &#125; <span class="hljs-keyword">while</span> (!casState(st, nst));<br>        <span class="hljs-keyword">return</span> nst == State.PAUSED;<br>    &#125;<br>  <br>    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">unpark</span><span class="hljs-params">()</span> &#123;<br>        State st, nst;<br>        <span class="hljs-keyword">do</span> &#123;<br>            <span class="hljs-type">State</span> <span class="hljs-variable">st</span> <span class="hljs-operator">=</span> state;<br>            <span class="hljs-keyword">switch</span> (st) &#123;<br>              <span class="hljs-keyword">case</span> LEASED: <br>              <span class="hljs-keyword">case</span> RUNNABLE: nst = State.LEASED;   <span class="hljs-keyword">break</span>;<br>              <span class="hljs-keyword">case</span> PAUSED:   nst = State.RUNNABLE; <span class="hljs-keyword">break</span>;<br>              <span class="hljs-keyword">default</span>:       <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalStateException</span>();<br>            &#125;<br>        &#125; <span class="hljs-keyword">while</span> (!casState(st, nst));<br>        <span class="hljs-keyword">if</span> (nst == State.RUNNABLE)<br>            scheduler.execute(task);<br>    &#125;<br>  <br>    <span class="hljs-keyword">private</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">casState</span><span class="hljs-params">(State oldState, State newState)</span> &#123; ... &#125;  <br>&#125;<br></code></pre></td></tr></table></figure></p>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-keyword">class</span> <span class="hljs-title class_">_Fiber</span> &#123;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> _Continuation cont;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Executor scheduler;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">volatile</span> State state;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Runnable task;
+
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">enum</span> <span class="hljs-title class_">State</span> &#123; NEW, LEASED, RUNNABLE, PAUSED, DONE; &#125;
+  
+    <span class="hljs-keyword">public</span> <span class="hljs-title function_">_Fiber</span><span class="hljs-params">(Runnable target, Executor scheduler)</span> &#123;
+        <span class="hljs-built_in">this</span>.scheduler = scheduler;
+        <span class="hljs-built_in">this</span>.cont = <span class="hljs-keyword">new</span> <span class="hljs-title class_">_Continuation</span>(_FIBER_SCOPE, target);
+      
+        <span class="hljs-built_in">this</span>.state = State.NEW;
+        <span class="hljs-built_in">this</span>.task = () -&gt; &#123;
+              <span class="hljs-keyword">while</span> (!cont.run()) &#123;
+                  <span class="hljs-keyword">if</span> (park0())
+                     <span class="hljs-keyword">return</span>; <span class="hljs-comment">// parking; otherwise, had lease -- continue</span>
+              &#125;
+              state = State.DONE;
+        &#125;;
+    &#125;
+  
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">start</span><span class="hljs-params">()</span> &#123;
+        <span class="hljs-keyword">if</span> (!casState(State.NEW, State.RUNNABLE))
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalStateException</span>();
+        scheduler.execute(task);
+    &#125;
+  
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">park</span><span class="hljs-params">()</span> &#123;
+        _Continuation.suspend(_FIBER_SCOPE, <span class="hljs-literal">null</span>);
+    &#125;
+  
+    <span class="hljs-keyword">private</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">park0</span><span class="hljs-params">()</span> &#123;
+        State st, nst;
+        <span class="hljs-keyword">do</span> &#123;
+            st = state;
+            <span class="hljs-keyword">switch</span> (st) &#123;
+              <span class="hljs-keyword">case</span> LEASED:   nst = State.RUNNABLE; <span class="hljs-keyword">break</span>;
+              <span class="hljs-keyword">case</span> RUNNABLE: nst = State.PAUSED;   <span class="hljs-keyword">break</span>;
+              <span class="hljs-keyword">default</span>:       <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalStateException</span>();
+            &#125;
+        &#125; <span class="hljs-keyword">while</span> (!casState(st, nst));
+        <span class="hljs-keyword">return</span> nst == State.PAUSED;
+    &#125;
+  
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">unpark</span><span class="hljs-params">()</span> &#123;
+        State st, nst;
+        <span class="hljs-keyword">do</span> &#123;
+            <span class="hljs-type">State</span> <span class="hljs-variable">st</span> <span class="hljs-operator">=</span> state;
+            <span class="hljs-keyword">switch</span> (st) &#123;
+              <span class="hljs-keyword">case</span> LEASED: 
+              <span class="hljs-keyword">case</span> RUNNABLE: nst = State.LEASED;   <span class="hljs-keyword">break</span>;
+              <span class="hljs-keyword">case</span> PAUSED:   nst = State.RUNNABLE; <span class="hljs-keyword">break</span>;
+              <span class="hljs-keyword">default</span>:       <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalStateException</span>();
+            &#125;
+        &#125; <span class="hljs-keyword">while</span> (!casState(st, nst));
+        <span class="hljs-keyword">if</span> (nst == State.RUNNABLE)
+            scheduler.execute(task);
+    &#125;
+  
+    <span class="hljs-keyword">private</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">casState</span><span class="hljs-params">(State oldState, State newState)</span> &#123; ... &#125;  
+&#125;</code></pre></div></p>
 <h1 id="调度器">调度器</h1>
 <p>如上所述，类似<code>ForkJoinPools</code>的工作窃取调度器特别适合用来调度那些经常阻塞或者频繁地与IO及其他线程交互的线程。当然，纤程也会有一些插件化的调度器，或者用户可以自定义实现（调度器的SPI同<code>Executor</code>接口一样简单方便）。从过往经验来看，预计异步模式下的<code>ForkJoinPool</code>可以在绝大部分场景下很好的支撑起纤程的调度，但是我们可能还会去调研一两种其他更简单的设计，如pinned-shceduler，一种总是会把给定的纤程固定调度到指定内核线程上的调度器（假设是固定到处理器）。</p>
 <h1 id="展开调用">展开调用</h1>
@@ -678,6 +826,19 @@ class="footnote-text"><span>是否将其称为续体或协程仍待定 —
 
 
 
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('mermaid' in window) {
+        mermaid.init();
+      }
+    });
+  });
+</script>
 
 
 

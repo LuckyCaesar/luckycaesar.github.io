@@ -70,6 +70,10 @@
 
 
 
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+
 
   <script id="fluid-configs">
     var Fluid = window.Fluid || {};
@@ -212,7 +216,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          7.5k 字
+          7.4k 字
         
       </span>
     
@@ -298,14 +302,24 @@ target="_blank" rel="noopener" href="https://docs.oracle.com/javase/tutorial/jav
 target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Side_effect_(computer_science)">副作用</a>。它们改变了某种状态，可能是外界的（程序以外的）。常见的副作用是<em>原地</em>改变对象或者变量，打印到控制台、写到日志文件或者数据库。如果副作用以非预期的方式影响了我们程序的语义，那就认为它是有害的。</p>
 <p>例如，一个函数抛出了异常且这个异常是<em>interpreted</em>，它就被认为是一个<em>影响程序</em>的副作用。而且，<a
 target="_blank" rel="noopener" href="http://c2.com/cgi/wiki?DontUseExceptionsForFlowControl">异常类似于非本地的go-to语句</a>，它们会破坏正常的控制流。不管怎么说，实际的应用确实会产生副作用。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-type">int</span> <span class="hljs-title function_">divide</span><span class="hljs-params">(<span class="hljs-type">int</span> dividend, <span class="hljs-type">int</span> divisor)</span> &#123;<br>    <span class="hljs-comment">// throws if divisor is zero</span><br>    <span class="hljs-keyword">return</span> dividend / divisor;<br>&#125;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-type">int</span> <span class="hljs-title function_">divide</span><span class="hljs-params">(<span class="hljs-type">int</span> dividend, <span class="hljs-type">int</span> divisor)</span> &#123;
+    <span class="hljs-comment">// throws if divisor is zero</span>
+    <span class="hljs-keyword">return</span> dividend / divisor;
+&#125;</code></pre></div>
 <p>在函数环境下，可以用Try来封装副作用使我们（的程序）处于一个良好的状态：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = Success(result) or Failure(exception)</span><br>Try&lt;Integer&gt; <span class="hljs-title function_">divide</span><span class="hljs-params">(Integer dividend, Integer divisor)</span> &#123;<br>    <span class="hljs-keyword">return</span> Try.of(() -&gt; dividend / divisor);<br>&#125;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">// = Success(result) or Failure(exception)</span>
+Try&lt;Integer&gt; <span class="hljs-title function_">divide</span><span class="hljs-params">(Integer dividend, Integer divisor)</span> &#123;
+    <span class="hljs-keyword">return</span> Try.of(() -&gt; dividend / divisor);
+&#125;</code></pre></div>
 <p>上面这个版本的divide方法不会再抛出任何异常，我们利用Try类型显式的显示了可能的失败。</p>
 <h3 id="引用透明性">1.2.2. 引用透明性</h3>
 <p>一个函数，或者更笼统的说一个表达式，对它的调用如果能用它的值替换而不影响程序本身的行为，那就称之为<a
 target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Referential_transparency">引用透明性</a>。简单来讲，给定相同的输入总能得到相同的输出。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// not referentially transparent</span><br>Math.random();<br><br><span class="hljs-comment">// referentially transparent</span><br>Math.max(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>);<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">// not referentially transparent</span>
+Math.random();
+
+<span class="hljs-comment">// referentially transparent</span>
+Math.max(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>);</code></pre></div>
 <p>如果（函数中）涉及的所有表达式都是引用透明的，则称该函数为<a
 target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Pure_function">纯函数</a>
 。一个由纯函数组成的应用大概率在编译后就可以<em>直接运行</em>，这也很容易解释。单元测试变得易于编写，而调试则成为了过去式。</p>
@@ -334,13 +348,19 @@ aria-label="[mutator method](https://en.wikipedia.org/wiki/Mutator_method)。">[
 <p>Java是一门面向对象编程语言。我们通过封装对象的状态来达到数据隐藏的目的，然后提供更改器方法控制这种状态。<a
 target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Java_collections_framework">Java
 collections framework (JCF)</a> 就是基于此种思想构建的。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">interface</span> <span class="hljs-title class_">Collection</span>&lt;E&gt; &#123;<br>    <span class="hljs-comment">// removes all elements from this collection</span><br>    <span class="hljs-keyword">void</span> <span class="hljs-title function_">clear</span><span class="hljs-params">()</span>;<br>&#125;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-keyword">interface</span> <span class="hljs-title class_">Collection</span>&lt;E&gt; &#123;
+    <span class="hljs-comment">// removes all elements from this collection</span>
+    <span class="hljs-keyword">void</span> <span class="hljs-title function_">clear</span><span class="hljs-params">()</span>;
+&#125;</code></pre></div>
 <p>现在我会把<em>void</em>的返回类型理解为一种异味。它就是<a
 target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Side_effect_(computer_science)">副作用</a>产生的证据，会使得状态发生变换。<em>共享</em>可变状态是一个造成失败的主要来源，不仅仅在并发环境中。</p>
 <h3 id="不可变数据结构">1.3.2. 不可变数据结构</h3>
 <p><a
 target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Immutable_object">不可变</a>数据结构被创建后就无法更改。在Java的上下文中，它们以集合包装器的形式被广泛应用。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java">List&lt;String&gt; list = Collections.unmodifiableList(otherList);<br><br><span class="hljs-comment">// Boom!</span><br>list.add(<span class="hljs-string">&quot;why not?&quot;</span>);<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java">List&lt;String&gt; list = Collections.unmodifiableList(otherList);
+
+<span class="hljs-comment">// Boom!</span>
+list.add(<span class="hljs-string">&quot;why not?&quot;</span>);</code></pre></div>
 <p>有各种各样的库提供了类似实用的方法给我们。（这些方法）返回的结果总是一个特定集合的不可变视图，而且通常在我们调用一个更改器方法后在运行时抛出（异常）。</p>
 <h3 id="持久化数据结构">1.3.3. 持久化数据结构</h3>
 <p>一个<a
@@ -358,7 +378,8 @@ target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Linked_list">
 target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Stack_(abstract_data_type)">后进先出
 (LIFO)</a>方法的栈。</p>
 <p>在Vavr里我们可以像这样来实例化一个列表：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = List(1, 2, 3)</span><br>List&lt;Integer&gt; list1 = List.of(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>);<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">// = List(1, 2, 3)</span>
+List&lt;Integer&gt; list1 = List.of(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>);</code></pre></div>
 <p>列表中的每一个元素都形成了一个独立的节点，最后一个元素的尾部指向Nil，一个空的列表。<sup id="fnref:3" class="footnote-ref"><a href="#fn:3" rel="footnote"><span
 class="hint--top hint--rounded"
 aria-label="查看源码可知，这里是按3、2、1的顺序进行构建的，对整个链表的遍历，则会按照1、2、3的顺序输出，遵循后进先出原则。整个链表遍历顺序的**头节点是1，尾节点是3**。">[3]</span></a></sup></p>
@@ -367,7 +388,8 @@ aria-label="查看源码可知，这里是按3、2、1的顺序进行构建的�
 <figcaption aria-hidden="true">list1</figcaption>
 </figure>
 <p>这使得我们可以在列表的不同版本之间共享元素：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = List(0, 2, 3)</span><br>List&lt;Integer&gt; list2 = list1.tail().prepend(<span class="hljs-number">0</span>);<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">// = List(0, 2, 3)</span>
+List&lt;Integer&gt; list2 = list1.tail().prepend(<span class="hljs-number">0</span>);</code></pre></div>
 <p>新的头元素0被<em>链接</em>到原列表的尾部<sup id="fnref:4" class="footnote-ref"><a href="#fn:4" rel="footnote"><span
 class="hint--top hint--rounded"
 aria-label="此时的**尾部**不是按链表的遍历顺序，而是按构建链表时的顺序来定义的。**头元素0**会变成新版本链表遍历顺序的头节点。更新后的新版本链表，遍历出来的结果就是0、2、3。">[4]</span></a></sup>，原来的列表则保持不变。</p>
@@ -382,7 +404,9 @@ target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Random_access
 <p>实际上链表也可以用来实现队列数据结构。</p>
 <h3 id="队列">1.4.2. 队列</h3>
 <p>一个很高效的函数式队列可以基于两个链表来实现。<em>front</em>链表持有<em>出队的</em>元素，<em>rear</em>链表持有<em>入队的</em>元素，入队和出队操作都是O(1)的时间复杂度。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java">Queue&lt;Integer&gt; queue = Queue.of(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>)<br>                            .enqueue(<span class="hljs-number">4</span>)<br>                            .enqueue(<span class="hljs-number">5</span>);<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java">Queue&lt;Integer&gt; queue = Queue.of(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>)
+                            .enqueue(<span class="hljs-number">4</span>)
+                            .enqueue(<span class="hljs-number">5</span>);</code></pre></div>
 <p>队列由3个元素初始化，还有两个元素在rear列表中排队。</p>
 <figure>
 <img src="/img/vavr-queue1.png" srcset="/img/loading.gif" lazyload alt="queue1" />
@@ -394,11 +418,28 @@ target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Random_access
 <figcaption aria-hidden="true">queue2</figcaption>
 </figure>
 <p>一个元素出队时我们会得到第一个元素和剩余队列组成的一对数据。必须返回这个队列的新版本，因为函数式数据结构是不可变且持久化的，原队列不应当受影响。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java">Queue&lt;Integer&gt; queue = Queue.of(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>);<br><br><span class="hljs-comment">// = (1, Queue(2, 3))</span><br>Tuple2&lt;Integer, Queue&lt;Integer&gt;&gt; dequeued = queue.dequeue();<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java">Queue&lt;Integer&gt; queue = Queue.of(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>);
+
+<span class="hljs-comment">// = (1, Queue(2, 3))</span>
+Tuple2&lt;Integer, Queue&lt;Integer&gt;&gt; dequeued = queue.dequeue();</code></pre></div>
 <p>当队列为空时会发生什么？这时dequeue()方法会抛出NoSuchElementException，用<em>函数式方式</em>来做的话我们更期望返回一个可选结果。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = Some((1, Queue()))</span><br>Queue.of(<span class="hljs-number">1</span>).dequeueOption();<br><br><span class="hljs-comment">// = None</span><br>Queue.empty().dequeueOption();<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">// = Some((1, Queue()))</span>
+Queue.of(<span class="hljs-number">1</span>).dequeueOption();
+
+<span class="hljs-comment">// = None</span>
+Queue.empty().dequeueOption();</code></pre></div>
 <p>一个可选结果可以被进一步处理，不管它是否为空。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = Queue(1)</span><br>Queue&lt;Integer&gt; queue = Queue.of(<span class="hljs-number">1</span>);<br><br><span class="hljs-comment">// = Some((1, Queue()))</span><br>Option&lt;Tuple2&lt;Integer, Queue&lt;Integer&gt;&gt;&gt; dequeued = queue.dequeueOption();<br><br><span class="hljs-comment">// = Some(1)</span><br>Option&lt;Integer&gt; element = dequeued.map(Tuple2::_1);<br><br><span class="hljs-comment">// = Some(Queue())</span><br>Option&lt;Queue&lt;Integer&gt;&gt; remaining = dequeued.map(Tuple2::_2);<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">// = Queue(1)</span>
+Queue&lt;Integer&gt; queue = Queue.of(<span class="hljs-number">1</span>);
+
+<span class="hljs-comment">// = Some((1, Queue()))</span>
+Option&lt;Tuple2&lt;Integer, Queue&lt;Integer&gt;&gt;&gt; dequeued = queue.dequeueOption();
+
+<span class="hljs-comment">// = Some(1)</span>
+Option&lt;Integer&gt; element = dequeued.map(Tuple2::_1);
+
+<span class="hljs-comment">// = Some(Queue())</span>
+Option&lt;Queue&lt;Integer&gt;&gt; remaining = dequeued.map(Tuple2::_2);</code></pre></div>
 <h3 id="有序集合5">1.4.3.
 有序集合<sup id="fnref:5" class="footnote-ref"><a href="#fn:5" rel="footnote"><span
 class="hint--top hint--rounded"
@@ -406,16 +447,23 @@ aria-label="这里的集合是指**Set**。">[5]</span></a></sup></h3>
 <p>有序集合是比队列使用得更频繁的一种数据结构。我们使用二叉搜索树以函数式方式给它们建模，这些树由一些节点组成，每个节点有一个值且最多只能拥有两个孩子节点。</p>
 <p>我们会在排序的情况下 -
 使用一个元素比较器来表达，构建二叉搜索树。任何给定节点的左子树的值都严格地小于当前给定节点的值，而所有右子树的值则严格地大于。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = TreeSet(1, 2, 3, 4, 6, 7, 8)</span><br>SortedSet&lt;Integer&gt; xs = TreeSet.of(<span class="hljs-number">6</span>, <span class="hljs-number">1</span>, <span class="hljs-number">3</span>, <span class="hljs-number">2</span>, <span class="hljs-number">4</span>, <span class="hljs-number">7</span>, <span class="hljs-number">8</span>);<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">// = TreeSet(1, 2, 3, 4, 6, 7, 8)</span>
+SortedSet&lt;Integer&gt; xs = TreeSet.of(<span class="hljs-number">6</span>, <span class="hljs-number">1</span>, <span class="hljs-number">3</span>, <span class="hljs-number">2</span>, <span class="hljs-number">4</span>, <span class="hljs-number">7</span>, <span class="hljs-number">8</span>);</code></pre></div>
 <figure>
 <img src="/img/vavr-binarytree1.png" srcset="/img/loading.gif" lazyload alt="binarytree1" />
 <figcaption aria-hidden="true">binarytree1</figcaption>
 </figure>
 <p>这棵树的查询时间复杂度为O(log<sub>n</sub>)。我们从根节点开始搜索，并判断是否找到了目标元素。由于所有的值是整体有序的，所以我们知道下一步该从何处进行搜索，是这棵树的左分支还是右分支。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = TreeSet(1, 2, 3);</span><br>SortedSet&lt;Integer&gt; set = TreeSet.of(<span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>);<br><br><span class="hljs-comment">// = TreeSet(3, 2, 1);</span><br>Comparator&lt;Integer&gt; c = (a, b) -&gt; b - a;<br>SortedSet&lt;Integer&gt; reversed = TreeSet.of(c, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>);<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">// = TreeSet(1, 2, 3);</span>
+SortedSet&lt;Integer&gt; set = TreeSet.of(<span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>);
+
+<span class="hljs-comment">// = TreeSet(3, 2, 1);</span>
+Comparator&lt;Integer&gt; c = (a, b) -&gt; b - a;
+SortedSet&lt;Integer&gt; reversed = TreeSet.of(c, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">1</span>, <span class="hljs-number">2</span>);</code></pre></div>
 <p>大部分树的操作本质上都是<a
 target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Recursion">递归</a>。插入函数和搜索函数很类似，当一条搜索路径抵达终点时，会创建一个新节点，然后整个路径会重建到根节点，（在此期间会）尽可能的引用现有的子节点。因此插入操作会花费O(log<sub>n</sub>)的时间和空间。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = TreeSet(1, 2, 3, 4, 5, 6, 7, 8)</span><br>SortedSet&lt;Integer&gt; ys = xs.add(<span class="hljs-number">5</span>);<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">// = TreeSet(1, 2, 3, 4, 5, 6, 7, 8)</span>
+SortedSet&lt;Integer&gt; ys = xs.add(<span class="hljs-number">5</span>);</code></pre></div>
 <figure>
 <img src="/img/vavr-binarytree2.png" srcset="/img/loading.gif" lazyload alt="binarytree2" />
 <figcaption aria-hidden="true">binarytree2</figcaption>
@@ -434,12 +482,20 @@ target="_blank" rel="noopener" href="https://www.youtube.com/watch?v=NW5h8d_ZyOs
 keynote</a>里就提到了Java8集合的状态。</p>
 <p>他把Java的Stream形容成一种很花哨的迭代器。Java8 Stream
 API是一个<em>lifted</em>集合的示例，它所做的就是<em>定义</em>一次计算并在另一个明确的步骤中把它<em>link</em>到一个特定的集合。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// i + 1</span><br>i.prepareForAddition()<br> .add(<span class="hljs-number">1</span>)<br> .mapBackToInteger(Mappers.toInteger())<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">// i + 1</span>
+i.prepareForAddition()
+ .add(<span class="hljs-number">1</span>)
+ .mapBackToInteger(Mappers.toInteger())</code></pre></div>
 <p>这就是新的Java8 Stream
 API的工作机制，它就是一个在人所熟知的Java集合之上的计算层。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;] in Java 8</span><br>Arrays.asList(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>)<br>      .stream()<br>      .map(Object::toString)<br>      .collect(Collectors.toList())<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">// = [&quot;1&quot;, &quot;2&quot;, &quot;3&quot;] in Java 8</span>
+Arrays.asList(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>)
+      .stream()
+      .map(Object::toString)
+      .collect(Collectors.toList())</code></pre></div>
 <p>Vavr则深受Scala的启发。上面的例子在Java8中本应该是这样的：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = Stream(&quot;1&quot;, &quot;2&quot;, &quot;3&quot;) in Vavr</span><br>Stream.of(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>).map(Object::toString)<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">// = Stream(&quot;1&quot;, &quot;2&quot;, &quot;3&quot;) in Vavr</span>
+Stream.of(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>).map(Object::toString)</code></pre></div>
 <p>过去一年我们在实现Vavr集合库上面付出了很大的努力，它包含了绝大多数的被广泛使用的集合类型。</p>
 <h3 id="seq">1.5.1. Seq</h3>
 <p>我们通过实现序列类型来开启我们的旅程。在上面我们已经详述了链表，之后的Stream是一个惰性链表。它允许我们处理可能的无限长度的元素序列。</p>
@@ -448,15 +504,33 @@ API的工作机制，它就是一个在人所熟知的Java集合之上的计算�
 <figcaption aria-hidden="true">collections-seq</figcaption>
 </figure>
 <p>所有集合都是迭代器，因此能够被用在增强型for语句里面：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">for</span> (String s : List.of(<span class="hljs-string">&quot;Java&quot;</span>, <span class="hljs-string">&quot;Advent&quot;</span>)) &#123;<br>    <span class="hljs-comment">// side effects and mutation</span><br>&#125;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-keyword">for</span> (String s : List.of(<span class="hljs-string">&quot;Java&quot;</span>, <span class="hljs-string">&quot;Advent&quot;</span>)) &#123;
+    <span class="hljs-comment">// side effects and mutation</span>
+&#125;</code></pre></div>
 <p>我们也可以通过内部化循环并使用lambda注入行为来达到同样的效果：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><code class="hljs java">List.of(<span class="hljs-string">&quot;Java&quot;</span>, <span class="hljs-string">&quot;Advent&quot;</span>).forEach(s -&gt; &#123;<br>    <span class="hljs-comment">// side effects and mutation</span><br>&#125;);<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java">List.of(<span class="hljs-string">&quot;Java&quot;</span>, <span class="hljs-string">&quot;Advent&quot;</span>).forEach(s -&gt; &#123;
+    <span class="hljs-comment">// side effects and mutation</span>
+&#125;);</code></pre></div>
 <p>总之，如前所见我们更期望的是返回一个带值的表达式而不是不返回任何东西的语句。通过一个简单的例子，我们马上就能意识到这种语句会带来干扰并且会把一个整体的东西分割开。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs java">String <span class="hljs-title function_">join</span><span class="hljs-params">(String... words)</span> &#123;<br>    <span class="hljs-type">StringBuilder</span> <span class="hljs-variable">builder</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">StringBuilder</span>();<br>    <span class="hljs-keyword">for</span>(String s : words) &#123;<br>        <span class="hljs-keyword">if</span> (builder.length() &gt; <span class="hljs-number">0</span>) &#123;<br>            builder.append(<span class="hljs-string">&quot;, &quot;</span>);<br>        &#125;<br>        builder.append(s);<br>    &#125;<br>    <span class="hljs-keyword">return</span> builder.toString();<br>&#125;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java">String <span class="hljs-title function_">join</span><span class="hljs-params">(String... words)</span> &#123;
+    <span class="hljs-type">StringBuilder</span> <span class="hljs-variable">builder</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">StringBuilder</span>();
+    <span class="hljs-keyword">for</span>(String s : words) &#123;
+        <span class="hljs-keyword">if</span> (builder.length() &gt; <span class="hljs-number">0</span>) &#123;
+            builder.append(<span class="hljs-string">&quot;, &quot;</span>);
+        &#125;
+        builder.append(s);
+    &#125;
+    <span class="hljs-keyword">return</span> builder.toString();
+&#125;</code></pre></div>
 <p>Vavr集合提供了很多操作底层元素的函数，这让我们可以用很简洁的方式来表达某些事物：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java">String <span class="hljs-title function_">join</span><span class="hljs-params">(String... words)</span> &#123;<br>    <span class="hljs-keyword">return</span> List.of(words)<br>               .intersperse(<span class="hljs-string">&quot;, &quot;</span>)<br>               .foldLeft(<span class="hljs-keyword">new</span> <span class="hljs-title class_">StringBuilder</span>(), StringBuilder::append)<br>               .toString();<br>&#125;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java">String <span class="hljs-title function_">join</span><span class="hljs-params">(String... words)</span> &#123;
+    <span class="hljs-keyword">return</span> List.of(words)
+               .intersperse(<span class="hljs-string">&quot;, &quot;</span>)
+               .foldLeft(<span class="hljs-keyword">new</span> <span class="hljs-title class_">StringBuilder</span>(), StringBuilder::append)
+               .toString();
+&#125;</code></pre></div>
 <p>Vavr可以用各种不同的方式来实现许多目标。在这里我们可以通过缩减整个方法体来使列表实例上的函数调用变得更流畅，甚至可以移除这个方法然后直接用我们的列表来获取计算结果。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs java">List.of(words).mkString(<span class="hljs-string">&quot;, &quot;</span>);<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java">List.of(words).mkString(<span class="hljs-string">&quot;, &quot;</span>);</code></pre></div>
 <p>在实际应用中我们可以借此大幅减少代码行数，也降低了出现bug的风险。</p>
 <h3 id="set和map">1.5.2. Set和Map</h3>
 <p>序列固然很棒，但就完整性来讲，一个集合库也需要不同类型的Sets和Maps。</p>
@@ -473,9 +547,17 @@ pairs）的HAMT。</p>
 <p>我们的Map<em>没有</em>一个特殊的Entry类型来表示键值对，作为替代使用的是Vavr中的Tuple2。一个Tuple<sup id="fnref:6" class="footnote-ref"><a href="#fn:6" rel="footnote"><span
 class="hint--top hint--rounded"
 aria-label="[多元组](https://zh.wikipedia.org/wiki/%E5%A4%9A%E5%85%83%E7%BB%84)，也称为顺序组（英语：Tuple），泛指有限个元素所组成的序列。在数学及计算机科学分别有其特殊的意义。">[6]</span></a></sup>中的字段总是可枚举的。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = (1, &quot;A&quot;)</span><br>Tuple2&lt;Integer, String&gt; entry = Tuple.of(<span class="hljs-number">1</span>, <span class="hljs-string">&quot;A&quot;</span>);<br><br><span class="hljs-type">Integer</span> <span class="hljs-variable">key</span> <span class="hljs-operator">=</span> entry._1;<br><span class="hljs-type">String</span> <span class="hljs-variable">value</span> <span class="hljs-operator">=</span> entry._2;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">// = (1, &quot;A&quot;)</span>
+Tuple2&lt;Integer, String&gt; entry = Tuple.of(<span class="hljs-number">1</span>, <span class="hljs-string">&quot;A&quot;</span>);
+
+<span class="hljs-type">Integer</span> <span class="hljs-variable">key</span> <span class="hljs-operator">=</span> entry._1;
+<span class="hljs-type">String</span> <span class="hljs-variable">value</span> <span class="hljs-operator">=</span> entry._2;</code></pre></div>
 <p>Maps和Tuples在Vavr中广泛被应用。把Tuples作为处理多值返回类型的一种通用方式已经是惯例了。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">// = HashMap((0, List(2, 4)), (1, List(1, 3)))</span><br>List.of(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">4</span>).groupBy(i -&gt; i % <span class="hljs-number">2</span>);<br><br><span class="hljs-comment">// = List((a, 0), (b, 1), (c, 2))</span><br>List.of(<span class="hljs-string">&#x27;a&#x27;</span>, <span class="hljs-string">&#x27;b&#x27;</span>, <span class="hljs-string">&#x27;c&#x27;</span>).zipWithIndex();<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">// = HashMap((0, List(2, 4)), (1, List(1, 3)))</span>
+List.of(<span class="hljs-number">1</span>, <span class="hljs-number">2</span>, <span class="hljs-number">3</span>, <span class="hljs-number">4</span>).groupBy(i -&gt; i % <span class="hljs-number">2</span>);
+
+<span class="hljs-comment">// = List((a, 0), (b, 1), (c, 2))</span>
+List.of(<span class="hljs-string">&#x27;a&#x27;</span>, <span class="hljs-string">&#x27;b&#x27;</span>, <span class="hljs-string">&#x27;c&#x27;</span>).zipWithIndex();</code></pre></div>
 <p>在Vavr里，我们会通过实现<a
 target="_blank" rel="noopener" href="https://projecteuler.net/archives">99 Euler
 Problems</a>来考察以及测试我们的库，这是一个很棒的概念性验证，请不要吝啬给我们的库推送PR。</p>
@@ -661,6 +743,19 @@ target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/%E5%A4%9A%E5%
 
 
 
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('mermaid' in window) {
+        mermaid.init();
+      }
+    });
+  });
+</script>
 
 
 

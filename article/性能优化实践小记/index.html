@@ -70,6 +70,10 @@
 
 
 
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+
 
   <script id="fluid-configs">
     var Fluid = window.Fluid || {};
@@ -372,10 +376,26 @@ kb左右，我们测试的用户数据是10w，如果原始数据直接缓存到
 <ol type="1">
 <li><p><strong>JVM</strong></p>
 <p>主要是以下几个参数，比较通用简单。</p>
-<figure class="highlight diff"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs diff"><span class="hljs-deletion">-XX:+UseG1GC 使用G1垃圾收集器</span><br><span class="hljs-deletion">-Xms4000m    初始化JVM内存，可以设置的和最大内存一致，避免每次GC后JVM重新分配内存以及扩容带来的影响</span><br><span class="hljs-deletion">-Xmx4000m    最大JVM可用内存</span><br><span class="hljs-deletion">-XX:MaxGCPauseMillis=100  设置每次年轻代垃圾回收的最长时间，如果无法满足此时间，JVM会自动调整年轻代大小，以满足此值</span><br></code></pre></td></tr></table></figure></li>
+<div class="code-wrapper"><pre><code class="hljs diff"><span class="hljs-deletion">-XX:+UseG1GC 使用G1垃圾收集器</span>
+<span class="hljs-deletion">-Xms4000m    初始化JVM内存，可以设置的和最大内存一致，避免每次GC后JVM重新分配内存以及扩容带来的影响</span>
+<span class="hljs-deletion">-Xmx4000m    最大JVM可用内存</span>
+<span class="hljs-deletion">-XX:MaxGCPauseMillis=100  设置每次年轻代垃圾回收的最长时间，如果无法满足此时间，JVM会自动调整年轻代大小，以满足此值</span></code></pre></div></li>
 <li><p><strong>Web容器</strong></p>
 <p>我们项目使用的是Undertow而不是Tomcat，从网上找了一些通用的参数调整。</p>
-<figure class="highlight yml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><code class="hljs yml"><span class="hljs-comment"># undertow配置</span><br><span class="hljs-attr">server:</span><br>  <span class="hljs-attr">undertow:</span><br>    <span class="hljs-comment"># 设置IO线程数, 它主要执行非阻塞的任务,它们会负责多个连接, 默认设置每个CPU核心一个线程</span><br>    <span class="hljs-comment"># 不要设置过大，如果过大，启动项目会报错：打开文件数过多</span><br>    <span class="hljs-attr">io-threads:</span> <span class="hljs-number">16</span><br>    <span class="hljs-comment"># 阻塞任务线程池, 当执行类似servlet请求阻塞IO操作, undertow会从这个线程池中取得线程</span><br>    <span class="hljs-comment"># 它的值设置取决于系统线程执行任务的阻塞系数，默认值是IO线程数*8</span><br>    <span class="hljs-attr">worker-threads:</span> <span class="hljs-number">256</span><br>    <span class="hljs-comment"># 以下的配置会影响buffer,这些buffer会用于服务器连接的IO操作,有点类似netty的池化内存管理</span><br>    <span class="hljs-comment"># 每块buffer的空间大小,越小的空间被利用越充分，不要设置太大，以免影响其他应用，合适即可</span><br>    <span class="hljs-attr">buffer-size:</span> <span class="hljs-number">1024</span><br>    <span class="hljs-comment"># 是否分配的直接内存(NIO直接分配的堆外内存)</span><br>    <span class="hljs-attr">direct-buffers:</span> <span class="hljs-literal">true</span><br></code></pre></td></tr></table></figure></li>
+<div class="code-wrapper"><pre><code class="hljs yml"><span class="hljs-comment"># undertow配置</span>
+<span class="hljs-attr">server:</span>
+  <span class="hljs-attr">undertow:</span>
+    <span class="hljs-comment"># 设置IO线程数, 它主要执行非阻塞的任务,它们会负责多个连接, 默认设置每个CPU核心一个线程</span>
+    <span class="hljs-comment"># 不要设置过大，如果过大，启动项目会报错：打开文件数过多</span>
+    <span class="hljs-attr">io-threads:</span> <span class="hljs-number">16</span>
+    <span class="hljs-comment"># 阻塞任务线程池, 当执行类似servlet请求阻塞IO操作, undertow会从这个线程池中取得线程</span>
+    <span class="hljs-comment"># 它的值设置取决于系统线程执行任务的阻塞系数，默认值是IO线程数*8</span>
+    <span class="hljs-attr">worker-threads:</span> <span class="hljs-number">256</span>
+    <span class="hljs-comment"># 以下的配置会影响buffer,这些buffer会用于服务器连接的IO操作,有点类似netty的池化内存管理</span>
+    <span class="hljs-comment"># 每块buffer的空间大小,越小的空间被利用越充分，不要设置太大，以免影响其他应用，合适即可</span>
+    <span class="hljs-attr">buffer-size:</span> <span class="hljs-number">1024</span>
+    <span class="hljs-comment"># 是否分配的直接内存(NIO直接分配的堆外内存)</span>
+    <span class="hljs-attr">direct-buffers:</span> <span class="hljs-literal">true</span></code></pre></div></li>
 </ol>
 <h1 id="结果">结果</h1>
 <p>由于请求链路上还有网关与用户鉴权中心的存在，所以我们也分为了两种情况进行测试，走网关和不走网关，用来定位和排除一些应用服务的问题。当然，最终结果是以真实环境的网络链路为标准的，也就是走网关路由和鉴权。</p>
@@ -537,6 +557,19 @@ class="footnote-text"><span>score为一个double数，整数部分为助力次�
 
 
 
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('mermaid' in window) {
+        mermaid.init();
+      }
+    });
+  });
+</script>
 
 
 

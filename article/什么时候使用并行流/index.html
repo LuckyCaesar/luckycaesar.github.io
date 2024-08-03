@@ -71,6 +71,10 @@
 
 
 
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+
 
   <script id="fluid-configs">
     var Fluid = window.Fluid || {};
@@ -324,7 +328,12 @@ target="_blank" rel="noopener" href="http://openjdk.java.net/projects/code-tools
 这些参数的了解甚少，如何去更好的抉择呢？</strong></p>
 <p>这也类似于常见的顺序性编程中出现的问题。比如，S
 是一个<code>HashSet</code>，调用集合的方法<code>S.contains(x)</code>通常会很快，但是如果是<code>LinkedList</code>就会变慢了，其它的集合介于二者之间。通常，对于使用了集合的组件的作者来说，<u>最好的处理方法不是直接导出集合，而是基于集合导出操作</u>，这样用户就与这些决策隔绝了，这同样适用于并行操作。比如，一个内置“prices”集合的组件，可能会定义一个使用size大小阈值进行判断的方法，除非对每个元素的计算都非常昂贵。例如：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-type">long</span> <span class="hljs-title function_">getMaxPrice</span><span class="hljs-params">()</span> &#123; <span class="hljs-keyword">return</span> priceStream().max(); &#125;<br><br><span class="hljs-keyword">private</span> Stream <span class="hljs-title function_">priceStream</span><span class="hljs-params">()</span> &#123;<br>  <span class="hljs-keyword">return</span> (prices.size() &lt; MIN_PAR) ? <br>    prices.stream() : prices.parallelStream();<br>&#125;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-type">long</span> <span class="hljs-title function_">getMaxPrice</span><span class="hljs-params">()</span> &#123; <span class="hljs-keyword">return</span> priceStream().max(); &#125;
+
+<span class="hljs-keyword">private</span> Stream <span class="hljs-title function_">priceStream</span><span class="hljs-params">()</span> &#123;
+  <span class="hljs-keyword">return</span> (prices.size() &lt; MIN_PAR) ? 
+    prices.stream() : prices.parallelStream();
+&#125;</code></pre></div>
 <p>你可以通过各种方式扩展这一思想，以处理有关何时以及如何使用并行性的各种考虑。</p></li>
 <li><p><strong>如果我的函数操作可能会涉及到IO或者同步呢？</strong></p>
 <p>一种极端情况是没有通过独立性标准的函数，包括本质上是顺序的IO，对锁定同步资源的访问以及一个并行子任务执行IO失败对其他子任务会产生副作用。将这些函数并行没有多大意义。还有另一种极端情况是，执行偶发且短暂的IO或者很少阻塞的同步计算（例如大多数形式的日志以及对并发集合的大多数使用，如<code>ConcurrentHashMap</code>），这些（<em>使用并行</em>）都是无害的。介于这两者之间的中间情况最需要去判决。如果每个子任务在等待IO或者访问时都阻塞了一段时间，那么CPU资源可能会闲置，并且程序或者JVM也无法通过任何方式去使用它们。（<em>这样的话</em>）每个人都不开心。在这些情况下，使用并行流通常不是一个很好的选择，但还是有可用的比较好的替代方案，比如<code>async-IO</code>以及<code>CompletableFuture</code>的设计。</p></li>
@@ -476,6 +485,19 @@ IO的Stream源（例如<code>BufferedReader.lines()</code>）主要用于顺序�
 
 
 
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('mermaid' in window) {
+        mermaid.init();
+      }
+    });
+  });
+</script>
 
 
 

@@ -1,0 +1,2833 @@
+
+
+<!DOCTYPE html>
+<html lang="zh-CN" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/rose.png">
+  <link rel="icon" href="/img/rose.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="LuckyCaesar">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="前言 大名鼎鼎的数据库连接池框架HikariCP，以其可靠性、超轻量、高性能而闻名。官方对于如何做到这几点有较为详细的介绍☞Down-the-Rabbit-Hole。本文尝试从核心源码的角度来探究其中奥秘。 配置 首先，针对连接池的一些最常用的核心配置项官方有详细的介绍，我们先来简单过一下：  autoCommit：数据库连接的自动提交属性，默认为true。  ✅autoCommit">
+<meta property="og:type" content="article">
+<meta property="og:title" content="HikariCP探秘">
+<meta property="og:url" content="https://luckycaesar.github.io/article/HikariCP%E6%8E%A2%E7%A7%98/index.html">
+<meta property="og:site_name" content="三味书屋">
+<meta property="og:description" content="前言 大名鼎鼎的数据库连接池框架HikariCP，以其可靠性、超轻量、高性能而闻名。官方对于如何做到这几点有较为详细的介绍☞Down-the-Rabbit-Hole。本文尝试从核心源码的角度来探究其中奥秘。 配置 首先，针对连接池的一些最常用的核心配置项官方有详细的介绍，我们先来简单过一下：  autoCommit：数据库连接的自动提交属性，默认为true。  ✅autoCommit">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://luckycaesar.github.io/img/hikaricp_14042412.png">
+<meta property="article:published_time" content="2024-08-03T14:00:00.000Z">
+<meta property="article:modified_time" content="2024-08-03T12:53:33.901Z">
+<meta property="article:author" content="LuckyCaesar">
+<meta property="article:tag" content="数据库连接池，HikariCP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://luckycaesar.github.io/img/hikaricp_14042412.png">
+  
+  
+    <meta name="referrer" content="no-referrer-when-downgrade">
+  
+  
+  <title>HikariCP探秘 - 三味书屋</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"luckycaesar.github.io","root":"/","version":"1.9.3","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"left","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":true,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":null,"gtag":null,"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml"};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>三味书屋</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                首页
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                归档
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                标签
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                关于
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              &nbsp;<i class="iconfont icon-search"></i>&nbsp;
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">&nbsp;<i
+                class="iconfont icon-dark" id="color-toggle-icon"></i>&nbsp;</a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/image-202208220aa.jpeg') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="HikariCP探秘"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2024-08-03 22:00" pubdate>
+          2024年8月3日 晚上
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          64k 字
+        
+      </span>
+    
+
+    
+
+    
+    
+      
+        <span id="busuanzi_container_page_pv" style="display: none">
+          <i class="iconfont icon-eye" aria-hidden="true"></i>
+          <span id="busuanzi_value_page_pv"></span> 次
+        </span>
+        
+      
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="padding-left: 2rem; margin-right: -1rem">
+    <div id="toc">
+  <p class="toc-header"><i class="iconfont icon-list"></i>&nbsp;目录</p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <!-- SEO header -->
+            <h1 style="display: none">HikariCP探秘</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h1 id="前言">前言</h1>
+<p>大名鼎鼎的数据库连接池框架<a
+target="_blank" rel="noopener" href="https://github.com/brettwooldridge/HikariCP">HikariCP</a>，以其可靠性、超轻量、高性能而闻名。官方对于如何做到这几点有较为详细的介绍☞<a
+target="_blank" rel="noopener" href="https://github.com/brettwooldridge/HikariCP/wiki/Down-the-Rabbit-Hole">Down-the-Rabbit-Hole</a>。本文尝试从核心源码的角度来探究其中奥秘。</p>
+<h1 id="配置">配置</h1>
+<p>首先，针对连接池的一些最常用的核心配置项官方有详细的介绍，我们先来简单过一下：</p>
+<ul>
+<li><p><strong>autoCommit</strong>：数据库连接的自动提交属性，默认为true。</p>
+<blockquote>
+<p>✅<code>autoCommit</code> This property controls the default
+auto-commit behavior of connections returned from the pool. It is a
+boolean value. <em>Default: true</em></p>
+</blockquote></li>
+<li><p><strong>connectionTimeout</strong>：连接超时时间，默认30000（单位：ms），可设置的最小值为
+250
+ms。它控制的是客户端从连接池中取连接时的最大等待超时时间，超过此时间仍未返回可用的连接，则抛出SQLException。</p>
+<blockquote>
+<p>⏳<code>connectionTimeout</code> This property controls the maximum
+number of milliseconds that a client (that's you) will wait for a
+connection from the pool. If this time is exceeded without a connection
+becoming available, a SQLException will be thrown. Lowest acceptable
+connection timeout is 250 ms. <em>Default: 30000 (30 seconds)</em></p>
+</blockquote></li>
+<li><p><strong>idleTimeout</strong>：空闲连接的超时时间，默认600000ms（10min），正常可配置的最小值为10000ms（10s）。当值为0时表示空闲连接永不移除。它用于控制连接池中连接的最大空闲时长。<strong>此配置只在最小空闲连接数的配置值小于最大连接数的配置值时生效</strong>。当池中的连接数已经达到最小空闲连接数时，空闲的连接将不再被停用。连接是否因空闲而被停用的最大变化时间为+30s，平均变化时间为+15s。在超时之前，连接不会因空闲而被停用。</p>
+<blockquote>
+<p>⏳<code>idleTimeout</code> This property controls the maximum amount
+of time that a connection is allowed to sit idle in the pool.
+<strong>This setting only applies when <code>minimumIdle</code> is
+defined to be less than <code>maximumPoolSize</code>.</strong> Idle
+connections will <em>not</em> be retired once the pool reaches
+<code>minimumIdle</code> connections. Whether a connection is retired as
+idle or not is subject to a maximum variation of +30 seconds, and
+average variation of +15 seconds. A connection will never be retired as
+idle <em>before</em> this timeout. A value of 0 means that idle
+connections are never removed from the pool. The minimum allowed value
+is 10000ms (10 seconds). <em>Default: 600000 (10 minutes)</em></p>
+</blockquote></li>
+<li><p><strong>keepaliveTime</strong>：连接的保活时长，默认值为0（代表禁用），正常可配置的最小值为30000ms（30s），更推荐以分钟的粒度来设置。它用来控制HikariCP间隔多久去维持一个连接的活性，以防其被数据库或者基础网络设施层置为超时。此配置的值必须小于最大存活时长的值。“保活”只存在于空闲连接当中。当针对某个连接的“保活”时间来临时，当前连接会从池中被移除，然后进行“ping”操作，之后再返还回池中去。“ping”操作指以下任意一种：执行JDBC4的isValid()方法，或者执行connectionTestQuery配置的语句。一般情况下，连接离开池子的时间间隔是以几毫秒甚至是亚毫秒来计量，所以对性能的影响微乎其微。</p>
+<blockquote>
+<p>⏳<code>keepaliveTime</code> This property controls how frequently
+HikariCP will attempt to keep a connection alive, in order to prevent it
+from being timed out by the database or network infrastructure. This
+value must be less than the <code>maxLifetime</code> value. A
+"keepalive" will only occur on an idle connection. When the time arrives
+for a "keepalive" against a given connection, that connection will be
+removed from the pool, "pinged", and then returned to the pool. The
+'ping' is one of either: invocation of the JDBC4 <code>isValid()</code>
+method, or execution of the <code>connectionTestQuery</code>. Typically,
+the duration out-of-the-pool should be measured in single digit
+milliseconds or even sub-millisecond, and therefore should have little
+or no noticeable performance impact. The minimum allowed value is
+30000ms (30 seconds), but a value in the range of minutes is most
+desirable. <em>Default: 0 (disabled)</em></p>
+</blockquote></li>
+<li><p><strong>maxLifetime</strong>：用于控制连接的最大存活时长，默认值为1800000（30min），正常可配置的最小值为30000ms（30s）。当值为0时，代表没有最大存活时长（即无限存活时长），当然取决于idleTimeout的设置。正在使用中的连接永不会被停用，只有当它关闭后才会被移除。对于每个连接，均对其最大存活时长进行了轻微的负衰减来避免池中连接的大规模消亡。<strong>强烈建议设置此值，而且它应该要比任何数据库或者基础设施的强制超时限制要小几秒钟</strong>。</p>
+<blockquote>
+<p>⏳<code>maxLifetime</code> This property controls the maximum
+lifetime of a connection in the pool. An in-use connection will never be
+retired, only when it is closed will it then be removed. On a
+connection-by-connection basis, minor negative attenuation is applied to
+avoid mass-extinction in the pool. <strong>We strongly recommend setting
+this value, and it should be several seconds shorter than any database
+or infrastructure imposed connection time limit.</strong> A value of 0
+indicates no maximum lifetime (infinite lifetime), subject of course to
+the <code>idleTimeout</code> setting. The minimum allowed value is
+30000ms (30 seconds). <em>Default: 1800000 (30 minutes)</em></p>
+</blockquote></li>
+<li><p><strong>connectionTestQuery</strong>：连接测试语句，默认为空。<strong>如果应用的数据库驱动支持JDBC4，那么强烈建议无需关注此配置项</strong>。它是为那些不支持JDBC4的Connection.isValid()接口的驱动而“遗留”下来的配置。该语句会在客户端从池中获取连接时执行，用以验证获取到的连接是否能正常与数据库通信。当然，如果运行中的连接池未配置此项且驱动不支持JDBC4的情况下，HikariCP会打印错误日志告警。</p>
+<blockquote>
+<p>🔤<code>connectionTestQuery</code> <strong>If your driver supports
+JDBC4 we strongly recommend not setting this property.</strong> This is
+for "legacy" drivers that do not support the JDBC4
+<code>Connection.isValid() API</code>. This is the query that will be
+executed just before a connection is given to you from the pool to
+validate that the connection to the database is still alive. <em>Again,
+try running the pool without this property, HikariCP will log an error
+if your driver is not JDBC4 compliant to let you know.</em> <em>Default:
+none</em></p>
+</blockquote></li>
+<li><p><strong>minimumIdle</strong>：最小空闲连接数，默认值等于最大连接数。它用于控制HikariCP在连接池中可维护的最小空闲连接数。如果空闲连接数低于此值且池中总连接数小于最大连接数，那么HikariCP会尽最大努力快速有效地新增额外的连接。但是，为了最好的性能以及对突发流量的最佳应对，官方推荐无需配置此项，而是让HikariCP充当固定大小的连接池。</p>
+<blockquote>
+<p>🔢<code>minimumIdle</code> This property controls the minimum number
+of <em>idle connections</em> that HikariCP tries to maintain in the
+pool. If the idle connections dip below this value and total connections
+in the pool are less than <code>maximumPoolSize</code>, HikariCP will
+make a best effort to add additional connections quickly and
+efficiently. However, for maximum performance and responsiveness to
+spike demands, we recommend <em>not</em> setting this value and instead
+allowing HikariCP to act as a <em>fixed size</em> connection pool.
+<em>Default: same as maximumPoolSize</em></p>
+</blockquote></li>
+<li><p><strong>maximumPoolSize</strong>：最大连接数，默认值10。它控制着连接池中允许创建的最大连接数，包括空闲连接和使用中的连接。基本上此值会决定与数据库后端的实际最大连接数。最好是由客户端的执行环境来决定一个合理的值。当池中的连接数达到此大小且无空闲连接可用时，对getConnection()方法的调用将会阻塞，直至connectionTimeout（独立的配置项，默认30s）毫秒后超时。</p>
+<blockquote>
+<p>🔢<code>maximumPoolSize</code> This property controls the maximum
+size that the pool is allowed to reach, including both idle and in-use
+connections. Basically this value will determine the maximum number of
+actual connections to the database backend. A reasonable value for this
+is best determined by your execution environment. When the pool reaches
+this size, and no idle connections are available, calls to
+getConnection() will block for up to <code>connectionTimeout</code>
+milliseconds before timing out. Please read <a
+target="_blank" rel="noopener" href="https://github.com/brettwooldridge/HikariCP/wiki/About-Pool-Sizing">about
+pool sizing</a>. <em>Default: 10</em></p>
+</blockquote></li>
+<li><p><strong>metricRegistry</strong>：监控指标注册表，默认空。该配置项只能通过程序配置或者在IoC容器中使用。它允许我们为连接池指定一个Codahale/Dropwizard
+MetricRegistry的实例，用于记录各种指标。</p>
+<blockquote>
+<p>📈<code>metricRegistry</code> This property is only available via
+programmatic configuration or IoC container. This property allows you to
+specify an instance of a <em>Codahale/Dropwizard</em>
+<code>MetricRegistry</code> to be used by the pool to record various
+metrics. See the <a
+target="_blank" rel="noopener" href="https://github.com/brettwooldridge/HikariCP/wiki/Dropwizard-Metrics">Metrics</a>
+wiki page for details. <em>Default: none</em></p>
+</blockquote></li>
+<li><p><strong>healthCheckRegistry</strong>：健康检查注册表，默认空。该配置项只能通过程序配置或者在IoC容器中使用。它允许我们为连接池指定一个Codahale/Dropwizard
+HealthCheckRegistry的实例，用于上报当前连接池的健康状况。</p>
+<blockquote>
+<p>📈<code>healthCheckRegistry</code> This property is only available
+via programmatic configuration or IoC container. This property allows
+you to specify an instance of a <em>Codahale/Dropwizard</em>
+<code>HealthCheckRegistry</code> to be used by the pool to report
+current health information. See the <a
+target="_blank" rel="noopener" href="https://github.com/brettwooldridge/HikariCP/wiki/Dropwizard-HealthChecks">Health
+Checks</a> wiki page for details. <em>Default: none</em></p>
+</blockquote></li>
+<li><p><strong>poolName</strong>：连接池名称，默认会自动生成。它代表用户为连接池指定的名称，主要出现在日志或者JMX管理控制台中，用来区别连接池及其配置。</p>
+<blockquote>
+<p>🔤<code>poolName</code> This property represents a user-defined name
+for the connection pool and appears mainly in logging and JMX management
+consoles to identify pools and pool configurations. <em>Default:
+auto-generated</em></p>
+</blockquote></li>
+</ul>
+<h1 id="流程">流程</h1>
+<p>主要整理了以下三个操作对应的时序图：数据源的初始化、数据库连接的获取、数据库连接的回收。</p>
+<h2 id="数据源初始化">数据源初始化</h2>
+<pre><code class=" mermaid">sequenceDiagram
+    Application-&gt;&gt;HikariDataSource: new HikariDataSource(hikariConfig)
+    note over Application,HikariDataSource: 以有参构造器为例，无参构造器流程不太一样
+    HikariDataSource-&gt;&gt;HikariDataSource: hikariConfig的校验和拷贝
+    HikariDataSource-&gt;&gt;HikariPool: pool = fastPathPool = new HikariPool(this)
+    HikariPool-&gt;&gt;HikariPool: 配置初始化
+    HikariPool-&gt;&gt;ConcurrentBag: this.connectionBag = new ConcurrentBag&lt;&gt;(this)
+    ConcurrentBag-&gt;&gt;ConcurrentBag: CopyOnWriteArrayList&lt;T&gt; sharedList共享连接池初始化
+    ConcurrentBag--&gt;&gt;HikariPool: 返回
+    HikariPool-&gt;&gt;HikariPool: 监控及后台任务初始化
+    HikariPool-&gt;&gt;HikariPool: 最核心的是连接池中连接的初始化，后台异步任务自动添加连接，直至minIdle指定的数量
+    HikariPool--&gt;&gt;HikariDataSource: 返回
+    HikariDataSource-&gt;&gt;HikariDataSource: 标记当前数据源为“密封”状态
+    Note over HikariDataSource,HikariDataSource: 密封：数据源中的所有属性已经固定，不可改变
+    HikariDataSource--&gt;&gt;Application: 返回HikariDataSource实例
+    HikariPool-&gt;&gt;PoolEntry: 异步任务，new PoolEntry(newConnection(), this, isReadOnly, isAutoCommit)
+    PoolEntry--&gt;&gt;HikariPool: 返回PoolEntry实例
+    HikariPool-&gt;&gt;ConcurrentBag: 异步任务，connectionBag.add(poolEntry)
+    ConcurrentBag-&gt;&gt;ConcurrentBag: sharedList.add(bagEntry)
+    ConcurrentBag--&gt;&gt;HikariPool: 返回</code></pre>
+<h2 id="获取数据库连接">获取数据库连接</h2>
+<pre><code class=" mermaid">sequenceDiagram
+    Application-&gt;&gt;HikariDataSource: hikariDataSource.getConnection()
+    HikariDataSource-&gt;&gt;HikariPool: fastPathPool.getConnection()
+    HikariPool-&gt;&gt;HikariPool: this.getConnection(final long hardTimeout)
+    HikariPool-&gt;&gt;ConcurrentBag: connectionBag.borrow(timeout, MILLISECONDS)
+    ConcurrentBag-&gt;&gt;ConcurrentBag: 1.优先从线程本地上下文获取连接，如存在则返回连接
+    ConcurrentBag-&gt;&gt;ConcurrentBag: 2.线程上下文取不到，则从sharedList取，如有可用的连接则返回
+    ConcurrentBag-&gt;&gt;ConcurrentBag: 3.sharedList仍获取不到，则进入等待，超时前能取到可用的连接则返回，超时后还获取不到则返回null
+    ConcurrentBag--&gt;&gt;HikariPool: 返回可用的连接或者null
+    HikariPool-&gt;&gt;HikariPool: 如果获取到的是null，则抛出等待超时异常
+    HikariPool--&gt;&gt;Application: throw new SQLTransientConnectionException(&quot;...request timed out...&quot;)
+    HikariPool-&gt;&gt;HikariPool: 如果正常获取到连接，那么还需要判断连接是否已经被标记删除或者不可用
+    HikariPool-&gt;&gt;HikariPool: 若连接已不可用，则后台异步静默关闭当前连接，然后重新从池中尝试获取新的连接
+    HikariPool-&gt;&gt;HikariPool: 若连接正常，则调用poolEntry.createProxyConnection()创建代理连接
+    Note over HikariPool,HikariPool: 使用了Javassist
+    HikariPool--&gt;&gt;Application: 返回创建好的代理连接</code></pre>
+<h2 id="回收数据库连接">回收数据库连接</h2>
+<pre><code class=" mermaid">sequenceDiagram
+    Application-&gt;&gt;ProxyConnection: connection.close()
+    ProxyConnection-&gt;&gt;ProxyConnection: closeStatements()，先关闭statement
+    ProxyConnection-&gt;&gt;ProxyConnection: 再判断，如果delegate（真正的连接）未被关闭，则触发后续回收流程
+    ProxyConnection-&gt;&gt;PoolEntry: poolEntry.recycle()
+    PoolEntry-&gt;&gt;HikariPool: hikariPool.recycle(this)
+    HikariPool-&gt;&gt;ConcurrentBag: connectionBag.requite(poolEntry)
+    ConcurrentBag-&gt;&gt;ConcurrentBag: 1.把连接置为非使用中的状态：bagEntry.setState(STATE_NOT_IN_USE)
+    ConcurrentBag-&gt;&gt;ConcurrentBag: 2.如果当前有正在等待获取连接的线程，则尝试把连接直接交给它们
+    ConcurrentBag-&gt;&gt;ConcurrentBag: 3.如果线程上下文有使用中的连接集合，且数量较少时（&lt;50），则把连接也添加到此集合中
+    ConcurrentBag--&gt;&gt;Application: 返回</code></pre>
+<h1 id="源码">源码</h1>
+<p>这里分析的源码版本为
+<strong><em>5.1.0</em></strong>，主要是上述时序图中的所涉及到的核心类及一些关联类中的重点属性和方法，并非所有的源码。</p>
+<h2 id="hikaridatasource">HikariDataSource</h2>
+<p>关键逻辑：</p>
+<ul>
+<li>有参/无参构造器的初始化流程</li>
+<li>获取连接</li>
+<li>数据源的关闭</li>
+</ul>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">// HikariDataSource本身也是一个HikariConfig</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">HikariDataSource</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">HikariConfig</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">DataSource</span>, Closeable
+&#123;
+    <span class="hljs-comment">// 标识数据源是否已关闭</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-type">AtomicBoolean</span> <span class="hljs-variable">isShutdown</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">AtomicBoolean</span>();
+
+    <span class="hljs-comment">// 连接池，有两个引用，不同的初始化逻辑有不同的指向</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> HikariPool fastPathPool;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">volatile</span> HikariPool pool;
+    
+    <span class="hljs-comment">// 默认无参构造器，会使用默认的连接池参数。此时连接池（pool，而非fastPathPool）会延迟初始化，在调用getConnection()方法时</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-title function_">HikariDataSource</span><span class="hljs-params">()</span>
+    &#123;
+        fastPathPool = <span class="hljs-literal">null</span>;
+    &#125;
+    
+    <span class="hljs-comment">// 指定参数构造器</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-title function_">HikariDataSource</span><span class="hljs-params">(HikariConfig configuration)</span>
+    &#123;
+        <span class="hljs-comment">// 自定义配置的校验和拷贝</span>
+        configuration.validate();
+        <span class="hljs-comment">// 这里会拷贝配置而不是直接使用入参的configuration类，其实是一种保护，避免入参的configuration在后续被改动，导致连接池异常</span>
+        <span class="hljs-comment">// 从下面的seal()方法也可以倒推</span>
+        configuration.copyStateTo(<span class="hljs-built_in">this</span>);
+
+        LOGGER.info(<span class="hljs-string">&quot;&#123;&#125; - Starting...&quot;</span>, configuration.getPoolName());
+        <span class="hljs-comment">// 初始化时客户端指定了自定义配置，则pool = fastPathPool，都指向以指定配置生成的连接池</span>
+        pool = fastPathPool = <span class="hljs-keyword">new</span> <span class="hljs-title class_">HikariPool</span>(<span class="hljs-built_in">this</span>);
+        LOGGER.info(<span class="hljs-string">&quot;&#123;&#125; - Start completed.&quot;</span>, configuration.getPoolName());
+        <span class="hljs-comment">// this.sealed = true，标识当前数据源是“密封”的，也就是初始化后就无法再修改其各种配置项</span>
+        <span class="hljs-comment">// 在HikariConfig的各种set方法中，都有对此属性值的检测，为true则无法再set</span>
+        <span class="hljs-built_in">this</span>.seal();
+    &#125;
+    
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> Connection <span class="hljs-title function_">getConnection</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> SQLException
+    &#123;
+        <span class="hljs-keyword">if</span> (isClosed()) &#123;
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SQLException</span>(<span class="hljs-string">&quot;HikariDataSource &quot;</span> + <span class="hljs-built_in">this</span> + <span class="hljs-string">&quot; has been closed.&quot;</span>);
+        &#125;
+
+        <span class="hljs-comment">// 优先从fastPathPool中获取连接</span>
+        <span class="hljs-keyword">if</span> (fastPathPool != <span class="hljs-literal">null</span>) &#123;
+            <span class="hljs-keyword">return</span> fastPathPool.getConnection();
+        &#125;
+
+        <span class="hljs-comment">// See http://en.wikipedia.org/wiki/Double-checked_locking#Usage_in_Java</span>
+        <span class="hljs-comment">// 默认配置下的连接池的延迟初始化，双重检测锁保证连接池的单例</span>
+        <span class="hljs-type">HikariPool</span> <span class="hljs-variable">result</span> <span class="hljs-operator">=</span> pool;
+        <span class="hljs-keyword">if</span> (result == <span class="hljs-literal">null</span>) &#123;
+            <span class="hljs-keyword">synchronized</span> (<span class="hljs-built_in">this</span>) &#123;
+                result = pool;
+                <span class="hljs-keyword">if</span> (result == <span class="hljs-literal">null</span>) &#123;
+                    validate();
+                    LOGGER.info(<span class="hljs-string">&quot;&#123;&#125; - Starting...&quot;</span>, getPoolName());
+                    <span class="hljs-keyword">try</span> &#123;
+                        pool = result = <span class="hljs-keyword">new</span> <span class="hljs-title class_">HikariPool</span>(<span class="hljs-built_in">this</span>);
+                        <span class="hljs-comment">// 一样的会“密封”当前连接池</span>
+                        <span class="hljs-built_in">this</span>.seal();
+                    &#125;
+                    <span class="hljs-keyword">catch</span> (PoolInitializationException pie) &#123;
+                        <span class="hljs-keyword">if</span> (pie.getCause() <span class="hljs-keyword">instanceof</span> SQLException) &#123;
+                            <span class="hljs-keyword">throw</span> (SQLException) pie.getCause();
+                        &#125;
+                        <span class="hljs-keyword">else</span> &#123;
+                            <span class="hljs-keyword">throw</span> pie;
+                        &#125;
+                    &#125;
+                    LOGGER.info(<span class="hljs-string">&quot;&#123;&#125; - Start completed.&quot;</span>, getPoolName());
+                &#125;
+            &#125;
+        &#125;
+
+        <span class="hljs-keyword">return</span> result.getConnection();
+    &#125;
+    
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">close</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-comment">// 若数据源未关闭，则isShutdown置为true后执行后续逻辑。若已经关闭，则忽略</span>
+        <span class="hljs-keyword">if</span> (isShutdown.getAndSet(<span class="hljs-literal">true</span>)) &#123;
+            <span class="hljs-keyword">return</span>;
+        &#125;
+
+        <span class="hljs-type">var</span> <span class="hljs-variable">p</span> <span class="hljs-operator">=</span> pool;
+        <span class="hljs-keyword">if</span> (p != <span class="hljs-literal">null</span>) &#123;
+            <span class="hljs-keyword">try</span> &#123;
+                LOGGER.info(<span class="hljs-string">&quot;&#123;&#125; - Shutdown initiated...&quot;</span>, getPoolName());
+                <span class="hljs-comment">// 关闭数据源对应的连接池</span>
+                p.shutdown();
+                LOGGER.info(<span class="hljs-string">&quot;&#123;&#125; - Shutdown completed.&quot;</span>, getPoolName());
+            &#125;
+            <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;
+                LOGGER.warn(<span class="hljs-string">&quot;&#123;&#125; - Interrupted during closing&quot;</span>, getPoolName(), e);
+                Thread.currentThread().interrupt();
+            &#125;
+        &#125;
+    &#125;
+&#125;</code></pre></div>
+<h2 id="hikaripool">HikariPool</h2>
+<p>关键逻辑：</p>
+<ul>
+<li>连接池的初始化，包括后台任务异步向池中添加连接的过程</li>
+<li>连接池的状态变化：正常、挂起（默认是没有此状态的，需要主动启用）、关闭，及对应池中连接的处理流程</li>
+<li>连接的获取和回收</li>
+<li>各种后台任务的维护逻辑：核心连接数量的维持、连接到期后的自动销毁、连接活性探测等</li>
+</ul>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">// pool本身也实现了IBagStateListener，在ConcurrentBag中会触发通知</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">HikariPool</span> <span class="hljs-keyword">extends</span> <span class="hljs-title class_">PoolBase</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">HikariPoolMXBean</span>, IBagStateListener
+&#123;
+    <span class="hljs-comment">// 连接池的几种状态：正常、挂起、关闭</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">POOL_NORMAL</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">POOL_SUSPENDED</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">POOL_SHUTDOWN</span> <span class="hljs-operator">=</span> <span class="hljs-number">2</span>;
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">volatile</span> <span class="hljs-type">int</span> poolState;
+    
+    <span class="hljs-comment">// 运行期间，使用此任务来维持核心连接数</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-type">PoolEntryCreator</span> <span class="hljs-variable">poolEntryCreator</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">PoolEntryCreator</span>();
+    <span class="hljs-comment">// 初始化时，使用此任务来创建连接</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-type">PoolEntryCreator</span> <span class="hljs-variable">postFillPoolEntryCreator</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">PoolEntryCreator</span>(<span class="hljs-string">&quot;After adding &quot;</span>);
+    <span class="hljs-comment">// 添加连接的线程池</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> ThreadPoolExecutor addConnectionExecutor;
+    <span class="hljs-comment">// 关闭连接的线程池</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> ThreadPoolExecutor closeConnectionExecutor;
+    <span class="hljs-comment">// 真正存放连接的bag</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> ConcurrentBag&lt;PoolEntry&gt; connectionBag;
+    
+    <span class="hljs-comment">// 检测连接是否泄漏的任务创建工厂，泄漏是指连接被程序只借不还</span>
+    <span class="hljs-comment">// HikariCP的检测实现是先指定一个时间阈值，连接从被借用开始，到超过这个阈值后仍未归还到池中，则认为可能是出现了连接泄漏</span>
+    <span class="hljs-comment">// 对应实际的任务类是ProxyLeakTask，检测到可能的泄漏后，会打印warn日志</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> ProxyLeakTaskFactory leakTaskFactory;
+    <span class="hljs-comment">// 如果允许连接池挂起，那么它可用于连接池的挂起和恢复，具体实现参看SuspendResumeLock类的解析</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> SuspendResumeLock suspendResumeLock;
+    <span class="hljs-comment">// 核心连接数维持的线程池</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> ScheduledExecutorService houseKeepingExecutorService;
+    <span class="hljs-comment">// 指向houseKeepingExecutorService的返回，在关闭连接池时用到</span>
+    <span class="hljs-keyword">private</span> ScheduledFuture&lt;?&gt; houseKeeperTask;
+    
+    <span class="hljs-keyword">public</span> <span class="hljs-title function_">HikariPool</span><span class="hljs-params">(<span class="hljs-keyword">final</span> HikariConfig config)</span>
+    &#123;
+        <span class="hljs-built_in">super</span>(config);
+
+        <span class="hljs-built_in">this</span>.connectionBag = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ConcurrentBag</span>&lt;&gt;(<span class="hljs-built_in">this</span>);
+        <span class="hljs-comment">// 默认不允许挂起，suspendResumeLock = SuspendResumeLock.FAUX_LOCK。FAUX_LOCK是一个假锁，空实现</span>
+        <span class="hljs-comment">// 如果允许连接池挂起，那么可以使用此Lock用于连接池的挂起和恢复，它实际上是一个信号量</span>
+        <span class="hljs-built_in">this</span>.suspendResumeLock = config.isAllowPoolSuspension() ? <span class="hljs-keyword">new</span> <span class="hljs-title class_">SuspendResumeLock</span>() : SuspendResumeLock.FAUX_LOCK;
+
+        <span class="hljs-built_in">this</span>.houseKeepingExecutorService = initializeHouseKeepingExecutorService();
+
+        <span class="hljs-comment">// 如果配置了initializationFailFast，会在初始化时进行数据库连接的检测，其实就是尝试创建一个连接，看是否能成功</span>
+        <span class="hljs-comment">// 默认是开启的</span>
+        checkFailFast();
+
+        <span class="hljs-comment">// 接下来都是一些线程池及后台任务的初始化和启动</span>
+        <span class="hljs-type">ThreadFactory</span> <span class="hljs-variable">threadFactory</span> <span class="hljs-operator">=</span> config.getThreadFactory();
+
+        <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">maxPoolSize</span> <span class="hljs-operator">=</span> config.getMaximumPoolSize();
+        LinkedBlockingQueue&lt;Runnable&gt; addConnectionQueue = <span class="hljs-keyword">new</span> <span class="hljs-title class_">LinkedBlockingQueue</span>&lt;&gt;(maxPoolSize);
+        <span class="hljs-built_in">this</span>.addConnectionExecutor = createThreadPoolExecutor(addConnectionQueue, poolName + <span class="hljs-string">&quot; connection adder&quot;</span>, threadFactory, <span class="hljs-keyword">new</span> <span class="hljs-title class_">CustomDiscardPolicy</span>());
+        <span class="hljs-built_in">this</span>.closeConnectionExecutor = createThreadPoolExecutor(maxPoolSize, poolName + <span class="hljs-string">&quot; connection closer&quot;</span>, threadFactory, <span class="hljs-keyword">new</span> <span class="hljs-title class_">ThreadPoolExecutor</span>.CallerRunsPolicy());
+        
+        <span class="hljs-built_in">this</span>.leakTaskFactory = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ProxyLeakTaskFactory</span>(config.getLeakDetectionThreshold(), houseKeepingExecutorService);
+
+        <span class="hljs-built_in">this</span>.houseKeeperTask = houseKeepingExecutorService.scheduleWithFixedDelay(<span class="hljs-keyword">new</span> <span class="hljs-title class_">HouseKeeper</span>(), <span class="hljs-number">100L</span>, housekeepingPeriodMs, MILLISECONDS);
+
+        <span class="hljs-keyword">if</span> (Boolean.getBoolean(<span class="hljs-string">&quot;com.zaxxer.hikari.blockUntilFilled&quot;</span>) &amp;&amp; config.getInitializationFailTimeout() &gt; <span class="hljs-number">1</span>) &#123;
+            addConnectionExecutor.setMaximumPoolSize(Math.min(<span class="hljs-number">16</span>, Runtime.getRuntime().availableProcessors()));
+            addConnectionExecutor.setCorePoolSize(Math.min(<span class="hljs-number">16</span>, Runtime.getRuntime().availableProcessors()));
+
+            <span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">startTime</span> <span class="hljs-operator">=</span> currentTime();
+            <span class="hljs-keyword">while</span> (elapsedMillis(startTime) &lt; config.getInitializationFailTimeout() &amp;&amp; getTotalConnections() &lt; config.getMinimumIdle()) &#123;
+                quietlySleep(MILLISECONDS.toMillis(<span class="hljs-number">100</span>));
+            &#125;
+
+            addConnectionExecutor.setCorePoolSize(<span class="hljs-number">1</span>);
+            addConnectionExecutor.setMaximumPoolSize(<span class="hljs-number">1</span>);
+        &#125;
+    &#125;
+    
+    <span class="hljs-comment">// 获取连接，使用了默认的超时时间</span>
+    <span class="hljs-keyword">public</span> Connection <span class="hljs-title function_">getConnection</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> SQLException
+    &#123;
+        <span class="hljs-keyword">return</span> getConnection(connectionTimeout);
+    &#125;
+
+    <span class="hljs-comment">// 获取连接，需指定超时时间</span>
+    <span class="hljs-keyword">public</span> Connection <span class="hljs-title function_">getConnection</span><span class="hljs-params">(<span class="hljs-keyword">final</span> <span class="hljs-type">long</span> hardTimeout)</span> <span class="hljs-keyword">throws</span> SQLException
+    &#123;
+        <span class="hljs-comment">// 利用信号量，控制并发数</span>
+        <span class="hljs-comment">// 如果允许连接池挂起，且当前连接池是挂起状态，那么此处是无法获取到信号量的，会根据配置决定阻塞直到获取到一个permit还是直接抛出异常</span>
+        suspendResumeLock.acquire();
+        <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">startTime</span> <span class="hljs-operator">=</span> currentTime();
+
+        <span class="hljs-keyword">try</span> &#123;
+            <span class="hljs-type">var</span> <span class="hljs-variable">timeout</span> <span class="hljs-operator">=</span> hardTimeout;
+            <span class="hljs-keyword">do</span> &#123;
+                <span class="hljs-comment">// 从bag中获取连接，poolEntry封装，有等待超时时间</span>
+                <span class="hljs-type">var</span> <span class="hljs-variable">poolEntry</span> <span class="hljs-operator">=</span> connectionBag.borrow(timeout, MILLISECONDS);
+                <span class="hljs-keyword">if</span> (poolEntry == <span class="hljs-literal">null</span>) &#123;
+                    <span class="hljs-keyword">break</span>; <span class="hljs-comment">// We timed out... break and throw exception</span>
+                &#125;
+
+                <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">now</span> <span class="hljs-operator">=</span> currentTime();
+                <span class="hljs-comment">// 获取到连接后，还要检查连接是否已被标记为删除或者是否已不可用（网络或数据库原因导致的不可用）</span>
+                <span class="hljs-keyword">if</span> (poolEntry.isMarkedEvicted() || (elapsedMillis(poolEntry.lastAccessed, now) &gt; aliveBypassWindowMs &amp;&amp; isConnectionDead(poolEntry.connection))) &#123;
+                    <span class="hljs-comment">// 如果连接已被标记为删除或已不可用，那就后台异步静默关闭它</span>
+                    closeConnection(poolEntry, poolEntry.isMarkedEvicted() ? EVICTED_CONNECTION_MESSAGE : DEAD_CONNECTION_MESSAGE);
+                    timeout = hardTimeout - elapsedMillis(startTime);
+                &#125;
+                <span class="hljs-keyword">else</span> &#123;
+                    metricsTracker.recordBorrowStats(poolEntry, startTime);
+                    <span class="hljs-comment">// 连接可用，则为其创建代理并返回。可以看到，连接泄漏检测的任务也同时启动</span>
+                    <span class="hljs-comment">// 这里每次都是新建代理连接对象。使用了Javassist动态生成代理类，速度更快、字节码更精简</span>
+                    <span class="hljs-keyword">return</span> poolEntry.createProxyConnection(leakTaskFactory.schedule(poolEntry));
+                &#125;
+            &#125; <span class="hljs-keyword">while</span> (timeout &gt; <span class="hljs-number">0L</span>);
+
+            metricsTracker.recordBorrowTimeoutStats(startTime);
+            <span class="hljs-comment">// 获取超时，抛出异常</span>
+            <span class="hljs-keyword">throw</span> createTimeoutException(startTime);
+        &#125;
+        <span class="hljs-keyword">catch</span> (InterruptedException e) &#123;
+            Thread.currentThread().interrupt();
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SQLException</span>(poolName + <span class="hljs-string">&quot; - Interrupted during connection acquisition&quot;</span>, e);
+        &#125;
+        <span class="hljs-keyword">finally</span> &#123;
+            suspendResumeLock.release();
+        &#125;
+    &#125;
+    
+    <span class="hljs-comment">// 关闭连接池、连接存储bag以及对应的任务线程池</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">synchronized</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">shutdown</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> InterruptedException
+    &#123;
+        <span class="hljs-keyword">try</span> &#123;
+            <span class="hljs-comment">// 连接池状态置为关闭</span>
+            poolState = POOL_SHUTDOWN;
+
+            <span class="hljs-keyword">if</span> (addConnectionExecutor == <span class="hljs-literal">null</span>) &#123; <span class="hljs-comment">// pool never started</span>
+                <span class="hljs-keyword">return</span>;
+            &#125;
+
+            logPoolState(<span class="hljs-string">&quot;Before shutdown &quot;</span>);
+
+            <span class="hljs-comment">// 尝试取消核心连接数维持任务的继续执行，但正在执行中的任务会让它继续执行直至完毕后再取消</span>
+            <span class="hljs-keyword">if</span> (houseKeeperTask != <span class="hljs-literal">null</span>) &#123;
+                houseKeeperTask.cancel(<span class="hljs-literal">false</span>);
+                houseKeeperTask = <span class="hljs-literal">null</span>;
+            &#125;
+
+            <span class="hljs-comment">// 软删除空闲连接，此方法里还有判断逻辑，并不是直接关闭空闲连接，所以是soft</span>
+            <span class="hljs-comment">// 这里先调用一次，个人认为是作一个预处理，先尽可能的把一些空闲的连接关闭，避免在关闭过程中连接又被重新使用导致后续的关闭流程拉长</span>
+            softEvictConnections();
+
+            addConnectionExecutor.shutdown();
+            <span class="hljs-keyword">if</span> (!addConnectionExecutor.awaitTermination(getLoginTimeout(), SECONDS)) &#123;
+                logger.warn(<span class="hljs-string">&quot;Timed-out waiting for add connection executor to shutdown&quot;</span>);
+            &#125;
+            destroyHouseKeepingExecutorService();
+
+            <span class="hljs-comment">// 把bag置为closed</span>
+            connectionBag.close();
+
+            <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">assassinExecutor</span> <span class="hljs-operator">=</span> createThreadPoolExecutor(config.getMaximumPoolSize(), poolName + <span class="hljs-string">&quot; connection assassinator&quot;</span>, config.getThreadFactory(), <span class="hljs-keyword">new</span> <span class="hljs-title class_">ThreadPoolExecutor</span>.CallerRunsPolicy());
+            <span class="hljs-keyword">try</span> &#123;
+                <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">start</span> <span class="hljs-operator">=</span> currentTime();
+                <span class="hljs-comment">// 这里会一直执行直到存储连接的bag中再无任何连接为止</span>
+                <span class="hljs-keyword">do</span> &#123;
+	                <span class="hljs-comment">// 尝试终止正在使用中的连接并关闭它</span>
+                    abortActiveConnections(assassinExecutor);
+                    <span class="hljs-comment">// 这里会再度调用此方法，因为上面的第一次调用可能无法把所有连接关闭</span>
+                    softEvictConnections();
+                &#125; <span class="hljs-keyword">while</span> (getTotalConnections() &gt; <span class="hljs-number">0</span> &amp;&amp; elapsedMillis(start) &lt; SECONDS.toMillis(<span class="hljs-number">10</span>));
+            &#125;
+            <span class="hljs-keyword">finally</span> &#123;
+                assassinExecutor.shutdown();
+                <span class="hljs-keyword">if</span> (!assassinExecutor.awaitTermination(<span class="hljs-number">10L</span>, SECONDS)) &#123;
+                    logger.warn(<span class="hljs-string">&quot;Timed-out waiting for connection assassin to shutdown&quot;</span>);
+                &#125;
+            &#125;
+
+            shutdownNetworkTimeoutExecutor();
+            closeConnectionExecutor.shutdown();
+            <span class="hljs-keyword">if</span> (!closeConnectionExecutor.awaitTermination(<span class="hljs-number">10L</span>, SECONDS)) &#123;
+                logger.warn(<span class="hljs-string">&quot;Timed-out waiting for close connection executor to shutdown&quot;</span>);
+            &#125;
+        &#125;
+        <span class="hljs-keyword">finally</span> &#123;
+            logPoolState(<span class="hljs-string">&quot;After shutdown &quot;</span>);
+            handleMBeans(<span class="hljs-built_in">this</span>, <span class="hljs-literal">false</span>);
+            metricsTracker.close();
+        &#125;
+    &#125;
+    
+   <span class="hljs-comment">// ***********************************************************************</span>
+   <span class="hljs-comment">//                        IBagStateListener callback</span>
+   <span class="hljs-comment">// ***********************************************************************</span>
+
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">addBagItem</span><span class="hljs-params">(<span class="hljs-keyword">final</span> <span class="hljs-type">int</span> waiting)</span>
+    &#123;
+        <span class="hljs-comment">// 当等待获取连接的线程较多时，可能池中的连接已经不太够了，会提交一个连接创建的任务，尝试去新增一个连接</span>
+        <span class="hljs-comment">// 当然不一定会新增成功，因为还有连接池参数的约束</span>
+        <span class="hljs-comment">// 这里的比较对象是addConnectionExecutor的等待队列的size，因为addBagItem方法还有后台线程在调用，如果等待队列中已有线程在等待创建连接且等待获取连接的线程较少时，那么就没有必要再次触发创建了，因为队列中的任务创建连接后就已经够用了</span>
+        <span class="hljs-keyword">if</span> (waiting &gt; addConnectionExecutor.getQueue().size())
+            addConnectionExecutor.submit(poolEntryCreator);
+    &#125;
+    
+    <span class="hljs-comment">// 遍历bag中的所有连接，尝试软删除空闲连接</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">softEvictConnections</span><span class="hljs-params">()</span>
+    &#123;
+        connectionBag.values().forEach(poolEntry -&gt; softEvictConnection(poolEntry, <span class="hljs-string">&quot;(connection evicted)&quot;</span>, <span class="hljs-literal">false</span> <span class="hljs-comment">/* not owner */</span>));
+    &#125;
+
+    <span class="hljs-comment">// 挂起连接池</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">synchronized</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">suspendPool</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-keyword">if</span> (suspendResumeLock == SuspendResumeLock.FAUX_LOCK) &#123;
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalStateException</span>(poolName + <span class="hljs-string">&quot; - is not suspendable&quot;</span>);
+        &#125;
+        <span class="hljs-comment">// 如果支持挂起，那么更新连接池的状态为POOL_SUSPENDED，且调用suspendResumeLock的suspend()方法</span>
+        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (poolState != POOL_SUSPENDED) &#123;
+            suspendResumeLock.suspend();
+            poolState = POOL_SUSPENDED;
+        &#125;
+    &#125;
+
+    <span class="hljs-comment">// 把连接池从挂起恢复到正常</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">synchronized</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">resumePool</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-keyword">if</span> (poolState == POOL_SUSPENDED) &#123;
+            poolState = POOL_NORMAL;
+            <span class="hljs-comment">// 恢复后，需尝试向池中填充连接</span>
+            fillPool(<span class="hljs-literal">false</span>);
+            <span class="hljs-comment">// suspendResumeLock也需要恢复</span>
+            suspendResumeLock.resume();
+        &#125;
+    &#125;
+
+    <span class="hljs-comment">// ***********************************************************************</span>
+    <span class="hljs-comment">//                           Package methods</span>
+    <span class="hljs-comment">// ***********************************************************************</span>
+
+    <span class="hljs-comment">/**</span>
+<span class="hljs-comment">    * Recycle PoolEntry (add back to the pool)</span>
+<span class="hljs-comment">    */</span>
+    <span class="hljs-comment">// 回收连接</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">void</span> <span class="hljs-title function_">recycle</span><span class="hljs-params">(<span class="hljs-keyword">final</span> PoolEntry poolEntry)</span>
+    &#123;
+        metricsTracker.recordConnectionUsage(poolEntry);
+
+        connectionBag.requite(poolEntry);
+    &#125;
+
+    <span class="hljs-comment">/**</span>
+<span class="hljs-comment">    * Permanently close the real (underlying) connection (eat any exception).</span>
+<span class="hljs-comment">    */</span>
+    <span class="hljs-comment">// 后台静默，彻底关闭实际的数据库连接</span>
+    <span class="hljs-keyword">void</span> <span class="hljs-title function_">closeConnection</span><span class="hljs-params">(<span class="hljs-keyword">final</span> PoolEntry poolEntry, <span class="hljs-keyword">final</span> String closureReason)</span>
+    &#123;
+        <span class="hljs-keyword">if</span> (connectionBag.remove(poolEntry)) &#123;
+            <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">connection</span> <span class="hljs-operator">=</span> poolEntry.close();
+            closeConnectionExecutor.execute(() -&gt; &#123;
+                quietlyCloseConnection(connection, closureReason);
+                <span class="hljs-keyword">if</span> (poolState == POOL_NORMAL) &#123;
+                    fillPool(<span class="hljs-literal">false</span>);
+                &#125;
+            &#125;);
+        &#125;
+    &#125;
+
+    <span class="hljs-comment">// ***********************************************************************</span>
+    <span class="hljs-comment">//                           Private methods</span>
+    <span class="hljs-comment">// ***********************************************************************</span>
+
+    <span class="hljs-comment">// 创建连接</span>
+    <span class="hljs-keyword">private</span> PoolEntry <span class="hljs-title function_">createPoolEntry</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-keyword">try</span> &#123;
+            <span class="hljs-comment">// new PoolEntry(newConnection(), this, isReadOnly, isAutoCommit)</span>
+            <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">poolEntry</span> <span class="hljs-operator">=</span> newPoolEntry();
+
+            <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">maxLifetime</span> <span class="hljs-operator">=</span> config.getMaxLifetime();
+            <span class="hljs-keyword">if</span> (maxLifetime &gt; <span class="hljs-number">0</span>) &#123;
+                <span class="hljs-comment">// variance up to 2.5% of the maxlifetime</span>
+                <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">variance</span> <span class="hljs-operator">=</span> maxLifetime &gt; <span class="hljs-number">10_000</span> ? ThreadLocalRandom.current().nextLong( maxLifetime / <span class="hljs-number">40</span> ) : <span class="hljs-number">0</span>;
+                <span class="hljs-comment">// 此处会随机指定一个variance，连接实际的最大存活时间 = 配置的maxLifetime值 - variance。这样做的目的是防止同一时刻出现大面积的连接到期，导致连接池阻塞</span>
+                <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">lifetime</span> <span class="hljs-operator">=</span> maxLifetime - variance;
+                poolEntry.setFutureEol(houseKeepingExecutorService.schedule(<span class="hljs-keyword">new</span> <span class="hljs-title class_">MaxLifetimeTask</span>(poolEntry), lifetime, MILLISECONDS));
+            &#125;
+
+            <span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">keepaliveTime</span> <span class="hljs-operator">=</span> config.getKeepaliveTime();
+            <span class="hljs-keyword">if</span> (keepaliveTime &gt; <span class="hljs-number">0</span>) &#123;
+                <span class="hljs-comment">// variance up to 10% of the heartbeat time</span>
+                <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">variance</span> <span class="hljs-operator">=</span> ThreadLocalRandom.current().nextLong(keepaliveTime / <span class="hljs-number">10</span>);
+                <span class="hljs-comment">// 同上</span>
+                <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">heartbeatTime</span> <span class="hljs-operator">=</span> keepaliveTime - variance;
+                poolEntry.setKeepalive(houseKeepingExecutorService.scheduleWithFixedDelay(<span class="hljs-keyword">new</span> <span class="hljs-title class_">KeepaliveTask</span>(poolEntry), heartbeatTime, heartbeatTime, MILLISECONDS));
+            &#125;
+
+            <span class="hljs-keyword">return</span> poolEntry;
+        &#125;
+        <span class="hljs-keyword">catch</span> (ConnectionSetupException e) &#123;
+            <span class="hljs-keyword">if</span> (poolState == POOL_NORMAL) &#123; <span class="hljs-comment">// we check POOL_NORMAL to avoid a flood of messages if shutdown() is running concurrently</span>
+                logger.error(<span class="hljs-string">&quot;&#123;&#125; - Error thrown while acquiring connection from data source&quot;</span>, poolName, e.getCause());
+                lastConnectionFailure.set(e);
+            &#125;
+        &#125;
+        <span class="hljs-keyword">catch</span> (Exception e) &#123;
+            <span class="hljs-keyword">if</span> (poolState == POOL_NORMAL) &#123; <span class="hljs-comment">// we check POOL_NORMAL to avoid a flood of messages if shutdown() is running concurrently</span>
+                logger.debug(<span class="hljs-string">&quot;&#123;&#125; - Cannot acquire connection from data source&quot;</span>, poolName, e);
+            &#125;
+        &#125;
+
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
+    &#125;
+
+    <span class="hljs-comment">// 维持池中最小空闲连接数的任务最终调用的方法</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">synchronized</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">fillPool</span><span class="hljs-params">(<span class="hljs-keyword">final</span> <span class="hljs-type">boolean</span> isAfterAdd)</span>
+    &#123;
+        <span class="hljs-comment">// 空闲连接数不够且总连接数未达到最大连接数时才允许添加</span>
+        <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">idle</span> <span class="hljs-operator">=</span> getIdleConnections();
+        <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">shouldAdd</span> <span class="hljs-operator">=</span> getTotalConnections() &lt; config.getMaximumPoolSize() &amp;&amp; idle &lt; config.getMinimumIdle();
+
+        <span class="hljs-keyword">if</span> (shouldAdd) &#123;
+            <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">countToAdd</span> <span class="hljs-operator">=</span> config.getMinimumIdle() - idle;
+            <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; countToAdd; i++)
+                addConnectionExecutor.submit(isAfterAdd ? postFillPoolEntryCreator : poolEntryCreator);
+        &#125;
+        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (isAfterAdd) &#123;
+            logger.debug(<span class="hljs-string">&quot;&#123;&#125; - Fill pool skipped, pool has sufficient level or currently being filled.&quot;</span>, poolName);
+        &#125;
+    &#125;
+
+    <span class="hljs-comment">// 尝试关闭正在使用中的连接</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">abortActiveConnections</span><span class="hljs-params">(<span class="hljs-keyword">final</span> ExecutorService assassinExecutor)</span>
+    &#123;
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> poolEntry : connectionBag.values(STATE_IN_USE)) &#123;
+            <span class="hljs-type">Connection</span> <span class="hljs-variable">connection</span> <span class="hljs-operator">=</span> poolEntry.close();
+            <span class="hljs-keyword">try</span> &#123;
+                connection.abort(assassinExecutor);
+            &#125;
+            <span class="hljs-keyword">catch</span> (Throwable e) &#123;
+                quietlyCloseConnection(connection, <span class="hljs-string">&quot;(connection aborted during shutdown)&quot;</span>);
+            &#125;
+            <span class="hljs-keyword">finally</span> &#123;
+                connectionBag.remove(poolEntry);
+            &#125;
+        &#125;
+    &#125;
+
+    <span class="hljs-comment">// 如果配置了initializationFailFast，会在初始化时进行数据库连接的检测，其实就是尝试创建一个连接，看是否能成功</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">checkFailFast</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-comment">// initializationFailTimeout的默认值为1，所以检测是开启的</span>
+        <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">initializationTimeout</span> <span class="hljs-operator">=</span> config.getInitializationFailTimeout();
+        <span class="hljs-keyword">if</span> (initializationTimeout &lt; <span class="hljs-number">0</span>) &#123;
+            <span class="hljs-keyword">return</span>;
+        &#125;
+
+        <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">startTime</span> <span class="hljs-operator">=</span> currentTime();
+        <span class="hljs-comment">// 尝试创建一个连接，如果成功则会添加此连接到池中，不会浪费。如果失败或者超过指定的初始化超时时长，则抛出异常</span>
+        <span class="hljs-keyword">do</span> &#123;
+            <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">poolEntry</span> <span class="hljs-operator">=</span> createPoolEntry();
+            <span class="hljs-keyword">if</span> (poolEntry != <span class="hljs-literal">null</span>) &#123;
+                <span class="hljs-keyword">if</span> (config.getMinimumIdle() &gt; <span class="hljs-number">0</span>) &#123;
+                    connectionBag.add(poolEntry);
+                    logger.info(<span class="hljs-string">&quot;&#123;&#125; - Added connection &#123;&#125;&quot;</span>, poolName, poolEntry.connection);
+                &#125;
+                <span class="hljs-keyword">else</span> &#123;
+                    quietlyCloseConnection(poolEntry.close(), <span class="hljs-string">&quot;(initialization check complete and minimumIdle is zero)&quot;</span>);
+                &#125;
+
+                <span class="hljs-keyword">return</span>;
+            &#125;
+
+            <span class="hljs-keyword">if</span> (getLastConnectionFailure() <span class="hljs-keyword">instanceof</span> ConnectionSetupException) &#123;
+                throwPoolInitializationException(getLastConnectionFailure().getCause());
+            &#125;
+
+            quietlySleep(SECONDS.toMillis(<span class="hljs-number">1</span>));
+        &#125; <span class="hljs-keyword">while</span> (elapsedMillis(startTime) &lt; initializationTimeout);
+
+        <span class="hljs-keyword">if</span> (initializationTimeout &gt; <span class="hljs-number">0</span>) &#123;
+            throwPoolInitializationException(getLastConnectionFailure());
+        &#125;
+    &#125;
+    
+    <span class="hljs-comment">// 软删除连接</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">softEvictConnection</span><span class="hljs-params">(<span class="hljs-keyword">final</span> PoolEntry poolEntry, <span class="hljs-keyword">final</span> String reason, <span class="hljs-keyword">final</span> <span class="hljs-type">boolean</span> owner)</span>
+    &#123;
+        <span class="hljs-comment">// 先把poolEntry标记为 evicted</span>
+        poolEntry.markEvicted();
+        <span class="hljs-comment">// 如果是owner，即应用的主动调用，则直接关闭连接。如果不是owner，则尝试把poolEntry的状态改为RESERVED保留状态。如果状态修改成功，才关闭连接</span>
+        <span class="hljs-keyword">if</span> (owner || connectionBag.reserve(poolEntry)) &#123;
+            closeConnection(poolEntry, reason);
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+        &#125;
+
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+    &#125;
+    
+    <span class="hljs-comment">// 连接池的状态，各项指标。可以学习一下PoolStats类的设计</span>
+    <span class="hljs-keyword">private</span> PoolStats <span class="hljs-title function_">getPoolStats</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">PoolStats</span>(SECONDS.toMillis(<span class="hljs-number">1</span>)) &#123;
+            <span class="hljs-meta">@Override</span>
+            <span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">update</span><span class="hljs-params">()</span> &#123;
+                <span class="hljs-built_in">this</span>.pendingThreads = HikariPool.<span class="hljs-built_in">this</span>.getThreadsAwaitingConnection();
+                <span class="hljs-built_in">this</span>.idleConnections = HikariPool.<span class="hljs-built_in">this</span>.getIdleConnections();
+                <span class="hljs-built_in">this</span>.totalConnections = HikariPool.<span class="hljs-built_in">this</span>.getTotalConnections();
+                <span class="hljs-built_in">this</span>.activeConnections = HikariPool.<span class="hljs-built_in">this</span>.getActiveConnections();
+                <span class="hljs-built_in">this</span>.maxConnections = config.getMaximumPoolSize();
+                <span class="hljs-built_in">this</span>.minConnections = config.getMinimumIdle();
+            &#125;
+        &#125;;
+    &#125;
+    
+    <span class="hljs-comment">// ***********************************************************************</span>
+    <span class="hljs-comment">//                      Non-anonymous Inner-classes</span>
+    <span class="hljs-comment">// ***********************************************************************</span>
+    
+    <span class="hljs-comment">// 连接创建器</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">PoolEntryCreator</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Callable</span>&lt;Boolean&gt;
+    &#123;
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> String loggingPrefix;
+
+        PoolEntryCreator()
+        &#123;
+            <span class="hljs-built_in">this</span>(<span class="hljs-literal">null</span>);
+        &#125;
+
+        PoolEntryCreator(String loggingPrefix)
+        &#123;
+            <span class="hljs-built_in">this</span>.loggingPrefix = loggingPrefix;
+        &#125;
+
+        <span class="hljs-meta">@Override</span>
+        <span class="hljs-keyword">public</span> Boolean <span class="hljs-title function_">call</span><span class="hljs-params">()</span>
+        &#123;
+            <span class="hljs-type">var</span> <span class="hljs-variable">backoffMs</span> <span class="hljs-operator">=</span> <span class="hljs-number">10L</span>;
+            <span class="hljs-type">var</span> <span class="hljs-variable">added</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+            <span class="hljs-keyword">try</span> &#123;
+                <span class="hljs-comment">// 是否该创建连接。允许创建的话，则创建一个新的连接并添加到connectionBag中，退出。如果创建连接失败，则会等待后持续重试</span>
+                <span class="hljs-keyword">while</span> (shouldContinueCreating()) &#123;
+                    <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">poolEntry</span> <span class="hljs-operator">=</span> createPoolEntry();
+                    <span class="hljs-keyword">if</span> (poolEntry != <span class="hljs-literal">null</span>) &#123;
+                        added = <span class="hljs-literal">true</span>;
+                        connectionBag.add(poolEntry);
+                        logger.debug(<span class="hljs-string">&quot;&#123;&#125; - Added connection &#123;&#125;&quot;</span>, poolName, poolEntry.connection);
+                        quietlySleep(<span class="hljs-number">30L</span>);
+                        <span class="hljs-keyword">break</span>;
+                    &#125; <span class="hljs-keyword">else</span> &#123;  <span class="hljs-comment">// failed to get connection from db, sleep and retry</span>
+                        <span class="hljs-keyword">if</span> (loggingPrefix != <span class="hljs-literal">null</span> &amp;&amp; backoffMs % <span class="hljs-number">50</span> == <span class="hljs-number">0</span>)
+                            logger.debug(<span class="hljs-string">&quot;&#123;&#125; - Connection add failed, sleeping with backoff: &#123;&#125;ms&quot;</span>, poolName, backoffMs);
+                        quietlySleep(backoffMs);
+                        <span class="hljs-comment">// 失败重试间隔，初始为10ms，随后每次时长会翻倍，直至最大值5s，之后固定为5s间隔</span>
+                        backoffMs = Math.min(SECONDS.toMillis(<span class="hljs-number">5</span>), backoffMs * <span class="hljs-number">2</span>);
+                    &#125;
+                &#125;
+            &#125;
+            <span class="hljs-keyword">finally</span> &#123;
+                <span class="hljs-keyword">if</span> (added &amp;&amp; loggingPrefix != <span class="hljs-literal">null</span>)
+                    logPoolState(loggingPrefix);
+                <span class="hljs-keyword">else</span>
+                    logPoolState(<span class="hljs-string">&quot;Connection not added, &quot;</span>);
+            &#125;
+
+            <span class="hljs-comment">// Pool is suspended, shutdown, or at max size</span>
+            <span class="hljs-keyword">return</span> Boolean.FALSE;
+        &#125;
+
+        <span class="hljs-comment">// 是否该继续创建连接</span>
+        <span class="hljs-comment">// 连接池状态正常 &amp; 总连接数小于最大连接数 &amp; (空闲连接数未达到配置的最小空闲连接数 || 等待的线程数量超过了当前池中的空闲连接数)，则允许</span>
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">synchronized</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">shouldContinueCreating</span><span class="hljs-params">()</span> &#123;
+            <span class="hljs-keyword">return</span> poolState == POOL_NORMAL &amp;&amp; getTotalConnections() &lt; config.getMaximumPoolSize() &amp;&amp;
+                (getIdleConnections() &lt; config.getMinimumIdle() || connectionBag.getWaitingThreadCount() &gt; getIdleConnections());
+        &#125;
+    
+    &#125;
+
+    <span class="hljs-comment">// 核心连接数维持的任务</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">HouseKeeper</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Runnable</span>
+    &#123;
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">volatile</span> <span class="hljs-type">long</span> <span class="hljs-variable">previous</span> <span class="hljs-operator">=</span> plusMillis(currentTime(), -housekeepingPeriodMs);
+        <span class="hljs-meta">@SuppressWarnings(&quot;AtomicFieldUpdaterNotStaticFinal&quot;)</span>
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> AtomicReferenceFieldUpdater&lt;PoolBase, String&gt; catalogUpdater = AtomicReferenceFieldUpdater.newUpdater(PoolBase.class, String.class, <span class="hljs-string">&quot;catalog&quot;</span>);
+
+        <span class="hljs-meta">@Override</span>
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">()</span>
+        &#123;
+            <span class="hljs-keyword">try</span> &#123;
+                <span class="hljs-comment">// refresh values in case they changed via MBean</span>
+                <span class="hljs-comment">// 先重置一些属性，防止通过MBean修改了它们</span>
+                connectionTimeout = config.getConnectionTimeout();
+                validationTimeout = config.getValidationTimeout();
+                leakTaskFactory.updateLeakDetectionThreshold(config.getLeakDetectionThreshold());
+
+                <span class="hljs-keyword">if</span> (config.getCatalog() != <span class="hljs-literal">null</span> &amp;&amp; !config.getCatalog().equals(catalog)) &#123;
+                    catalogUpdater.set(HikariPool.<span class="hljs-built_in">this</span>, config.getCatalog());
+                &#125;
+
+                <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">idleTimeout</span> <span class="hljs-operator">=</span> config.getIdleTimeout();
+                <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">now</span> <span class="hljs-operator">=</span> currentTime();
+
+                <span class="hljs-comment">// 时钟偏移的检测，允许一定的回拨，128ms</span>
+                <span class="hljs-comment">// Detect retrograde time, allowing +128ms as per NTP spec.</span>
+                <span class="hljs-keyword">if</span> (plusMillis(now, <span class="hljs-number">128</span>) &lt; plusMillis(previous, housekeepingPeriodMs)) &#123;
+                 	<span class="hljs-comment">// 如果检测到了时钟回拨，则打印告警日志，重置时钟，并尝试软删除池中的空闲连接。结束本次任务</span>
+                    logger.warn(<span class="hljs-string">&quot;&#123;&#125; - Retrograde clock change detected (housekeeper delta=&#123;&#125;), soft-evicting connections from pool.&quot;</span>, poolName, elapsedDisplayString(previous, now));
+                    previous = now;
+                    softEvictConnections();
+                    <span class="hljs-keyword">return</span>;
+                &#125;
+                <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (now &gt; plusMillis(previous, (<span class="hljs-number">3</span> * housekeepingPeriodMs) / <span class="hljs-number">2</span>)) &#123;
+                    <span class="hljs-comment">// No point evicting for forward clock motion, this merely accelerates connection retirement anyway</span>
+                    <span class="hljs-comment">// 正向的时钟跳跃，无需做任何操作，只打印告警日志</span>
+                    logger.warn(<span class="hljs-string">&quot;&#123;&#125; - Thread starvation or clock leap detected (housekeeper delta=&#123;&#125;).&quot;</span>, poolName, elapsedDisplayString(previous, now));
+                &#125;
+
+                <span class="hljs-comment">// previous时间指向当前任务运行的时间</span>
+                previous = now;
+
+                <span class="hljs-comment">// 如果 设置了空闲超时时间 &amp; 最小空闲连接数&lt;最大连接数，则尝试将超过最小空闲连接数的空闲连接关闭</span>
+                <span class="hljs-keyword">if</span> (idleTimeout &gt; <span class="hljs-number">0L</span> &amp;&amp; config.getMinimumIdle() &lt; config.getMaximumPoolSize()) &#123;
+                    logPoolState(<span class="hljs-string">&quot;Before cleanup &quot;</span>);
+                    <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">notInUse</span> <span class="hljs-operator">=</span> connectionBag.values(STATE_NOT_IN_USE);
+                    <span class="hljs-type">var</span> <span class="hljs-variable">maxToRemove</span> <span class="hljs-operator">=</span> notInUse.size() - config.getMinimumIdle();
+                    <span class="hljs-keyword">for</span> (PoolEntry entry : notInUse) &#123;
+                        <span class="hljs-comment">// 如果存在需要关闭的连接 &amp; 距离连接最近一次被访问的时间已超过了空闲超时时间 &amp; 连接成功的被置为REVERSED</span>
+                        <span class="hljs-comment">// 那么关闭连接</span>
+                        <span class="hljs-keyword">if</span> (maxToRemove &gt; <span class="hljs-number">0</span> &amp;&amp; elapsedMillis(entry.lastAccessed, now) &gt; idleTimeout &amp;&amp; connectionBag.reserve(entry)) &#123;
+                            closeConnection(entry, <span class="hljs-string">&quot;(connection has passed idleTimeout)&quot;</span>);
+                            maxToRemove--;
+                        &#125;
+                    &#125;
+                    logPoolState(<span class="hljs-string">&quot;After cleanup  &quot;</span>);
+                &#125;
+                <span class="hljs-keyword">else</span>
+                    logPoolState(<span class="hljs-string">&quot;Pool &quot;</span>);
+
+                <span class="hljs-comment">// 最后仍然要尝试新增连接，因为时钟回拨的情况下，后续的定时调度需要新增连接</span>
+                fillPool(<span class="hljs-literal">true</span>); <span class="hljs-comment">// Try to maintain minimum connections</span>
+            &#125;
+            <span class="hljs-keyword">catch</span> (Exception e) &#123;
+                logger.error(<span class="hljs-string">&quot;Unexpected exception in housekeeping task&quot;</span>, e);
+            &#125;
+        &#125;
+    &#125;
+
+    <span class="hljs-comment">// 连接最大存活时长检测任务，是一个延时调度，触发后就直接尝试去关闭连接</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">MaxLifetimeTask</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Runnable</span>
+    &#123;
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> PoolEntry poolEntry;
+
+        MaxLifetimeTask(<span class="hljs-keyword">final</span> PoolEntry poolEntry)
+        &#123;
+            <span class="hljs-built_in">this</span>.poolEntry = poolEntry;
+        &#125;
+
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">()</span>
+        &#123;
+            <span class="hljs-comment">// 这里对softEvictConnection()方法的调用与之前不同，会关注返回的结果</span>
+            <span class="hljs-keyword">if</span> (softEvictConnection(poolEntry, <span class="hljs-string">&quot;(connection has passed maxLifetime)&quot;</span>, <span class="hljs-literal">false</span> <span class="hljs-comment">/* not owner */</span>)) &#123;
+                <span class="hljs-comment">// 连接关闭成功后，会再尝试向池中新增连接，如果等待线程较多的话</span>
+                addBagItem(connectionBag.getWaitingThreadCount());
+            &#125;
+        &#125;
+    &#125;
+
+    <span class="hljs-comment">// 探活任务</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">KeepaliveTask</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Runnable</span>
+    &#123;
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> PoolEntry poolEntry;
+
+        KeepaliveTask(<span class="hljs-keyword">final</span> PoolEntry poolEntry)
+        &#123;
+            <span class="hljs-built_in">this</span>.poolEntry = poolEntry;
+        &#125;
+
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">run</span><span class="hljs-params">()</span>
+        &#123;
+            <span class="hljs-comment">// 尝试把空闲连接置为REVERSED</span>
+            <span class="hljs-keyword">if</span> (connectionBag.reserve(poolEntry)) &#123;
+                <span class="hljs-comment">// 判断连接是否可用</span>
+                <span class="hljs-keyword">if</span> (isConnectionDead(poolEntry.connection)) &#123;
+                    <span class="hljs-comment">// 如果连接已经不可用，则尝试关闭旧连接，再添加新的连接</span>
+                    softEvictConnection(poolEntry, DEAD_CONNECTION_MESSAGE, <span class="hljs-literal">true</span>);
+                    addBagItem(connectionBag.getWaitingThreadCount());
+                &#125;
+                <span class="hljs-keyword">else</span> &#123;
+                    <span class="hljs-comment">// 连接仍可用，则将连接重置为空闲状态</span>
+                    connectionBag.unreserve(poolEntry);
+                    logger.debug(<span class="hljs-string">&quot;&#123;&#125; - keepalive: connection &#123;&#125; is alive&quot;</span>, poolName, poolEntry.connection);
+                &#125;
+            &#125;
+        &#125;
+    &#125;
+    
+&#125;</code></pre></div>
+<h2 id="suspendresumelock">SuspendResumeLock</h2>
+<p>一把“锁”，可用于连接池的挂起和恢复。</p>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">/**</span>
+<span class="hljs-comment"> * This class implements a lock that can be used to suspend and resume the pool.  It</span>
+<span class="hljs-comment"> * also provides a faux implementation that is used when the feature is disabled that</span>
+<span class="hljs-comment"> * hopefully gets fully &quot;optimized away&quot; by the JIT.</span>
+<span class="hljs-comment"> */</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">SuspendResumeLock</span>
+&#123;
+    <span class="hljs-comment">// 假锁，空实现</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">SuspendResumeLock</span> <span class="hljs-variable">FAUX_LOCK</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SuspendResumeLock</span>(<span class="hljs-literal">false</span>) &#123;
+        <span class="hljs-meta">@Override</span>
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">acquire</span><span class="hljs-params">()</span> &#123;&#125;
+
+        <span class="hljs-meta">@Override</span>
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">release</span><span class="hljs-params">()</span> &#123;&#125;
+
+        <span class="hljs-meta">@Override</span>
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">suspend</span><span class="hljs-params">()</span> &#123;&#125;
+
+        <span class="hljs-meta">@Override</span>
+        <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">resume</span><span class="hljs-params">()</span> &#123;&#125;
+    &#125;;
+
+    <span class="hljs-comment">// 实际上使用的是信号量来控制，默认最大容量（访问许可数量）为 10000</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">MAX_PERMITS</span> <span class="hljs-operator">=</span> <span class="hljs-number">10000</span>;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Semaphore acquisitionSemaphore;
+
+    <span class="hljs-keyword">public</span> <span class="hljs-title function_">SuspendResumeLock</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-built_in">this</span>(<span class="hljs-literal">true</span>);
+    &#125;
+
+    <span class="hljs-keyword">private</span> <span class="hljs-title function_">SuspendResumeLock</span><span class="hljs-params">(<span class="hljs-keyword">final</span> <span class="hljs-type">boolean</span> createSemaphore)</span>
+    &#123;
+        <span class="hljs-comment">// 如果需要，创建一个Semaphore对象，获取许可时，采用公平模式（公平 - 队列，先来后到，非公平 - 抢占式，直接尝试compareAndSet）</span>
+        acquisitionSemaphore = (createSemaphore ? <span class="hljs-keyword">new</span> <span class="hljs-title class_">Semaphore</span>(MAX_PERMITS, <span class="hljs-literal">true</span>) : <span class="hljs-literal">null</span>);
+    &#125;
+
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">acquire</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> SQLException
+    &#123;
+        <span class="hljs-comment">// 尝试获取一个permit，抢占式</span>
+        <span class="hljs-keyword">if</span> (acquisitionSemaphore.tryAcquire()) &#123;
+            <span class="hljs-keyword">return</span>;
+        &#125;
+        <span class="hljs-comment">// 获取失败，根据配置决定是否要抛出异常</span>
+        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (Boolean.getBoolean(<span class="hljs-string">&quot;com.zaxxer.hikari.throwIfSuspended&quot;</span>)) &#123;
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SQLTransientException</span>(<span class="hljs-string">&quot;The pool is currently suspended and configured to throw exceptions upon acquisition&quot;</span>);
+        &#125;
+        <span class="hljs-comment">// 如果获取失败且无需抛出异常，则一直阻塞等待直至获取到一个permit。此处即是按公平模式等待</span>
+        acquisitionSemaphore.acquireUninterruptibly();
+    &#125;
+
+    <span class="hljs-comment">// 释放一个permit</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">release</span><span class="hljs-params">()</span>
+    &#123;
+        acquisitionSemaphore.release();
+    &#125;
+
+    <span class="hljs-comment">// 连接池挂起时调用，可以看到实际上就是占用了所有的permits，这样应用获取连接时就会一直阻塞</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">suspend</span><span class="hljs-params">()</span>
+    &#123;
+        acquisitionSemaphore.acquireUninterruptibly(MAX_PERMITS);
+    &#125;
+
+    <span class="hljs-comment">// 连接池恢复时调用，释放所有的permits</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">resume</span><span class="hljs-params">()</span>
+    &#123;
+        acquisitionSemaphore.release(MAX_PERMITS);
+    &#125;
+&#125;</code></pre></div>
+<h2 id="concurrentbag">ConcurrentBag</h2>
+<p>关键逻辑：</p>
+<ul>
+<li>连接的状态 - 未使用、使用中、移除、保留，及状态转换</li>
+<li>连接的实际存储方式，及新增、获取和归还</li>
+</ul>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ConcurrentBag</span>&lt;T <span class="hljs-keyword">extends</span> <span class="hljs-title class_">IConcurrentBagEntry</span>&gt; <span class="hljs-keyword">implements</span> <span class="hljs-title class_">AutoCloseable</span>
+&#123;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">Logger</span> <span class="hljs-variable">LOGGER</span> <span class="hljs-operator">=</span> LoggerFactory.getLogger(ConcurrentBag.class);
+
+    <span class="hljs-comment">// 真正存储连接的共享list</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> CopyOnWriteArrayList&lt;T&gt; sharedList;
+    <span class="hljs-comment">// 连接是否使用弱引用，它是指在线程上下文中存储连接时，是否要使用WeakReference来包装PoolEntry对象</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-type">boolean</span> weakThreadLocals;
+    <span class="hljs-comment">// 线程上下文中存储连接的list。注意ThreadLocal是非static final的</span>
+    <span class="hljs-comment">// sharedList已经是线程安全且CopyOnWriteArrayList的读也是很快的，这里为何还需要threadList？个人理解这既是为了更快，也是一种资源倾斜</span>
+    <span class="hljs-comment">// 考虑一种场景：如果一个线程需要频繁地开启和关闭连接（比如在循环中，甚至是嵌套循环），那么从sharedList中取数，每次取到的连接可能会不同，且会和其他线程产生争用。此时如果有了threadList，那么相当于有1个或n个连接会偏向这个线程。类推到多个线程也是一样的。当然是在池中空闲连接足够的情况下。</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> ThreadLocal&lt;List&lt;Object&gt;&gt; threadList;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> IBagStateListener listener;
+    <span class="hljs-comment">// 等待获取连接的线程数，一般是由于池中连接不够</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> AtomicInteger waiters;
+    <span class="hljs-comment">// bag是否已关闭</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">volatile</span> <span class="hljs-type">boolean</span> closed;
+    <span class="hljs-comment">// 移交队列，是一个SynchronousQueue</span>
+    <span class="hljs-comment">// 当新增或者归还空闲连接时，如果当前有等待获取连接的线程，则可通过此队列来进行连接的移交</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> SynchronousQueue&lt;T&gt; handoffQueue;
+
+    <span class="hljs-comment">// PoolEntry类实现的接口</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">IConcurrentBagEntry</span>
+    &#123;
+        <span class="hljs-comment">// 连接的状态：未使用、使用中、移除、保留</span>
+        <span class="hljs-comment">// 状态转换均采用了CAS的方式来避免加锁</span>
+        <span class="hljs-type">int</span> <span class="hljs-variable">STATE_NOT_IN_USE</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;
+        <span class="hljs-type">int</span> <span class="hljs-variable">STATE_IN_USE</span> <span class="hljs-operator">=</span> <span class="hljs-number">1</span>;
+        <span class="hljs-type">int</span> <span class="hljs-variable">STATE_REMOVED</span> <span class="hljs-operator">=</span> -<span class="hljs-number">1</span>;
+        <span class="hljs-type">int</span> <span class="hljs-variable">STATE_RESERVED</span> <span class="hljs-operator">=</span> -<span class="hljs-number">2</span>;
+
+        <span class="hljs-type">boolean</span> <span class="hljs-title function_">compareAndSet</span><span class="hljs-params">(<span class="hljs-type">int</span> expectState, <span class="hljs-type">int</span> newState)</span>;
+        <span class="hljs-keyword">void</span> <span class="hljs-title function_">setState</span><span class="hljs-params">(<span class="hljs-type">int</span> newState)</span>;
+        <span class="hljs-type">int</span> <span class="hljs-title function_">getState</span><span class="hljs-params">()</span>;
+    &#125;
+
+    <span class="hljs-comment">// HikariPool实现了此接口，监听回调</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">IBagStateListener</span>
+    &#123;
+        <span class="hljs-keyword">void</span> <span class="hljs-title function_">addBagItem</span><span class="hljs-params">(<span class="hljs-type">int</span> waiting)</span>;
+    &#125;
+
+    <span class="hljs-comment">// 默认唯一的有参构造器，入参listener即HikariPool</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-title function_">ConcurrentBag</span><span class="hljs-params">(<span class="hljs-keyword">final</span> IBagStateListener listener)</span>
+    &#123;
+        <span class="hljs-built_in">this</span>.listener = listener;
+        <span class="hljs-comment">// 根据 系统变量及是否有自定义类加载器 来决定是否启用连接的弱引用。具体逻辑参见useWeakThreadLocals()方法</span>
+        <span class="hljs-comment">// 正常情况下应该是false</span>
+        <span class="hljs-built_in">this</span>.weakThreadLocals = useWeakThreadLocals();
+
+        <span class="hljs-comment">// handoffQueue的初始化，使用公平模式，先到先得</span>
+        <span class="hljs-built_in">this</span>.handoffQueue = <span class="hljs-keyword">new</span> <span class="hljs-title class_">SynchronousQueue</span>&lt;&gt;(<span class="hljs-literal">true</span>);
+        <span class="hljs-built_in">this</span>.waiters = <span class="hljs-keyword">new</span> <span class="hljs-title class_">AtomicInteger</span>();
+        <span class="hljs-built_in">this</span>.sharedList = <span class="hljs-keyword">new</span> <span class="hljs-title class_">CopyOnWriteArrayList</span>&lt;&gt;();
+        <span class="hljs-comment">// 这里可以看出weakThreadLocals属性的第一个差异点，如果启用了弱引用，则线程上下文使用的是普通的ArrayList，反之则使用自定义的FastList</span>
+        <span class="hljs-keyword">if</span> (weakThreadLocals) &#123;
+            <span class="hljs-built_in">this</span>.threadList = ThreadLocal.withInitial(() -&gt; <span class="hljs-keyword">new</span> <span class="hljs-title class_">ArrayList</span>&lt;&gt;(<span class="hljs-number">16</span>));
+        &#125;
+        <span class="hljs-keyword">else</span> &#123;
+            <span class="hljs-built_in">this</span>.threadList = ThreadLocal.withInitial(() -&gt; <span class="hljs-keyword">new</span> <span class="hljs-title class_">FastList</span>&lt;&gt;(IConcurrentBagEntry.class, <span class="hljs-number">16</span>));
+        &#125;
+    &#125;
+
+    <span class="hljs-comment">// 获取连接</span>
+    <span class="hljs-keyword">public</span> T <span class="hljs-title function_">borrow</span><span class="hljs-params">(<span class="hljs-type">long</span> timeout, <span class="hljs-keyword">final</span> TimeUnit timeUnit)</span> <span class="hljs-keyword">throws</span> InterruptedException
+    &#123;
+        <span class="hljs-comment">// 优先从threadList获取。这里是倒序遍历，保证优先获取最活跃的连接</span>
+        <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">list</span> <span class="hljs-operator">=</span> threadList.get();
+        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> list.size() - <span class="hljs-number">1</span>; i &gt;= <span class="hljs-number">0</span>; i--) &#123;
+            <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">entry</span> <span class="hljs-operator">=</span> list.remove(i);
+            <span class="hljs-comment">// 这里可以看出weakThreadLocals属性的第二个差异点，集合中的entry都是使用WeakReference包装的</span>
+            <span class="hljs-meta">@SuppressWarnings(&quot;unchecked&quot;)</span>
+            <span class="hljs-keyword">final</span> <span class="hljs-type">T</span> <span class="hljs-variable">bagEntry</span> <span class="hljs-operator">=</span> weakThreadLocals ? ((WeakReference&lt;T&gt;) entry).get() : (T) entry;
+            <span class="hljs-keyword">if</span> (bagEntry != <span class="hljs-literal">null</span> &amp;&amp; bagEntry.compareAndSet(STATE_NOT_IN_USE, STATE_IN_USE)) &#123;
+                <span class="hljs-keyword">return</span> bagEntry;
+            &#125;
+        &#125;
+
+        <span class="hljs-comment">// Otherwise, scan the shared list ... then poll the handoff queue</span>
+        <span class="hljs-comment">// 上下文取不到，则从共享list中取</span>
+        <span class="hljs-comment">// 此处会将当前线程添加到waiters中去</span>
+        <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">waiting</span> <span class="hljs-operator">=</span> waiters.incrementAndGet();
+        <span class="hljs-keyword">try</span> &#123;
+            <span class="hljs-keyword">for</span> (T bagEntry : sharedList) &#123;
+                <span class="hljs-keyword">if</span> (bagEntry.compareAndSet(STATE_NOT_IN_USE, STATE_IN_USE)) &#123;
+                    <span class="hljs-comment">// If we may have stolen another waiter&#x27;s connection, request another bag add.</span>
+                    <span class="hljs-comment">// 成功获取，这里可能会出现抢占，当前线程抢占了正在等待的其他线程的连接，可能是池中连接数量不够，此时会尝试新增连接</span>
+                    <span class="hljs-keyword">if</span> (waiting &gt; <span class="hljs-number">1</span>) &#123;
+                        listener.addBagItem(waiting - <span class="hljs-number">1</span>);
+                    &#125;
+                    <span class="hljs-keyword">return</span> bagEntry;
+                &#125;
+            &#125;
+
+            <span class="hljs-comment">// 如果从共享list中仍取不到，可能是池中连接数量不够，尝试新增连接</span>
+            listener.addBagItem(waiting);
+
+            <span class="hljs-comment">// 接下来就进入等待，直至获取连接或者等待超时。时间均以纳秒为单位，因为等待逻辑对时间精度要求很高</span>
+            timeout = timeUnit.toNanos(timeout);
+            <span class="hljs-keyword">do</span> &#123;
+                <span class="hljs-comment">// 记录一个起始时间</span>
+                <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">start</span> <span class="hljs-operator">=</span> currentTime();
+                <span class="hljs-comment">// 从handoffQueue中尝试获取连接，在等待一定时间后返回</span>
+                <span class="hljs-keyword">final</span> <span class="hljs-type">T</span> <span class="hljs-variable">bagEntry</span> <span class="hljs-operator">=</span> handoffQueue.poll(timeout, NANOSECONDS); <span class="hljs-comment">// ①</span>
+                <span class="hljs-comment">// 如果拿不到连接，或者拿到了连接且能成功占用，则直接返回</span>
+                <span class="hljs-keyword">if</span> (bagEntry == <span class="hljs-literal">null</span> || bagEntry.compareAndSet(STATE_NOT_IN_USE, STATE_IN_USE)) &#123;<span class="hljs-comment">// ②</span>
+                    <span class="hljs-keyword">return</span> bagEntry;
+                &#125;
+                <span class="hljs-comment">// 如果拿到了连接但是抢占失败，则需要多次尝试</span>
+                <span class="hljs-comment">// 这里后续每次的等待时间是持续衰减的，下次等待时长 = 本次等待时长 - (当前时间点 - 本次等待的起始时间点)，也就是减去本次等待的耗时</span>
+                <span class="hljs-comment">// elapsedNanos(start) =&gt; 当前时间点距离start时间点的时间间隔，单位纳秒</span>
+                <span class="hljs-comment">// 本次等待的耗时，即elapsedNanos(start)的值，区间如下：</span>
+                <span class="hljs-comment">// 最小值，会&lt;=0。考虑极端情况，①处代码在等待的最后时刻才从队列中获取到了连接，再加上②处执行的耗时，会大于本次的timeout</span>
+                <span class="hljs-comment">// 最大值，很接近timeout的值。考虑①处代码能立即返回，再加上②处代码的CAS很快返回失败，可能本次等待耗时会远小于本次的timeout，那么后续的timeout衰减就有意义了</span>
+                <span class="hljs-comment">// 从上述分析可以看出来，此处使用纳秒作为时间单位是很有必要的</span>
+                timeout -= elapsedNanos(start);
+            <span class="hljs-comment">// 约定一个timeout的最小值，小于此值后则不再尝试等待了</span>
+            &#125; <span class="hljs-keyword">while</span> (timeout &gt; <span class="hljs-number">10_000</span>);
+
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
+        &#125;
+        <span class="hljs-keyword">finally</span> &#123;
+            <span class="hljs-comment">// 不管最终是否获取了连接，当前线程需要从waiters中移除，因为线程已返回</span>
+            waiters.decrementAndGet();
+        &#125;
+    &#125;
+
+    <span class="hljs-comment">// 归还连接，如果一个连接只借不还，会造成内存泄露</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">requite</span><span class="hljs-params">(<span class="hljs-keyword">final</span> T bagEntry)</span>
+    &#123;
+        <span class="hljs-comment">// 连接状态置为未使用</span>
+        bagEntry.setState(STATE_NOT_IN_USE);
+
+        <span class="hljs-comment">// 若存在等待线程（注意是实时获取waiters的数量，也就是说可能会有大量的等待线程甚至死循环），则尝试把当前归还的连接直接移交给它们，更快的返回</span>
+        <span class="hljs-keyword">for</span> (<span class="hljs-type">var</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; waiters.get() &gt; <span class="hljs-number">0</span>; i++) &#123;
+            <span class="hljs-comment">// 如果连接已被抢占（被使用或者是被置为其他状态），或者成功通过队列移交给等待线程，则完成归还流程</span>
+            <span class="hljs-keyword">if</span> (bagEntry.getState() != STATE_NOT_IN_USE || handoffQueue.offer(bagEntry)) &#123;
+                <span class="hljs-keyword">return</span>;
+            &#125;
+            <span class="hljs-comment">// 对于下面不同的if分支使用了不同的CPU让出方法，个人理解如下：</span>
+            <span class="hljs-comment">// 如果等待线程数量较少且连接一直移交失败时，采用yield转换为READY，避免持续占用CPU，且恢复执行的时间也随机，因为当前线程不是很急迫</span>
+            <span class="hljs-comment">// 如果等待线程数量较多且连接仍旧一直移交失败时，则使用parkNanos来WAITING很短的一段时间，超时后，会尝试争抢CPU使用权，因为此时当前线程可能需要尽快恢复执行，尽快的尝试移交连接</span>
+            <span class="hljs-comment">// 如果park后仍旧移交失败，则再次进入yield的状态，重复</span>
+            <span class="hljs-comment">// 相当于每隔一段时间，做一个抢占升级，便于在大量线程等待时尽快的尝试移交连接，是综合考虑了性能和CPU占用而做的权衡</span>
+            
+            <span class="hljs-comment">// 位运算，0xff为十六进制，对应二进制为1111 1111，十进制为255。i &amp; 0xff等同于十进制的i % 256</span>
+            <span class="hljs-comment">// 当循环每达到一定数量，此处是每256（此时i=255）个时，则触发park式的休眠</span>
+            <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> ((i &amp; <span class="hljs-number">0xff</span>) == <span class="hljs-number">0xff</span>) &#123;
+                <span class="hljs-comment">// 使用LockSupport.parkNanos方法进行休眠，让出CPU，指定超时时间且允许当前线程被主动唤醒</span>
+                parkNanos(MICROSECONDS.toNanos(<span class="hljs-number">10</span>));
+            &#125;
+            <span class="hljs-keyword">else</span> &#123;
+                <span class="hljs-comment">// 大部分时间，都会使用yield转换为就绪状态，让出CPU，避免长时间占用</span>
+                Thread.yield();
+            &#125;
+        &#125;
+
+        <span class="hljs-comment">// 如果没有移交成功，则把当前连接放到线程上下文维护的list当中，便于同一个线程的快速获取</span>
+        <span class="hljs-comment">// 有条件，当线程上下文中的连接数较少时（小于50）。这里50姑且认为是一个经验值</span>
+        <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">threadLocalList</span> <span class="hljs-operator">=</span> threadList.get();
+        <span class="hljs-keyword">if</span> (threadLocalList.size() &lt; <span class="hljs-number">50</span>) &#123;
+            threadLocalList.add(weakThreadLocals ? <span class="hljs-keyword">new</span> <span class="hljs-title class_">WeakReference</span>&lt;&gt;(bagEntry) : bagEntry);
+        &#125;
+    &#125;
+
+    <span class="hljs-comment">// 新增连接</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">add</span><span class="hljs-params">(<span class="hljs-keyword">final</span> T bagEntry)</span>
+    &#123;
+        <span class="hljs-keyword">if</span> (closed) &#123;
+            LOGGER.info(<span class="hljs-string">&quot;ConcurrentBag has been closed, ignoring add()&quot;</span>);
+            <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalStateException</span>(<span class="hljs-string">&quot;ConcurrentBag has been closed, ignoring add()&quot;</span>);
+        &#125;
+
+        <span class="hljs-comment">// 向共享list中添加一个连接</span>
+        sharedList.add(bagEntry);
+
+        <span class="hljs-comment">// spin until a thread takes it or none are waiting</span>
+        <span class="hljs-comment">// 如果 当前有等待线程 &amp; 当前连接状态为【未使用】-即未被抢占 &amp; 通过移交队列一直移交不成功 时，会持续尝试移交直至成功或者bagEntry被使用</span>
+        <span class="hljs-keyword">while</span> (waiters.get() &gt; <span class="hljs-number">0</span> &amp;&amp; bagEntry.getState() == STATE_NOT_IN_USE &amp;&amp; !handoffQueue.offer(bagEntry)) &#123;
+            <span class="hljs-comment">// 同样会采用yield来避免一直占用CPU</span>
+            Thread.yield();
+        &#125;
+    &#125;
+
+    <span class="hljs-comment">/**</span>
+<span class="hljs-comment">    * Remove a value from the bag.  This method should only be called</span>
+<span class="hljs-comment">    * with objects obtained by &lt;code&gt;borrow(long, TimeUnit)&lt;/code&gt; or &lt;code&gt;reserve(T)&lt;/code&gt;</span>
+<span class="hljs-comment">    */</span>
+    <span class="hljs-comment">// 移除连接。此方法应该只会被那些通过borrow()获取到了连接或者通过reserve()方法把连接转换成了【保留】状态的对象所调用</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">remove</span><span class="hljs-params">(<span class="hljs-keyword">final</span> T bagEntry)</span>
+    &#123;
+        <span class="hljs-comment">// 如果当前连接即不是【使用中】，也不是【保留】状态，则返回false，并打印告警日志</span>
+        <span class="hljs-comment">// 从这个判断可以看出上面注释的含义：此方法应该是用来关闭已激活的或者需要被回收的连接</span>
+        <span class="hljs-keyword">if</span> (!bagEntry.compareAndSet(STATE_IN_USE, STATE_REMOVED) &amp;&amp; !bagEntry.compareAndSet(STATE_RESERVED, STATE_REMOVED) &amp;&amp; !closed) &#123;
+            LOGGER.warn(<span class="hljs-string">&quot;Attempt to remove an object from the bag that was not borrowed or reserved: &#123;&#125;&quot;</span>, bagEntry);
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+        &#125;
+
+        <span class="hljs-comment">// 从共享list中移除连接</span>
+        <span class="hljs-keyword">final</span> <span class="hljs-type">boolean</span> <span class="hljs-variable">removed</span> <span class="hljs-operator">=</span> sharedList.remove(bagEntry);
+        <span class="hljs-keyword">if</span> (!removed &amp;&amp; !closed) &#123;
+            LOGGER.warn(<span class="hljs-string">&quot;Attempt to remove an object from the bag that does not exist: &#123;&#125;&quot;</span>, bagEntry);
+        &#125;
+
+        <span class="hljs-comment">// 从threadList中移除连接，如果有的话</span>
+        threadList.get().remove(bagEntry);
+
+        <span class="hljs-keyword">return</span> removed;
+    &#125;
+
+    <span class="hljs-comment">// 关闭bag，只有在连接池关闭时才会触发调用</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">close</span><span class="hljs-params">()</span>
+    &#123;
+        closed = <span class="hljs-literal">true</span>;
+    &#125;
+
+    <span class="hljs-comment">/**</span>
+<span class="hljs-comment">    * This method provides a &quot;snapshot&quot; in time of the BagEntry</span>
+<span class="hljs-comment">    * items in the bag in the specified state.  It does not &quot;lock&quot;</span>
+<span class="hljs-comment">    * or reserve items in any way.  Call &lt;code&gt;reserve(T)&lt;/code&gt;</span>
+<span class="hljs-comment">    * on items in list before performing any action on them.</span>
+<span class="hljs-comment">    */</span>
+    <span class="hljs-comment">// 实时返回sharedList中符合指定状态的BagEntry的快照list，只是查询，不会BagEntry做任何状态变动</span>
+    <span class="hljs-comment">// 在对列表中的BagEntry执行任何操作之前，请先调用reserve方法</span>
+    <span class="hljs-keyword">public</span> List&lt;T&gt; <span class="hljs-title function_">values</span><span class="hljs-params">(<span class="hljs-keyword">final</span> <span class="hljs-type">int</span> state)</span>
+    &#123;
+        <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">list</span> <span class="hljs-operator">=</span> sharedList.stream().filter(e -&gt; e.getState() == state).collect(Collectors.toList());
+        <span class="hljs-comment">// 这里对取到的快照list进行了反转，也就是说后添加进sharedList中的连接会先被访问到</span>
+        <span class="hljs-comment">// 个人理解，这是为了让调用此方法的方法所做的操作（比如拿到连接，循环关闭）尽可能小的影响到连接的获取，因为获取时是顺序访问sharedList的</span>
+        <span class="hljs-comment">// 来看看其中一种场景，HikariPool类的HouseKeeper中会调用此方法取闲置的连接，然后超过最小连接数的部分会关闭。考虑下面这种情况：</span>
+        <span class="hljs-comment">// 1.sharedList中有3个连接，一个使用中，两个空闲。最小连接数=2。此时HouseKeeper触发了cleanup操作，要移除多余的一个空闲连接</span>
+        <span class="hljs-comment">// 2.如果此处顺序返回，且恰好此时有一个线程来池中获取连接，那么就会产生争用，因为首先遍历到的都是第一个空闲的连接</span>
+        <span class="hljs-comment">// 3.如果此处倒序返回，就不会有任何影响，HouseKeeper关闭的是第二个空闲的连接，另一个线程获取到的是第一个空闲连接</span>
+        Collections.reverse(list);
+        <span class="hljs-keyword">return</span> list;
+    &#125;
+
+    <span class="hljs-comment">/**</span>
+<span class="hljs-comment">    * This method provides a &quot;snapshot&quot; in time of the bag items.  It</span>
+<span class="hljs-comment">    * does not &quot;lock&quot; or reserve items in any way.  Call &lt;code&gt;reserve(T)&lt;/code&gt;</span>
+<span class="hljs-comment">    * on items in the list, or understand the concurrency implications of</span>
+<span class="hljs-comment">    * modifying items, before performing any action on them.</span>
+<span class="hljs-comment">    */</span>
+    <span class="hljs-comment">// 返回整个sharedList的浅拷贝快照</span>
+    <span class="hljs-meta">@SuppressWarnings(&quot;unchecked&quot;)</span>
+    <span class="hljs-keyword">public</span> List&lt;T&gt; <span class="hljs-title function_">values</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-keyword">return</span> (List&lt;T&gt;) sharedList.clone();
+    &#125;
+
+    <span class="hljs-comment">/**</span>
+<span class="hljs-comment">    * The method is used to make an item in the bag &quot;unavailable&quot; for</span>
+<span class="hljs-comment">    * borrowing.  It is primarily used when wanting to operate on items</span>
+<span class="hljs-comment">    * returned by the &lt;code&gt;values(int)&lt;/code&gt; method.  Items that are</span>
+<span class="hljs-comment">    * reserved can be removed from the bag via &lt;code&gt;remove(T)&lt;/code&gt;</span>
+<span class="hljs-comment">    * without the need to unreserve them.  Items that are not removed</span>
+<span class="hljs-comment">    * from the bag can be make available for borrowing again by calling</span>
+<span class="hljs-comment">    * the &lt;code&gt;unreserve(T)&lt;/code&gt; method.</span>
+<span class="hljs-comment">    */</span>
+    <span class="hljs-comment">// 把bagEntry的状态置为【保留】。【保留】状态的连接无法被获取，且允许直接移除。当然也可以恢复，参见下面的unreserve(bagEntry)方法</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">reserve</span><span class="hljs-params">(<span class="hljs-keyword">final</span> T bagEntry)</span>
+    &#123;
+        <span class="hljs-keyword">return</span> bagEntry.compareAndSet(STATE_NOT_IN_USE, STATE_RESERVED);
+    &#125;
+
+    <span class="hljs-comment">// 把连接从【保留】状态重置为【未使用】，使其可以重新被获取</span>
+    <span class="hljs-meta">@SuppressWarnings(&quot;SpellCheckingInspection&quot;)</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">unreserve</span><span class="hljs-params">(<span class="hljs-keyword">final</span> T bagEntry)</span>
+    &#123;
+        <span class="hljs-keyword">if</span> (bagEntry.compareAndSet(STATE_RESERVED, STATE_NOT_IN_USE)) &#123;
+            <span class="hljs-comment">// spin until a thread takes it or none are waiting</span>
+            <span class="hljs-comment">// 这里也会持续尝试移交当前bagEntry给等待者</span>
+            <span class="hljs-keyword">while</span> (waiters.get() &gt; <span class="hljs-number">0</span> &amp;&amp; !handoffQueue.offer(bagEntry)) &#123;
+                Thread.yield();
+            &#125;
+        &#125;
+        <span class="hljs-keyword">else</span> &#123;
+            LOGGER.warn(<span class="hljs-string">&quot;Attempt to relinquish an object to the bag that was not reserved: &#123;&#125;&quot;</span>, bagEntry);
+        &#125;
+    &#125;
+
+    <span class="hljs-comment">// 获取正在等待可用连接的线程数</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-type">int</span> <span class="hljs-title function_">getWaitingThreadCount</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-keyword">return</span> waiters.get();
+    &#125;
+
+    <span class="hljs-comment">// 实时获取sharedList中等于指定状态的连接数</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-type">int</span> <span class="hljs-title function_">getCount</span><span class="hljs-params">(<span class="hljs-keyword">final</span> <span class="hljs-type">int</span> state)</span>
+    &#123;
+        <span class="hljs-type">var</span> <span class="hljs-variable">count</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> e : sharedList) &#123;
+            <span class="hljs-keyword">if</span> (e.getState() == state) &#123;
+                count++;
+            &#125;
+        &#125;
+        <span class="hljs-keyword">return</span> count;
+    &#125;
+
+    <span class="hljs-comment">// 获取一个数组。长度为6，其元素分别表示池中连接的四种状态的数量 + sharedList的大小 + 等待者的数量</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-type">int</span>[] getStateCounts()
+    &#123;
+        <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">states</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">int</span>[<span class="hljs-number">6</span>];
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> e : sharedList) &#123;
+            ++states[e.getState()];
+        &#125;
+        states[<span class="hljs-number">4</span>] = sharedList.size();
+        states[<span class="hljs-number">5</span>] = waiters.get();
+
+        <span class="hljs-keyword">return</span> states;
+    &#125;
+
+    <span class="hljs-keyword">public</span> <span class="hljs-type">int</span> <span class="hljs-title function_">size</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-keyword">return</span> sharedList.size();
+    &#125;
+
+    <span class="hljs-comment">// 打印池中连接的状态</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">dumpState</span><span class="hljs-params">()</span>
+    &#123;
+        sharedList.forEach(entry -&gt; LOGGER.info(entry.toString()));
+    &#125;
+
+    <span class="hljs-comment">/**</span>
+<span class="hljs-comment">    * Determine whether to use WeakReferences based on whether there is a</span>
+<span class="hljs-comment">    * custom ClassLoader implementation sitting between this class and the</span>
+<span class="hljs-comment">    * System ClassLoader.</span>
+<span class="hljs-comment">    */</span>
+    <span class="hljs-comment">// 这里决定是否使用weakThreadLocals</span>
+    <span class="hljs-comment">// 优先判断系统属性com.zaxxer.hikari.useWeakReferences的值，此属性是隐藏的，并未显式的暴露出来</span>
+    <span class="hljs-comment">// 如果未指定此属性的值，则判断当前类的加载器是否为系统类加载器（如AppClassLoader）。如果不是的话，则使用WeakReference</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">useWeakThreadLocals</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-keyword">try</span> &#123;
+            <span class="hljs-comment">// 允许手动修改此属性对默认行为进行覆盖</span>
+            <span class="hljs-keyword">if</span> (System.getProperty(<span class="hljs-string">&quot;com.zaxxer.hikari.useWeakReferences&quot;</span>) != <span class="hljs-literal">null</span>) &#123;   <span class="hljs-comment">// undocumented manual override of WeakReference behavior</span>
+                <span class="hljs-keyword">return</span> Boolean.getBoolean(<span class="hljs-string">&quot;com.zaxxer.hikari.useWeakReferences&quot;</span>);
+            &#125;
+
+            <span class="hljs-keyword">return</span> getClass().getClassLoader() != ClassLoader.getSystemClassLoader();
+        &#125;
+        <span class="hljs-keyword">catch</span> (SecurityException se) &#123;
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+        &#125;
+    &#125;
+&#125;</code></pre></div>
+<p>这里想单独讨论一下两个点：</p>
+<ul>
+<li><code>ThreadLocal</code>是<em>非<code>static</code></em>的，也就是说<em>不同连接池之间的<code>ThreadLocal</code>是完全隔离的</em>。</li>
+<li>为何<code>getClass().getClassLoader() != ClassLoader.getSystemClassLoader()</code>时<code>threadList</code>被初始化为<code>ArrayList</code>且其中的元素需要弱引用？</li>
+</ul>
+<p>关于这两点，完整问题讨论和解答可以参看这两个issue：<a
+target="_blank" rel="noopener" href="https://github.com/brettwooldridge/HikariCP/issues/148">#148</a>、<a
+target="_blank" rel="noopener" href="https://github.com/brettwooldridge/HikariCP/issues/39">#39</a>，可以看到它们都被标记为<em>bug</em>。整理了其中的关键信息：</p>
+<ul>
+<li><p>第一个点，<code>ThreadLocal</code>修改为非<code>static</code>，见<a
+target="_blank" rel="noopener" href="https://github.com/brettwooldridge/HikariCP/issues/148">#148</a>的以下两个回答：</p>
+<p><img src="/img/bag_20240802201112.jpg" srcset="/img/loading.gif" lazyload /></p>
+<p><img src="/img/bag_20240802201138.jpg" srcset="/img/loading.gif" lazyload /></p>
+<p>可以看出来，最开始<code>ThreadLocal</code>是定义为<code>static</code>的，但是有人提出质疑，同一个应用同时开启多个连接池的情况下可能会有问题。作者赞同其观点，并将<code>ThreadLocal</code>改成了非<code>static</code>，但并未道明问题所在。我们来简单分析一下，考虑这样一个场景，一个应用开启一个<em>线程池</em>，并在其中执行<em>多数据源（需要连接池隔离）</em>的取数计算操作。此时若<code>ThreadLocal</code>定义为<code>static</code>，那么不同数据源连接池就是共享一个<code>ThreadLocal</code>。在线程池场景下，同一个线程在不同数据源之间切换获取连接时，就可能从<code>threadList</code>中取到非当前数据源对应的数据库连接，导致报错。</p></li>
+<li><p>第二点，<code>ArrayList</code>和弱引用的使用，跟Tomcat的类加载以及内存泄露的探测机制有关。这里整理了一下问题点及解决思路，不再贴Tomcat的源码了：</p>
+<ul>
+<li>首先，Tomcat在卸载应用时会对当前应用中所有线程对应的<code>ThreadLocal</code>进行检测，判断它们是否存在可能的内存泄露。最终判断的方法在这里☞<a
+target="_blank" rel="noopener" href="https://github.com/apache/tomcat/blob/main/java/org/apache/catalina/loader/WebappClassLoaderBase.java#L1750">WebappClassLoaderBase#checkThreadLocalMapForLeaks</a>。这里会判断每个线程对应的<code>ThreadLocalMap</code>中的<code>key</code>和<code>value</code>是否为空且是否由Tomcat的<code>WebappClassLoader</code>（继承了<code>URLClassLoader</code>）所加载。其中有一个关键点，<em>如果value不是由<code>WebappClassLoader</code>加载，且value是一个集合，则会对集合当中的元素作同样的判断，以这些元素是否满足条件作为依据</em>。如果不为空且它们的类是由Tomcat所加载，则Tomcat认为可能会存在内存泄露，打印告警日志。</li>
+<li>所以，根据这种检测机制可以回答两个问题：一是为何要使用<code>ArrayList</code>而不是<code>FastList</code>？因为它是由引导（Bootstrap）类加载器加载的，能满足第一个条件
+-
+value不是由<code>WebappClassLoader</code>加载。且由于它是一个集合，会扫描其中的元素
+-
+也就是数据库连接对象，检测它们是否存在内存泄漏。当然，选用<code>ArrayList</code>也有性能上的考虑，这里的场景是读多写少，自然是数组优先。二是弱引用，有了弱引用之后，集合中元素的引用就会在某次GC被回收掉，Tomcat的判断也就会失败，不触发告警。</li>
+<li>虽然，作者认为这种场景下<code>threadList</code>中的连接对象并不是真正的内存泄露（因为最终随着池子的销毁会关闭所有的连接，假如在SpringBoot应用下，内置Tomcat关闭
+-&gt; ApplicationContext关闭 -&gt; bean的销毁 -&gt; HikariDataSource关闭
+-&gt;
+连接被移除），但是为了消除这个警告，还是做了优化。可以从这两次commit中看到具体的优化过程<a
+target="_blank" rel="noopener" href="https://github.com/brettwooldridge/HikariCP/commit/72710b0f06588c7be0061b37b0e0f83008b8b2d9">Allow
+the user to control whether WeakReference objects are used within
+ThreadLocals or not (default is not)</a>和<a
+target="_blank" rel="noopener" href="https://github.com/brettwooldridge/HikariCP/commit/8d45526f4de0faa8fccd9f1c19c03a48edb80605">Allow
+(undocumented/unsupported) overriding the use of
+WeakReferences</a>。</li>
+</ul></li>
+</ul>
+<h2 id="fastlist">FastList</h2>
+<p>定制的一个简单列表，对比ArrayList移除了很多使用不到的检查，增删查效率很高。</p>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">/**</span>
+<span class="hljs-comment"> * Fast list without range checking.</span>
+<span class="hljs-comment"> */</span>
+<span class="hljs-comment">// 不带范围检查的快速列表。可以看到实现了RandomAccess接口，说明此list是支持常量时间复杂度的随机访问（数组实现）</span>
+<span class="hljs-meta">@SuppressWarnings(&quot;NullableProblems&quot;)</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">FastList</span>&lt;T&gt; <span class="hljs-keyword">implements</span> <span class="hljs-title class_">List</span>&lt;T&gt;, RandomAccess, Serializable
+&#123;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">long</span> <span class="hljs-variable">serialVersionUID</span> <span class="hljs-operator">=</span> -<span class="hljs-number">4598088075242913858L</span>;
+
+    <span class="hljs-comment">// 存储的元素类型</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> Class&lt;?&gt; clazz;
+    <span class="hljs-comment">// 存储元素的数组</span>
+    <span class="hljs-keyword">private</span> T[] elementData;
+    <span class="hljs-comment">// 实际的元素个数，而非数组的容量</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-type">int</span> size;
+
+    <span class="hljs-comment">// 初始化数组，默认容量32</span>
+    <span class="hljs-meta">@SuppressWarnings(&quot;unchecked&quot;)</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-title function_">FastList</span><span class="hljs-params">(Class&lt;?&gt; clazz)</span>
+    &#123;
+        <span class="hljs-built_in">this</span>.elementData = (T[]) Array.newInstance(clazz, <span class="hljs-number">32</span>);
+        <span class="hljs-built_in">this</span>.clazz = clazz;
+    &#125;
+
+    <span class="hljs-comment">// 初始化数组，指定容量</span>
+    <span class="hljs-meta">@SuppressWarnings(&quot;unchecked&quot;)</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-title function_">FastList</span><span class="hljs-params">(Class&lt;?&gt; clazz, <span class="hljs-type">int</span> capacity)</span>
+    &#123;
+        <span class="hljs-built_in">this</span>.elementData = (T[]) Array.newInstance(clazz, capacity);
+        <span class="hljs-built_in">this</span>.clazz = clazz;
+    &#125;
+
+    <span class="hljs-comment">// 向数组尾部添加一个元素</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">add</span><span class="hljs-params">(T element)</span>
+    &#123;
+        <span class="hljs-keyword">if</span> (size &lt; elementData.length) &#123;
+            <span class="hljs-comment">// 如果元素个数较少，则直接添加元素，size自增</span>
+            elementData[size++] = element;
+        &#125;
+        <span class="hljs-keyword">else</span> &#123;
+            <span class="hljs-comment">// 如果元素个数已经超过了数组容量，需要进行扩容</span>
+            <span class="hljs-comment">// overflow-conscious code</span>
+            <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">oldCapacity</span> <span class="hljs-operator">=</span> elementData.length;
+            <span class="hljs-comment">// 翻倍扩容</span>
+            <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">newCapacity</span> <span class="hljs-operator">=</span> oldCapacity &lt;&lt; <span class="hljs-number">1</span>;
+            <span class="hljs-meta">@SuppressWarnings(&quot;unchecked&quot;)</span>
+            <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">newElementData</span> <span class="hljs-operator">=</span> (T[]) Array.newInstance(clazz, newCapacity);
+            <span class="hljs-comment">// 数组拷贝</span>
+            System.arraycopy(elementData, <span class="hljs-number">0</span>, newElementData, <span class="hljs-number">0</span>, oldCapacity);
+            <span class="hljs-comment">// 把元素添加到数组尾部</span>
+            newElementData[size++] = element;
+            elementData = newElementData;
+        &#125;
+
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+    &#125;
+
+    <span class="hljs-comment">// 获取指定index处的元素</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> T <span class="hljs-title function_">get</span><span class="hljs-params">(<span class="hljs-type">int</span> index)</span>
+    &#123;
+        <span class="hljs-keyword">return</span> elementData[index];
+    &#125;
+
+    <span class="hljs-comment">// 移除数组当中的最后一个元素。不会执行范围检查，如果数组为空，那么会抛出ArrayIndexOutOfBoundsException</span>
+    <span class="hljs-keyword">public</span> T <span class="hljs-title function_">removeLast</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-type">T</span> <span class="hljs-variable">element</span> <span class="hljs-operator">=</span> elementData[--size];
+        elementData[size] = <span class="hljs-literal">null</span>;
+        <span class="hljs-keyword">return</span> element;
+    &#125;
+
+    <span class="hljs-comment">/**</span>
+<span class="hljs-comment">    * This remove method is most efficient when the element being removed</span>
+<span class="hljs-comment">    * is the last element.  Equality is identity based, not equals() based.</span>
+<span class="hljs-comment">    * Only the first matching element is removed.</span>
+<span class="hljs-comment">    */</span>
+    <span class="hljs-comment">// 移除指定元素，倒序遍历数组，移除匹配到的第一个元素。使用的是 == 匹配，而不是equals()方法。如果是恰好是移除最后一个元素的话，那么速度会超快</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">remove</span><span class="hljs-params">(Object element)</span>
+    &#123;
+        <span class="hljs-keyword">for</span> (<span class="hljs-type">var</span> <span class="hljs-variable">index</span> <span class="hljs-operator">=</span> size - <span class="hljs-number">1</span>; index &gt;= <span class="hljs-number">0</span>; index--) &#123;
+            <span class="hljs-keyword">if</span> (element == elementData[index]) &#123;
+                <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">numMoved</span> <span class="hljs-operator">=</span> size - index - <span class="hljs-number">1</span>;
+                <span class="hljs-keyword">if</span> (numMoved &gt; <span class="hljs-number">0</span>) &#123;
+                    System.arraycopy(elementData, index + <span class="hljs-number">1</span>, elementData, index, numMoved);
+                &#125;
+                elementData[--size] = <span class="hljs-literal">null</span>;
+                <span class="hljs-keyword">return</span> <span class="hljs-literal">true</span>;
+            &#125;
+        &#125;
+
+        <span class="hljs-keyword">return</span> <span class="hljs-literal">false</span>;
+    &#125;
+
+    <span class="hljs-comment">// 清理数组</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">clear</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-keyword">for</span> (<span class="hljs-type">var</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; size; i++) &#123;
+            elementData[i] = <span class="hljs-literal">null</span>;
+        &#125;
+
+        size = <span class="hljs-number">0</span>;
+    &#125;
+
+    <span class="hljs-comment">// 获取当前list中的元素个数</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-type">int</span> <span class="hljs-title function_">size</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-keyword">return</span> size;
+    &#125;
+
+    <span class="hljs-comment">/** &#123;<span class="hljs-doctag">@inheritDoc</span>&#125; */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">isEmpty</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-keyword">return</span> size == <span class="hljs-number">0</span>;
+    &#125;
+
+    <span class="hljs-comment">// 覆盖指定index处的元素，并返回旧元素的值</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> T <span class="hljs-title function_">set</span><span class="hljs-params">(<span class="hljs-type">int</span> index, T element)</span>
+    &#123;
+        <span class="hljs-type">T</span> <span class="hljs-variable">old</span> <span class="hljs-operator">=</span> elementData[index];
+        elementData[index] = element;
+        <span class="hljs-keyword">return</span> old;
+    &#125;
+
+    <span class="hljs-comment">// 移除指定index处的元素</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> T <span class="hljs-title function_">remove</span><span class="hljs-params">(<span class="hljs-type">int</span> index)</span>
+    &#123;
+        <span class="hljs-keyword">if</span> (size == <span class="hljs-number">0</span>) &#123;
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
+        &#125;
+
+        <span class="hljs-keyword">final</span> <span class="hljs-type">T</span> <span class="hljs-variable">old</span> <span class="hljs-operator">=</span> elementData[index];
+
+        <span class="hljs-comment">// 移除元素之后，需要调整数组中的元素位置，这里是使用拷贝大法进行覆盖后把最后一位元素置为null</span>
+        <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">numMoved</span> <span class="hljs-operator">=</span> size - index - <span class="hljs-number">1</span>;
+        <span class="hljs-keyword">if</span> (numMoved &gt; <span class="hljs-number">0</span>) &#123;
+            System.arraycopy(elementData, index + <span class="hljs-number">1</span>, elementData, index, numMoved);
+        &#125;
+
+        elementData[--size] = <span class="hljs-literal">null</span>;
+
+        <span class="hljs-keyword">return</span> old;
+    &#125;
+
+    <span class="hljs-comment">// 简单的迭代器</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> Iterator&lt;T&gt; <span class="hljs-title function_">iterator</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Iterator</span>&lt;&gt;() &#123;
+            <span class="hljs-keyword">private</span> <span class="hljs-type">int</span> index;
+
+            <span class="hljs-meta">@Override</span>
+            <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">hasNext</span><span class="hljs-params">()</span>
+            &#123;
+                <span class="hljs-keyword">return</span> index &lt; size;
+            &#125;
+
+            <span class="hljs-meta">@Override</span>
+            <span class="hljs-keyword">public</span> T <span class="hljs-title function_">next</span><span class="hljs-params">()</span>
+            &#123;
+                <span class="hljs-keyword">if</span> (index &lt; size) &#123;
+                    <span class="hljs-keyword">return</span> elementData[index++];
+                &#125;
+
+                <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">NoSuchElementException</span>(<span class="hljs-string">&quot;No more elements in FastList&quot;</span>);
+            &#125;
+        &#125;;
+    &#125;
+
+    <span class="hljs-comment">// 其他方法都是Unsupported的，说明用不到，略</span>
+    ...
+&#125;</code></pre></div>
+<h2 id="poolentry">PoolEntry</h2>
+<p>对连接（非代理连接）进行封装，便于跟踪连接实例。</p>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-keyword">final</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">PoolEntry</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">IConcurrentBagEntry</span>
+&#123;
+    <span class="hljs-comment">// 状态更新器</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> AtomicIntegerFieldUpdater&lt;PoolEntry&gt; stateUpdater;
+
+    <span class="hljs-comment">// 持有真正的数据库连接对象</span>
+    Connection connection;
+    <span class="hljs-comment">// 记录连接最近一次访问和租借的时间点</span>
+    <span class="hljs-type">long</span> lastAccessed;
+    <span class="hljs-type">long</span> lastBorrowed;
+
+    <span class="hljs-comment">// 状态</span>
+    <span class="hljs-meta">@SuppressWarnings(&quot;FieldCanBeLocal&quot;)</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">volatile</span> <span class="hljs-type">int</span> <span class="hljs-variable">state</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>;
+    <span class="hljs-comment">// 标记连接是否被逐出，表示真正的数据库连接关闭中或者已被关闭</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">volatile</span> <span class="hljs-type">boolean</span> evict;
+
+    <span class="hljs-comment">// 指向最大存活时长检查和活性探测的任务</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">volatile</span> ScheduledFuture&lt;?&gt; endOfLife;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">volatile</span> ScheduledFuture&lt;?&gt; keepalive;
+
+    <span class="hljs-comment">// 记录当前连接中打开的statement，在poolEntry中被初始化为FastList，作为构造器入参传递给ProxyConnection</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> FastList&lt;Statement&gt; openStatements;
+    <span class="hljs-comment">// 持有hikariPool对象</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> HikariPool hikariPool;
+
+    <span class="hljs-comment">// 记录连接池配置的 只读和自动提交 属性值，传递给ProxyConnection</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-type">boolean</span> isReadOnly;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> <span class="hljs-type">boolean</span> isAutoCommit;
+
+    <span class="hljs-keyword">static</span>
+    &#123;
+        stateUpdater = AtomicIntegerFieldUpdater.newUpdater(PoolEntry.class, <span class="hljs-string">&quot;state&quot;</span>);
+    &#125;
+
+    PoolEntry(<span class="hljs-keyword">final</span> Connection connection, <span class="hljs-keyword">final</span> PoolBase pool, <span class="hljs-keyword">final</span> <span class="hljs-type">boolean</span> isReadOnly, <span class="hljs-keyword">final</span> <span class="hljs-type">boolean</span> isAutoCommit)
+    &#123;
+        <span class="hljs-built_in">this</span>.connection = connection;
+        <span class="hljs-built_in">this</span>.hikariPool = (HikariPool) pool;
+        <span class="hljs-built_in">this</span>.isReadOnly = isReadOnly;
+        <span class="hljs-built_in">this</span>.isAutoCommit = isAutoCommit;
+        <span class="hljs-built_in">this</span>.lastAccessed = currentTime();
+        <span class="hljs-built_in">this</span>.openStatements = <span class="hljs-keyword">new</span> <span class="hljs-title class_">FastList</span>&lt;&gt;(Statement.class, <span class="hljs-number">16</span>);
+    &#125;
+
+    <span class="hljs-comment">/**</span>
+<span class="hljs-comment">    * Release this entry back to the pool.</span>
+<span class="hljs-comment">    */</span>
+    <span class="hljs-comment">// 代理连接关闭时，会调用此方法，进行连接的回收</span>
+    <span class="hljs-keyword">void</span> <span class="hljs-title function_">recycle</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-keyword">if</span> (connection != <span class="hljs-literal">null</span>) &#123;
+            <span class="hljs-built_in">this</span>.lastAccessed = currentTime();
+            hikariPool.recycle(<span class="hljs-built_in">this</span>);
+        &#125;
+    &#125;
+
+    <span class="hljs-comment">// 创建动态代理连接对象</span>
+    Connection <span class="hljs-title function_">createProxyConnection</span><span class="hljs-params">(<span class="hljs-keyword">final</span> ProxyLeakTask leakTask)</span>
+    &#123;
+        <span class="hljs-keyword">return</span> ProxyFactory.getProxyConnection(<span class="hljs-built_in">this</span>, connection, openStatements, leakTask, isReadOnly, isAutoCommit);
+    &#125;
+
+    <span class="hljs-comment">// 重置连接的属性。如果连接被租借后应用修改了其中的某些属性，那么在归还时需要重置连接的属性为初始化配置时的值，避免出现异常</span>
+    <span class="hljs-comment">// ProxyConnection关闭时会判断并调用</span>
+    <span class="hljs-keyword">void</span> <span class="hljs-title function_">resetConnectionState</span><span class="hljs-params">(<span class="hljs-keyword">final</span> ProxyConnection proxyConnection, <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> dirtyBits)</span> <span class="hljs-keyword">throws</span> SQLException
+    &#123;
+        hikariPool.resetConnectionState(connection, proxyConnection, dirtyBits);
+    &#125;
+
+    <span class="hljs-comment">// 真正的数据库连接需要被关闭时调用</span>
+    <span class="hljs-keyword">void</span> <span class="hljs-title function_">markEvicted</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-built_in">this</span>.evict = <span class="hljs-literal">true</span>;
+    &#125;
+    
+    <span class="hljs-comment">// ProxyConnection关闭或者执行SQL出现异常时调用，关闭真正的数据库连接</span>
+    <span class="hljs-keyword">void</span> <span class="hljs-title function_">evict</span><span class="hljs-params">(<span class="hljs-keyword">final</span> String closureReason)</span>
+    &#123;
+        hikariPool.closeConnection(<span class="hljs-built_in">this</span>, closureReason);
+    &#125;
+
+    <span class="hljs-comment">/** Returns millis since lastBorrowed */</span>
+    <span class="hljs-type">long</span> <span class="hljs-title function_">getMillisSinceBorrowed</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-comment">// 追踪监控用，返回连接自上次被租借的时间到当前时间的间隔，ms</span>
+        <span class="hljs-keyword">return</span> elapsedMillis(lastBorrowed);
+    &#125;
+
+    <span class="hljs-comment">// ***********************************************************************</span>
+    <span class="hljs-comment">//                      IConcurrentBagEntry methods</span>
+    <span class="hljs-comment">// ***********************************************************************</span>
+
+    <span class="hljs-comment">/** &#123;<span class="hljs-doctag">@inheritDoc</span>&#125; */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-type">int</span> <span class="hljs-title function_">getState</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-keyword">return</span> stateUpdater.get(<span class="hljs-built_in">this</span>);
+    &#125;
+
+    <span class="hljs-comment">/** &#123;<span class="hljs-doctag">@inheritDoc</span>&#125; */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">compareAndSet</span><span class="hljs-params">(<span class="hljs-type">int</span> expect, <span class="hljs-type">int</span> update)</span>
+    &#123;
+        <span class="hljs-comment">// 利用CAS进行状态的转换</span>
+        <span class="hljs-keyword">return</span> stateUpdater.compareAndSet(<span class="hljs-built_in">this</span>, expect, update);
+    &#125;
+
+    <span class="hljs-comment">/** &#123;<span class="hljs-doctag">@inheritDoc</span>&#125; */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">setState</span><span class="hljs-params">(<span class="hljs-type">int</span> update)</span>
+    &#123;
+        stateUpdater.set(<span class="hljs-built_in">this</span>, update);
+    &#125;
+
+    <span class="hljs-comment">// 关闭当前poolEntry对象，释放对应的资源</span>
+    Connection <span class="hljs-title function_">close</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-type">var</span> <span class="hljs-variable">eol</span> <span class="hljs-operator">=</span> endOfLife;
+        <span class="hljs-keyword">if</span> (eol != <span class="hljs-literal">null</span> &amp;&amp; !eol.isDone() &amp;&amp; !eol.cancel(<span class="hljs-literal">false</span>)) &#123;
+            LOGGER.warn(<span class="hljs-string">&quot;&#123;&#125; - maxLifeTime expiration task cancellation unexpectedly returned false for connection &#123;&#125;&quot;</span>, getPoolName(), connection);
+        &#125;
+
+        <span class="hljs-type">var</span> <span class="hljs-variable">ka</span> <span class="hljs-operator">=</span> keepalive;
+        <span class="hljs-keyword">if</span> (ka != <span class="hljs-literal">null</span> &amp;&amp; !ka.isDone() &amp;&amp; !ka.cancel(<span class="hljs-literal">false</span>)) &#123;
+            LOGGER.warn(<span class="hljs-string">&quot;&#123;&#125; - keepalive task cancellation unexpectedly returned false for connection &#123;&#125;&quot;</span>, getPoolName(), connection);
+        &#125;
+
+        <span class="hljs-type">var</span> <span class="hljs-variable">con</span> <span class="hljs-operator">=</span> connection;
+        connection = <span class="hljs-literal">null</span>;
+        endOfLife = <span class="hljs-literal">null</span>;
+        keepalive = <span class="hljs-literal">null</span>;
+        <span class="hljs-keyword">return</span> con;
+    &#125;
+
+    <span class="hljs-keyword">private</span> String <span class="hljs-title function_">stateToString</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-keyword">switch</span> (state) &#123;
+            <span class="hljs-keyword">case</span> STATE_IN_USE:
+                <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;IN_USE&quot;</span>;
+            <span class="hljs-keyword">case</span> STATE_NOT_IN_USE:
+                <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;NOT_IN_USE&quot;</span>;
+            <span class="hljs-keyword">case</span> STATE_REMOVED:
+                <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;REMOVED&quot;</span>;
+            <span class="hljs-keyword">case</span> STATE_RESERVED:
+                <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;RESERVED&quot;</span>;
+            <span class="hljs-keyword">default</span>:
+                <span class="hljs-keyword">return</span> <span class="hljs-string">&quot;Invalid&quot;</span>;
+        &#125;
+    &#125;
+&#125;</code></pre></div>
+<h2 id="proxyconnection">ProxyConnection</h2>
+<p>抽象代理连接类。代理连接对象是一次性的，在每次获取连接时都会重新创建。</p>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">abstract</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ProxyConnection</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Connection</span>
+&#123;
+    <span class="hljs-comment">// 利用二进制的不同位，来映射连接的不同属性</span>
+    <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">DIRTY_BIT_READONLY</span>   <span class="hljs-operator">=</span> <span class="hljs-number">0b000001</span>;<span class="hljs-comment">// 是否只读，isReadOnly</span>
+    <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">DIRTY_BIT_AUTOCOMMIT</span> <span class="hljs-operator">=</span> <span class="hljs-number">0b000010</span>;<span class="hljs-comment">// 是否自动提交，isAutoCommit</span>
+    <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">DIRTY_BIT_ISOLATION</span>  <span class="hljs-operator">=</span> <span class="hljs-number">0b000100</span>;<span class="hljs-comment">// 事务隔离级别，transactionIsolation</span>
+    <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">DIRTY_BIT_CATALOG</span>    <span class="hljs-operator">=</span> <span class="hljs-number">0b001000</span>;<span class="hljs-comment">// 连接的数据库名称/目录，dbcatalog</span>
+    <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">DIRTY_BIT_NETTIMEOUT</span> <span class="hljs-operator">=</span> <span class="hljs-number">0b010000</span>;<span class="hljs-comment">// 连接超时时间，networkTimeout</span>
+    <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">int</span> <span class="hljs-variable">DIRTY_BIT_SCHEMA</span>     <span class="hljs-operator">=</span> <span class="hljs-number">0b100000</span>;<span class="hljs-comment">// 数据库的SCHEMA，dbschema</span>
+    
+    <span class="hljs-comment">// 记录连接的某些属性是否被修改过，默认为 000000。与上面的常量进行 或（|）操作后，对应位会被置为1，则表示有被修改过，即所谓dirty</span>
+    <span class="hljs-comment">// 主要是用作回收连接时的判断，如果连接被租借后应用修改了其中的某些属性，那么在归还时需要重置连接的属性为初始化配置时的值，避免出现异常</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-type">int</span> dirtyBits;
+
+    <span class="hljs-comment">// 一些固定的错误码。主要是在语句执行抛出异常时，检测是否有这些错误，如果有，则认为连接已断开，触发关闭逻辑</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> Set&lt;String&gt; ERROR_STATES;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> Set&lt;Integer&gt; ERROR_CODES;
+
+    <span class="hljs-comment">// 真正的数据库连接</span>
+    <span class="hljs-meta">@SuppressWarnings(&quot;WeakerAccess&quot;)</span>
+    <span class="hljs-keyword">protected</span> Connection delegate;
+
+    <span class="hljs-comment">// 持有poolEntry对象</span>
+    <span class="hljs-comment">// 在代理连接对象关闭时，实际只是把poolEntry的状态重置，poolEntry中的连接也一直存活，即所谓回收。而当前代理对象会被释放掉，对应的delegate也会被置为全局唯一的单例对象CLOSED_CONNECTION</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> PoolEntry poolEntry;
+    <span class="hljs-comment">// 连接是否泄露的检测任务</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> ProxyLeakTask leakTask;
+    <span class="hljs-comment">// 记录当前连接中打开的statement，在回收连接时也需要把它们一起释放</span>
+    <span class="hljs-comment">// 在poolEntry中被初始化为FastList，作为构造器入参传递给ProxyConnection</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">final</span> FastList&lt;Statement&gt; openStatements;
+
+    <span class="hljs-comment">// 标记当前连接的提交是否为dirty，如果为dirty，则表明需要显示调用commit或者rollback</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-type">boolean</span> isCommitStateDirty;
+
+    <span class="hljs-comment">// 下面几个属性就对应连接中比较重要的几个属性</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-type">boolean</span> isReadOnly;
+    <span class="hljs-keyword">private</span> <span class="hljs-type">boolean</span> isAutoCommit;
+    <span class="hljs-keyword">private</span> <span class="hljs-type">int</span> networkTimeout;
+    <span class="hljs-keyword">private</span> <span class="hljs-type">int</span> transactionIsolation;
+    <span class="hljs-keyword">private</span> String dbcatalog;
+    <span class="hljs-keyword">private</span> String dbschema;
+
+    <span class="hljs-comment">// static initializer</span>
+    <span class="hljs-keyword">static</span> &#123;
+        ERROR_STATES = <span class="hljs-keyword">new</span> <span class="hljs-title class_">HashSet</span>&lt;&gt;();
+        ERROR_STATES.add(<span class="hljs-string">&quot;0A000&quot;</span>); <span class="hljs-comment">// FEATURE UNSUPPORTED</span>
+        ERROR_STATES.add(<span class="hljs-string">&quot;57P01&quot;</span>); <span class="hljs-comment">// ADMIN SHUTDOWN</span>
+        ERROR_STATES.add(<span class="hljs-string">&quot;57P02&quot;</span>); <span class="hljs-comment">// CRASH SHUTDOWN</span>
+        ERROR_STATES.add(<span class="hljs-string">&quot;57P03&quot;</span>); <span class="hljs-comment">// CANNOT CONNECT NOW</span>
+        ERROR_STATES.add(<span class="hljs-string">&quot;01002&quot;</span>); <span class="hljs-comment">// SQL92 disconnect error</span>
+        ERROR_STATES.add(<span class="hljs-string">&quot;JZ0C0&quot;</span>); <span class="hljs-comment">// Sybase disconnect error</span>
+        ERROR_STATES.add(<span class="hljs-string">&quot;JZ0C1&quot;</span>); <span class="hljs-comment">// Sybase disconnect error</span>
+
+        ERROR_CODES = <span class="hljs-keyword">new</span> <span class="hljs-title class_">HashSet</span>&lt;&gt;();
+        ERROR_CODES.add(<span class="hljs-number">500150</span>);
+        ERROR_CODES.add(<span class="hljs-number">2399</span>);
+        ERROR_CODES.add(<span class="hljs-number">1105</span>);
+    &#125;
+
+    <span class="hljs-keyword">protected</span> <span class="hljs-title function_">ProxyConnection</span><span class="hljs-params">(<span class="hljs-keyword">final</span> PoolEntry poolEntry,</span>
+<span class="hljs-params">                              <span class="hljs-keyword">final</span> Connection connection,</span>
+<span class="hljs-params">                              <span class="hljs-keyword">final</span> FastList&lt;Statement&gt; openStatements,</span>
+<span class="hljs-params">                              <span class="hljs-keyword">final</span> ProxyLeakTask leakTask,</span>
+<span class="hljs-params">                              <span class="hljs-keyword">final</span> <span class="hljs-type">boolean</span> isReadOnly,</span>
+<span class="hljs-params">                              <span class="hljs-keyword">final</span> <span class="hljs-type">boolean</span> isAutoCommit)</span> &#123;
+        <span class="hljs-built_in">this</span>.poolEntry = poolEntry;
+        <span class="hljs-built_in">this</span>.delegate = connection;
+        <span class="hljs-built_in">this</span>.openStatements = openStatements;
+        <span class="hljs-built_in">this</span>.leakTask = leakTask;
+        <span class="hljs-built_in">this</span>.isReadOnly = isReadOnly;
+        <span class="hljs-built_in">this</span>.isAutoCommit = isAutoCommit;
+    &#125;
+
+    <span class="hljs-meta">@SuppressWarnings(&quot;ConstantConditions&quot;)</span>
+    <span class="hljs-comment">// 抛出异常时检测，是否需要直接关闭连接</span>
+    <span class="hljs-keyword">final</span> SQLException <span class="hljs-title function_">checkException</span><span class="hljs-params">(SQLException sqle)</span>
+    &#123;
+        <span class="hljs-type">var</span> <span class="hljs-variable">evict</span> <span class="hljs-operator">=</span> <span class="hljs-literal">false</span>;
+        <span class="hljs-type">SQLException</span> <span class="hljs-variable">nse</span> <span class="hljs-operator">=</span> sqle;
+        <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">exceptionOverride</span> <span class="hljs-operator">=</span> poolEntry.getPoolBase().exceptionOverride;
+        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">depth</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; delegate != ClosedConnection.CLOSED_CONNECTION &amp;&amp; nse != <span class="hljs-literal">null</span> &amp;&amp; depth &lt; <span class="hljs-number">10</span>; depth++) &#123;
+            <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">sqlState</span> <span class="hljs-operator">=</span> nse.getSQLState();
+            <span class="hljs-keyword">if</span> (sqlState != <span class="hljs-literal">null</span> &amp;&amp; sqlState.startsWith(<span class="hljs-string">&quot;08&quot;</span>)
+                || nse <span class="hljs-keyword">instanceof</span> SQLTimeoutException
+                || ERROR_STATES.contains(sqlState)
+                || ERROR_CODES.contains(nse.getErrorCode())) &#123;
+
+                <span class="hljs-keyword">if</span> (exceptionOverride != <span class="hljs-literal">null</span> &amp;&amp; exceptionOverride.adjudicate(nse) == DO_NOT_EVICT) &#123;
+                    <span class="hljs-keyword">break</span>;
+                &#125;
+
+                <span class="hljs-comment">// broken connection</span>
+                evict = <span class="hljs-literal">true</span>;
+                <span class="hljs-keyword">break</span>;
+            &#125;
+            <span class="hljs-keyword">else</span> &#123;
+                nse = nse.getNextException();
+            &#125;
+        &#125;
+
+        <span class="hljs-keyword">if</span> (evict) &#123;
+            <span class="hljs-type">var</span> <span class="hljs-variable">exception</span> <span class="hljs-operator">=</span> (nse != <span class="hljs-literal">null</span>) ? nse : sqle;
+            LOGGER.warn(<span class="hljs-string">&quot;&#123;&#125; - Connection &#123;&#125; marked as broken because of SQLSTATE(&#123;&#125;), ErrorCode(&#123;&#125;)&quot;</span>,
+                        poolEntry.getPoolName(), delegate, exception.getSQLState(), exception.getErrorCode(), exception);
+            leakTask.cancel();
+            poolEntry.evict(<span class="hljs-string">&quot;(connection is broken)&quot;</span>);
+            delegate = ClosedConnection.CLOSED_CONNECTION;
+        &#125;
+
+        <span class="hljs-keyword">return</span> sqle;
+    &#125;
+
+    <span class="hljs-keyword">final</span> <span class="hljs-keyword">synchronized</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">untrackStatement</span><span class="hljs-params">(<span class="hljs-keyword">final</span> Statement statement)</span>
+    &#123;
+        openStatements.remove(statement);
+    &#125;
+
+    <span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">markCommitStateDirty</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-comment">// 非自动提交时，isCommitStateDirty才生效。手动控制事务的场景</span>
+        <span class="hljs-keyword">if</span> (!isAutoCommit) &#123;
+            isCommitStateDirty = <span class="hljs-literal">true</span>;
+        &#125;
+    &#125;
+
+    <span class="hljs-keyword">void</span> <span class="hljs-title function_">cancelLeakTask</span><span class="hljs-params">()</span>
+    &#123;
+        leakTask.cancel();
+    &#125;
+
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">synchronized</span> &lt;T <span class="hljs-keyword">extends</span> <span class="hljs-title class_">Statement</span>&gt; T <span class="hljs-title function_">trackStatement</span><span class="hljs-params">(<span class="hljs-keyword">final</span> T statement)</span>
+    &#123;
+        openStatements.add(statement);
+        <span class="hljs-keyword">return</span> statement;
+    &#125;
+
+    <span class="hljs-comment">// 关闭statement</span>
+    <span class="hljs-meta">@SuppressWarnings(&quot;EmptyTryBlock&quot;)</span>
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">synchronized</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">closeStatements</span><span class="hljs-params">()</span>
+    &#123;
+        <span class="hljs-keyword">final</span> <span class="hljs-type">var</span> <span class="hljs-variable">size</span> <span class="hljs-operator">=</span> openStatements.size();
+        <span class="hljs-keyword">if</span> (size &gt; <span class="hljs-number">0</span>) &#123;
+            <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> <span class="hljs-number">0</span>; i &lt; size &amp;&amp; delegate != ClosedConnection.CLOSED_CONNECTION; i++) &#123;
+                <span class="hljs-keyword">try</span> (<span class="hljs-type">Statement</span> <span class="hljs-variable">ignored</span> <span class="hljs-operator">=</span> openStatements.get(i)) &#123;
+                    <span class="hljs-comment">// 自动资源释放</span>
+                    <span class="hljs-comment">// automatic resource cleanup</span>
+                &#125;
+                <span class="hljs-keyword">catch</span> (SQLException e) &#123;
+                    LOGGER.warn(<span class="hljs-string">&quot;&#123;&#125; - Connection &#123;&#125; marked as broken because of an exception closing open statements during Connection.close()&quot;</span>,
+                                poolEntry.getPoolName(), delegate);
+                    leakTask.cancel();
+                    <span class="hljs-comment">// statement关闭失败，则需要把连接关闭</span>
+                    poolEntry.evict(<span class="hljs-string">&quot;(exception closing Statements during Connection.close())&quot;</span>);
+                    <span class="hljs-comment">// 真正的连接指向CLOSED_CONNECTION</span>
+                    delegate = ClosedConnection.CLOSED_CONNECTION;
+                &#125;
+            &#125;
+
+            openStatements.clear();
+        &#125;
+    &#125;
+
+    <span class="hljs-comment">// **********************************************************************</span>
+    <span class="hljs-comment">//              &quot;Overridden&quot; java.sql.Connection Methods</span>
+    <span class="hljs-comment">// **********************************************************************</span>
+
+    <span class="hljs-comment">// 关闭（回收）连接</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">close</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> SQLException
+    &#123;
+		<span class="hljs-comment">// 下面这个方法的调用及对应的注释就对应了上面的逻辑，statement的关闭失败会导致连接的连锁关闭，故而要先调用closeStatements()</span>
+        <span class="hljs-comment">// Closing statements can cause connection eviction, so this must run before the conditional below</span>
+        closeStatements();
+
+        <span class="hljs-comment">// 连接正常时才触发关闭回收逻辑</span>
+        <span class="hljs-keyword">if</span> (delegate != ClosedConnection.CLOSED_CONNECTION) &#123;
+            leakTask.cancel();
+
+            <span class="hljs-keyword">try</span> &#123;
+                <span class="hljs-comment">// 如果是dirty，则需要回滚</span>
+                <span class="hljs-keyword">if</span> (isCommitStateDirty &amp;&amp; !isAutoCommit) &#123;
+                    delegate.rollback();
+                    LOGGER.debug(<span class="hljs-string">&quot;&#123;&#125; - Executed rollback on connection &#123;&#125; due to dirty commit state on close().&quot;</span>, poolEntry.getPoolName(), delegate);
+                &#125;
+
+                <span class="hljs-keyword">if</span> (dirtyBits != <span class="hljs-number">0</span>) &#123;
+                    <span class="hljs-comment">// 调用poolEntry的方法来对连接中的某些属性进行重置</span>
+                    poolEntry.resetConnectionState(<span class="hljs-built_in">this</span>, dirtyBits);
+                &#125;
+
+                delegate.clearWarnings();
+            &#125;
+            <span class="hljs-keyword">catch</span> (SQLException e) &#123;
+                <span class="hljs-comment">// when connections are aborted, exceptions are often thrown that should not reach the application</span>
+                <span class="hljs-keyword">if</span> (!poolEntry.isMarkedEvicted()) &#123;
+                    <span class="hljs-keyword">throw</span> checkException(e);
+                &#125;
+            &#125;
+            <span class="hljs-keyword">finally</span> &#123;
+                <span class="hljs-comment">// 真正的连接指向CLOSED_CONNECTION</span>
+                delegate = ClosedConnection.CLOSED_CONNECTION;
+                <span class="hljs-comment">// 触发连接回收操作</span>
+                poolEntry.recycle();
+            &#125;
+        &#125;
+    &#125;
+
+    <span class="hljs-comment">/** &#123;<span class="hljs-doctag">@inheritDoc</span>&#125; */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-meta">@SuppressWarnings(&quot;RedundantThrows&quot;)</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">isClosed</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> SQLException
+    &#123;
+        <span class="hljs-comment">// 可以看到连接是否关闭就是delegate跟CLOSED_CONNECTION进行比对，简单快速</span>
+        <span class="hljs-keyword">return</span> (delegate == ClosedConnection.CLOSED_CONNECTION);
+    &#125;
+
+    <span class="hljs-comment">// 创建statement，下面还有一些跟创建和prepare的方法，忽略</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> Statement <span class="hljs-title function_">createStatement</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> SQLException
+    &#123;
+        <span class="hljs-keyword">return</span> ProxyFactory.getProxyStatement(<span class="hljs-built_in">this</span>, trackStatement(delegate.createStatement()));
+    &#125;
+
+    ...
+
+    <span class="hljs-comment">// 下面是一些connection的核心方法，进行了覆写。有dirtyBits的赋值逻辑</span>
+    <span class="hljs-comment">/** &#123;<span class="hljs-doctag">@inheritDoc</span>&#125; */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">commit</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> SQLException
+    &#123;
+        delegate.commit();
+        isCommitStateDirty = <span class="hljs-literal">false</span>;
+    &#125;
+
+    <span class="hljs-comment">/** &#123;<span class="hljs-doctag">@inheritDoc</span>&#125; */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">rollback</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> SQLException
+    &#123;
+        delegate.rollback();
+        isCommitStateDirty = <span class="hljs-literal">false</span>;
+    &#125;
+
+    <span class="hljs-comment">/** &#123;<span class="hljs-doctag">@inheritDoc</span>&#125; */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">rollback</span><span class="hljs-params">(Savepoint savepoint)</span> <span class="hljs-keyword">throws</span> SQLException
+    &#123;
+        delegate.rollback(savepoint);
+        isCommitStateDirty = <span class="hljs-literal">false</span>;
+    &#125;
+
+    <span class="hljs-comment">/** &#123;<span class="hljs-doctag">@inheritDoc</span>&#125; */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">setAutoCommit</span><span class="hljs-params">(<span class="hljs-type">boolean</span> autoCommit)</span> <span class="hljs-keyword">throws</span> SQLException
+    &#123;
+        delegate.setAutoCommit(autoCommit);
+        isAutoCommit = autoCommit;
+        dirtyBits |= DIRTY_BIT_AUTOCOMMIT;
+    &#125;
+
+    <span class="hljs-comment">/** &#123;<span class="hljs-doctag">@inheritDoc</span>&#125; */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">setReadOnly</span><span class="hljs-params">(<span class="hljs-type">boolean</span> readOnly)</span> <span class="hljs-keyword">throws</span> SQLException
+    &#123;
+        delegate.setReadOnly(readOnly);
+        isReadOnly = readOnly;
+        isCommitStateDirty = <span class="hljs-literal">false</span>;
+        dirtyBits |= DIRTY_BIT_READONLY;
+    &#125;
+
+    <span class="hljs-comment">/** &#123;<span class="hljs-doctag">@inheritDoc</span>&#125; */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">setTransactionIsolation</span><span class="hljs-params">(<span class="hljs-type">int</span> level)</span> <span class="hljs-keyword">throws</span> SQLException
+    &#123;
+        delegate.setTransactionIsolation(level);
+        transactionIsolation = level;
+        dirtyBits |= DIRTY_BIT_ISOLATION;
+    &#125;
+
+    <span class="hljs-comment">/** &#123;<span class="hljs-doctag">@inheritDoc</span>&#125; */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">setCatalog</span><span class="hljs-params">(String catalog)</span> <span class="hljs-keyword">throws</span> SQLException
+    &#123;
+        delegate.setCatalog(catalog);
+        dbcatalog = catalog;
+        dirtyBits |= DIRTY_BIT_CATALOG;
+    &#125;
+
+    <span class="hljs-comment">/** &#123;<span class="hljs-doctag">@inheritDoc</span>&#125; */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">setNetworkTimeout</span><span class="hljs-params">(Executor executor, <span class="hljs-type">int</span> milliseconds)</span> <span class="hljs-keyword">throws</span> SQLException
+    &#123;
+        delegate.setNetworkTimeout(executor, milliseconds);
+        networkTimeout = milliseconds;
+        dirtyBits |= DIRTY_BIT_NETTIMEOUT;
+    &#125;
+
+    <span class="hljs-comment">/** &#123;<span class="hljs-doctag">@inheritDoc</span>&#125; */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">setSchema</span><span class="hljs-params">(String schema)</span> <span class="hljs-keyword">throws</span> SQLException
+    &#123;
+        delegate.setSchema(schema);
+        dbschema = schema;
+        dirtyBits |= DIRTY_BIT_SCHEMA;
+    &#125;
+
+    <span class="hljs-comment">/** &#123;<span class="hljs-doctag">@inheritDoc</span>&#125; */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-type">boolean</span> <span class="hljs-title function_">isWrapperFor</span><span class="hljs-params">(Class&lt;?&gt; iface)</span> <span class="hljs-keyword">throws</span> SQLException
+    &#123;
+        <span class="hljs-keyword">return</span> iface.isInstance(delegate) || (delegate != <span class="hljs-literal">null</span> &amp;&amp; delegate.isWrapperFor(iface));
+    &#125;
+
+    <span class="hljs-comment">/** &#123;<span class="hljs-doctag">@inheritDoc</span>&#125; */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-meta">@SuppressWarnings(&quot;unchecked&quot;)</span>
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> &lt;T&gt; T <span class="hljs-title function_">unwrap</span><span class="hljs-params">(Class&lt;T&gt; iface)</span> <span class="hljs-keyword">throws</span> SQLException
+    &#123;
+        <span class="hljs-keyword">if</span> (iface.isInstance(delegate)) &#123;
+            <span class="hljs-keyword">return</span> (T) delegate;
+        &#125;
+        <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (delegate != <span class="hljs-literal">null</span>) &#123;
+            <span class="hljs-keyword">return</span> delegate.unwrap(iface);
+        &#125;
+
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SQLException</span>(<span class="hljs-string">&quot;Wrapped connection is not an instance of &quot;</span> + iface);
+    &#125;
+
+    <span class="hljs-comment">// **********************************************************************</span>
+    <span class="hljs-comment">//                         Private classes</span>
+    <span class="hljs-comment">// **********************************************************************</span>
+
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ClosedConnection</span>
+    &#123;    
+	    <span class="hljs-comment">// 全局唯一的单例对象，标识一个代理连接已被关闭</span>
+        <span class="hljs-keyword">static</span> <span class="hljs-keyword">final</span> <span class="hljs-type">Connection</span> <span class="hljs-variable">CLOSED_CONNECTION</span> <span class="hljs-operator">=</span> getClosedConnection();
+
+        <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> Connection <span class="hljs-title function_">getClosedConnection</span><span class="hljs-params">()</span>
+        &#123;
+            <span class="hljs-comment">// 其中的几个主要方法设置固定返回值，其他方法全部抛出异常</span>
+            <span class="hljs-type">InvocationHandler</span> <span class="hljs-variable">handler</span> <span class="hljs-operator">=</span> (proxy, method, args) -&gt; &#123;
+                <span class="hljs-keyword">final</span> <span class="hljs-type">String</span> <span class="hljs-variable">methodName</span> <span class="hljs-operator">=</span> method.getName();
+                <span class="hljs-keyword">if</span> (<span class="hljs-string">&quot;isClosed&quot;</span>.equals(methodName)) &#123;
+                    <span class="hljs-keyword">return</span> Boolean.TRUE;
+                &#125;
+                <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-string">&quot;isValid&quot;</span>.equals(methodName)) &#123;
+                    <span class="hljs-keyword">return</span> Boolean.FALSE;
+                &#125;
+                <span class="hljs-keyword">if</span> (<span class="hljs-string">&quot;abort&quot;</span>.equals(methodName)) &#123;
+                    <span class="hljs-keyword">return</span> Void.TYPE;
+                &#125;
+                <span class="hljs-keyword">if</span> (<span class="hljs-string">&quot;close&quot;</span>.equals(methodName)) &#123;
+                    <span class="hljs-keyword">return</span> Void.TYPE;
+                &#125;
+                <span class="hljs-keyword">else</span> <span class="hljs-keyword">if</span> (<span class="hljs-string">&quot;toString&quot;</span>.equals(methodName)) &#123;
+                    <span class="hljs-keyword">return</span> ClosedConnection.class.getCanonicalName();
+                &#125;
+
+                <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">SQLException</span>(<span class="hljs-string">&quot;Connection is closed&quot;</span>);
+            &#125;;
+            <span class="hljs-comment">// 这里利用反射动态的生成CLOSED_CONNECTION实例，即JDK动态代理。由于只会在启动时触发一次，故性能问题可以忽略</span>
+            <span class="hljs-keyword">return</span> (Connection) Proxy.newProxyInstance(Connection.class.getClassLoader(), <span class="hljs-keyword">new</span> <span class="hljs-title class_">Class</span>[] &#123; Connection.class &#125;, handler);
+        &#125;
+    &#125;
+&#125;</code></pre></div>
+<h2 id="javassistproxyfactory">JavassistProxyFactory</h2>
+<p>这个类主要是通过javassist来动态生成一些代理类，重点看看main方法。</p>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">/**</span>
+<span class="hljs-comment"> * This class generates the proxy objects for &#123;<span class="hljs-doctag">@link</span> Connection&#125;, &#123;<span class="hljs-doctag">@link</span> Statement&#125;,</span>
+<span class="hljs-comment"> * &#123;<span class="hljs-doctag">@link</span> PreparedStatement&#125;, and &#123;<span class="hljs-doctag">@link</span> CallableStatement&#125;.  Additionally it injects</span>
+<span class="hljs-comment"> * method bodies into the &#123;<span class="hljs-doctag">@link</span> ProxyFactory&#125; class methods that can instantiate</span>
+<span class="hljs-comment"> * instances of the generated proxies.</span>
+<span class="hljs-comment"> */</span>
+<span class="hljs-comment">// 生成Connection、Statement、PreparedStatement、CallableStatement的代理类，并覆盖ProxyFactory类中的代理方法</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">final</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">JavassistProxyFactory</span>
+&#123;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> ClassPool classPool;
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-type">String</span> <span class="hljs-variable">genDirectory</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&quot;</span>;
+
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String... args)</span> <span class="hljs-keyword">throws</span> Exception &#123;
+        classPool = <span class="hljs-keyword">new</span> <span class="hljs-title class_">ClassPool</span>();
+        classPool.importPackage(<span class="hljs-string">&quot;java.sql&quot;</span>);
+        classPool.appendClassPath(<span class="hljs-keyword">new</span> <span class="hljs-title class_">LoaderClassPath</span>(JavassistProxyFactory.class.getClassLoader()));
+
+        <span class="hljs-keyword">if</span> (args.length &gt; <span class="hljs-number">0</span>) &#123;
+            genDirectory = args[<span class="hljs-number">0</span>];
+        &#125;
+
+        <span class="hljs-comment">// Cast is not needed for these</span>
+        <span class="hljs-type">String</span> <span class="hljs-variable">methodBody</span> <span class="hljs-operator">=</span> <span class="hljs-string">&quot;&#123; try &#123; return delegate.method($$); &#125; catch (SQLException e) &#123; throw checkException(e); &#125; &#125;&quot;</span>;
+        generateProxyClass(Connection.class, ProxyConnection.class.getName(), methodBody);
+        generateProxyClass(Statement.class, ProxyStatement.class.getName(), methodBody);
+        generateProxyClass(ResultSet.class, ProxyResultSet.class.getName(), methodBody);
+        generateProxyClass(DatabaseMetaData.class, ProxyDatabaseMetaData.class.getName(), methodBody);
+
+        <span class="hljs-comment">// For these we have to cast the delegate</span>
+        methodBody = <span class="hljs-string">&quot;&#123; try &#123; return ((cast) delegate).method($$); &#125; catch (SQLException e) &#123; throw checkException(e); &#125; &#125;&quot;</span>;
+        generateProxyClass(PreparedStatement.class, ProxyPreparedStatement.class.getName(), methodBody);
+        generateProxyClass(CallableStatement.class, ProxyCallableStatement.class.getName(), methodBody);
+
+        modifyProxyFactory();
+    &#125;
+
+    <span class="hljs-keyword">private</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">modifyProxyFactory</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> NotFoundException, CannotCompileException, IOException &#123;
+        System.out.println(<span class="hljs-string">&quot;Generating method bodies for com.zaxxer.hikari.proxy.ProxyFactory&quot;</span>);
+
+        <span class="hljs-type">var</span> <span class="hljs-variable">packageName</span> <span class="hljs-operator">=</span> ProxyConnection.class.getPackage().getName();
+        <span class="hljs-type">var</span> <span class="hljs-variable">proxyCt</span> <span class="hljs-operator">=</span> classPool.getCtClass(<span class="hljs-string">&quot;com.zaxxer.hikari.pool.ProxyFactory&quot;</span>);
+        <span class="hljs-keyword">for</span> (<span class="hljs-keyword">var</span> method : proxyCt.getMethods()) &#123;
+            <span class="hljs-keyword">switch</span> (method.getName()) &#123;
+                <span class="hljs-keyword">case</span> <span class="hljs-string">&quot;getProxyConnection&quot;</span>:
+                    method.setBody(<span class="hljs-string">&quot;&#123;return new &quot;</span> + packageName + <span class="hljs-string">&quot;.HikariProxyConnection($$);&#125;&quot;</span>);
+                    <span class="hljs-keyword">break</span>;
+                <span class="hljs-keyword">case</span> <span class="hljs-string">&quot;getProxyStatement&quot;</span>:
+                    method.setBody(<span class="hljs-string">&quot;&#123;return new &quot;</span> + packageName + <span class="hljs-string">&quot;.HikariProxyStatement($$);&#125;&quot;</span>);
+                    <span class="hljs-keyword">break</span>;
+                <span class="hljs-keyword">case</span> <span class="hljs-string">&quot;getProxyPreparedStatement&quot;</span>:
+                    method.setBody(<span class="hljs-string">&quot;&#123;return new &quot;</span> + packageName + <span class="hljs-string">&quot;.HikariProxyPreparedStatement($$);&#125;&quot;</span>);
+                    <span class="hljs-keyword">break</span>;
+                <span class="hljs-keyword">case</span> <span class="hljs-string">&quot;getProxyCallableStatement&quot;</span>:
+                    method.setBody(<span class="hljs-string">&quot;&#123;return new &quot;</span> + packageName + <span class="hljs-string">&quot;.HikariProxyCallableStatement($$);&#125;&quot;</span>);
+                    <span class="hljs-keyword">break</span>;
+                <span class="hljs-keyword">case</span> <span class="hljs-string">&quot;getProxyResultSet&quot;</span>:
+                    method.setBody(<span class="hljs-string">&quot;&#123;return new &quot;</span> + packageName + <span class="hljs-string">&quot;.HikariProxyResultSet($$);&#125;&quot;</span>);
+                    <span class="hljs-keyword">break</span>;
+                <span class="hljs-keyword">case</span> <span class="hljs-string">&quot;getProxyDatabaseMetaData&quot;</span>:
+                    method.setBody(<span class="hljs-string">&quot;&#123;return new &quot;</span> + packageName + <span class="hljs-string">&quot;.HikariProxyDatabaseMetaData($$);&#125;&quot;</span>);
+                    <span class="hljs-keyword">break</span>;
+                <span class="hljs-keyword">default</span>:
+                    <span class="hljs-comment">// unhandled method</span>
+                    <span class="hljs-keyword">break</span>;
+            &#125;
+        &#125;
+
+        <span class="hljs-comment">// 把生成的class写到编译后的目录下，覆盖原class</span>
+        proxyCt.writeFile(genDirectory + <span class="hljs-string">&quot;target/classes&quot;</span>);
+    &#125;
+&#125;</code></pre></div>
+<h1 id="总结">总结</h1>
+<p>重点关注，为何这么快？结合作者的介绍<a
+target="_blank" rel="noopener" href="https://github.com/brettwooldridge/HikariCP/wiki/Down-the-Rabbit-Hole">Down-the-Rabbit-Hole</a>以及对源码的简单解析可以看出主要有以下几点：</p>
+<ol type="1">
+<li><p>数据结构的选取和定制：CopyOnWriteArrayList、ArrayList、FastList、SynchronousQueue</p>
+<ul>
+<li><p>在连接池读多写少的场景，数组无疑是最快的。而CopyOnWrite的方式在读取时无需加锁，最大化数组结构的优势</p></li>
+<li><p>采用handoffQueue -
+移交队列这种方式，大大减少了大量线程等待空闲连接的用时</p></li>
+<li><p>定制了一个基于数组的FastList，大大提高了存取效率</p></li>
+</ul></li>
+<li><p>ThreadLocal：最大化线程重复获取连接时的效率</p></li>
+<li><p>CAS：lock-free，无锁设计</p></li>
+<li><p>避免<a
+target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/False_sharing">false-sharing</a>伪共享：参照<a
+target="_blank" rel="noopener" href="https://www.cnblogs.com/cyfonly/p/5800758.html">此文章</a>的解释及示例，在本地实测了一下，确实有2倍的差距（但是个人暂未get到是何处的设计来避免伪共享）</p></li>
+<li><p>CPU资源利用的优化：Thread#yield、LockSupport#parkNanos</p></li>
+<li><p>Javassist的使用：我们可以看到在HikariCP中Javassist主要是用来生成一些<em>代理类</em>的字节码再做覆盖。但是，其实也可以直接使用单例工厂来生成代理对象。可为什么不这么做呢？在这一章节<a
+target="_blank" rel="noopener" href="https://github.com/brettwooldridge/HikariCP/wiki/Down-the-Rabbit-Hole#invocation-invokevirtual-vs-invokestatic">invocation-invokevirtual-vs-invokestatic</a>有详细的解释。主要是生成的字节码不同，使用Javassist生成的字节码更加精简（<em>移除了<code>getstatic</code>的调用、栈深度变浅</em>等）且更易被JVM优化（
+<em><code>invokevirtual</code> 的调用被替换为 <code>invokestatic</code>
+，JVM指令，前者是调用对象方法，后者是调用类方法。由于Java继承和多态的缘故，查找对象方法比查找类方法的流程更长，所以替换为<code>invokestatic</code>能得到性能上的提升</em>）。</p></li>
+</ol>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/%E6%95%B0%E6%8D%AE%E5%BA%93%E8%BF%9E%E6%8E%A5%E6%B1%A0%EF%BC%8CHikariCP/">#数据库连接池，HikariCP</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>HikariCP探秘</div>
+      <div>https://luckycaesar.github.io/article/HikariCP探秘/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>作者</div>
+          <div>LuckyCaesar</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>发布于</div>
+          <div>2024年8月3日</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>许可协议</div>
+          <div>
+            
+              
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - 署名">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+                <a target="_blank" href="https://creativecommons.org/licenses/by-sa/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="SA - 相同方式共享">
+                    <i class="iconfont icon-sa"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/article/%E5%A4%A7%E6%95%B0%E6%8D%AE%E4%B8%8B%E7%9A%84%E9%A2%91%E6%95%B0%E7%BB%9F%E8%AE%A1%E7%AE%97%E6%B3%95-Count-Min%20Sketch/" title="大数据下的频数统计算法-Count-Min Sketch">
+                        <span class="hidden-mobile">大数据下的频数统计算法-Count-Min Sketch</span>
+                        <span class="visible-mobile">下一篇</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('mermaid' in window) {
+        mermaid.init();
+      }
+    });
+  });
+</script>
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">搜索</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">关键词</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.0/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+  
+    <script  src="/js/img-lazyload.js" ></script>
+  
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.18.2/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  
+      <script>
+        if (!window.MathJax) {
+          window.MathJax = {
+            tex    : {
+              inlineMath: { '[+]': [['$', '$']] }
+            },
+            loader : {
+              load: ['ui/lazy']
+            },
+            options: {
+              renderActions: {
+                insertedScript: [200, () => {
+                  document.querySelectorAll('mjx-container').forEach(node => {
+                    let target = node.parentNode;
+                    if (target.nodeName.toLowerCase() === 'li') {
+                      target.parentNode.classList.add('has-jax');
+                    }
+                  });
+                }, '', false]
+              }
+            }
+          };
+        } else {
+          MathJax.startup.document.state(0);
+          MathJax.texReset();
+          MathJax.typeset();
+          MathJax.typesetPromise();
+        }
+
+        Fluid.events.registerRefreshCallback(function() {
+          if ('MathJax' in window && MathJax.startup.document && typeof MathJax.startup.document.state === 'function') {
+            MathJax.startup.document.state(0);
+            MathJax.texReset();
+            MathJax.typeset();
+            MathJax.typesetPromise();
+          }
+        });
+      </script>
+    
+
+  <script  src="https://lib.baomitu.com/mathjax/3.2.2/es5/tex-mml-chtml.js" ></script>
+
+  <script  src="/js/local-search.js" ></script>
+
+  <script defer src="https://busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">博客在允许 JavaScript 运行的环境下浏览效果更佳</div>
+  </noscript>
+</body>
+</html>

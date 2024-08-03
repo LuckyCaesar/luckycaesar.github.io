@@ -70,6 +70,10 @@
 
 
 
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+
 
   <script id="fluid-configs">
     var Fluid = window.Fluid || {};
@@ -318,7 +322,11 @@ master节点宕机了怎么办？那好，我们再加一个slave节点，然后
 <p><code>SET resource_name my_random_value NX PX 30000</code></p>
 <p>这条命令只会在key不存在的情况下（<code>NX</code>选项）把它设置进去，过期时间是30000毫秒（<code>PX</code>选项）。key设置了一个对应的值”my_random_value“。这个值在所有的客户端以及锁定请求中必须是唯一的。</p>
 <p>基本上，使用这个随机值是为了以一种安全的方式释放锁。使用一个脚本告诉Redis：<strong>当且仅当key存在且存储在key上的值恰好是我所期望的值时，才能移除此key</strong>。可以使用下面这个Lua脚本实现：
-<figure class="highlight lua"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><code class="hljs lua"><span class="hljs-keyword">if</span> redis.call(<span class="hljs-string">&quot;get&quot;</span>,KEYS[<span class="hljs-number">1</span>]) == ARGV[<span class="hljs-number">1</span>] <span class="hljs-keyword">then</span><br>    <span class="hljs-keyword">return</span> redis.call(<span class="hljs-string">&quot;del&quot;</span>,KEYS[<span class="hljs-number">1</span>])<br><span class="hljs-keyword">else</span><br>    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span><br><span class="hljs-keyword">end</span><br></code></pre></td></tr></table></figure></p>
+<div class="code-wrapper"><pre><code class="hljs lua"><span class="hljs-keyword">if</span> redis.call(<span class="hljs-string">&quot;get&quot;</span>,KEYS[<span class="hljs-number">1</span>]) == ARGV[<span class="hljs-number">1</span>] <span class="hljs-keyword">then</span>
+    <span class="hljs-keyword">return</span> redis.call(<span class="hljs-string">&quot;del&quot;</span>,KEYS[<span class="hljs-number">1</span>])
+<span class="hljs-keyword">else</span>
+    <span class="hljs-keyword">return</span> <span class="hljs-number">0</span>
+<span class="hljs-keyword">end</span></code></pre></div></p>
 <p>（上面这个脚本中）很重要的一点是避免了删除另一个客户端创建的锁。譬如，一个客户端可能获取了该锁，然后在某些操作中阻塞（执行）的时间超过了该锁的有效时间（锁将要过期的时间），之后（操作完成之后）该客户端删除了这个锁（直接执行<code>DEL</code>命令），但其实这个锁已经被其它客户端获取了（或者说删除了其它客户端创建的锁，因为key是一样的）。所以仅仅使用<code>DEL</code>命令是不安全的，因为一个客户端可能删除另一个客户端创建的锁。而使用上述脚本，<strong>由于每个锁都持有一个随机字符串的”签名“（代表某个客户端），因此仅当仍然是设置当前锁的客户端尝试将锁删除时，当前锁才会被删除。</strong></p>
 <p>那么这个随机字符串应该是什么样的呢？我会假设它是来自<code>/dev/random</code>下的20个字节。当然在你自己的程序任务中你可以去找一个更简单的方式来保证它的唯一性。（略，这段后面是一些关于随机串的选取方式。）</p>
 <p>key的存活时间，我们把它叫做”lock validity
@@ -527,6 +535,19 @@ restarts</em>（延迟重启）基本上能保证安全性，即便没有任何R
 
 
 
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('mermaid' in window) {
+        mermaid.init();
+      }
+    });
+  });
+</script>
 
 
 

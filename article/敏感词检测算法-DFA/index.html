@@ -71,6 +71,10 @@
 
 
 
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+
 
   <script id="fluid-configs">
     var Fluid = window.Fluid || {};
@@ -213,7 +217,7 @@
       <span class="post-meta mr-2">
         <i class="iconfont icon-chart"></i>
         
-          2.5k 字
+          2.4k 字
         
       </span>
     
@@ -291,7 +295,51 @@ T的第二个字符；若不相等，则比较S的第二个字符和T的第一�
 -- 百度百科</p>
 </blockquote>
 <p>直接看<code>indexOf()</code>方法的源码：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-comment">/**</span><br><span class="hljs-comment"> * source：来源串（输入的文本），target：模式串（敏感词）.</span><br><span class="hljs-comment"> */</span><br><span class="hljs-keyword">static</span> <span class="hljs-type">int</span> <span class="hljs-title function_">indexOf</span><span class="hljs-params">(<span class="hljs-type">char</span>[] source, <span class="hljs-type">int</span> sourceOffset, <span class="hljs-type">int</span> sourceCount,</span><br><span class="hljs-params">            <span class="hljs-type">char</span>[] target, <span class="hljs-type">int</span> targetOffset, <span class="hljs-type">int</span> targetCount,</span><br><span class="hljs-params">            <span class="hljs-type">int</span> fromIndex)</span> &#123;<br>        <span class="hljs-keyword">if</span> (fromIndex &gt;= sourceCount) &#123;<br>            <span class="hljs-keyword">return</span> (targetCount == <span class="hljs-number">0</span> ? sourceCount : -<span class="hljs-number">1</span>);<br>        &#125;<br>        <span class="hljs-keyword">if</span> (fromIndex &lt; <span class="hljs-number">0</span>) &#123;<br>            fromIndex = <span class="hljs-number">0</span>;<br>        &#125;<br>        <span class="hljs-keyword">if</span> (targetCount == <span class="hljs-number">0</span>) &#123;<br>            <span class="hljs-keyword">return</span> fromIndex;<br>        &#125;<br>		<span class="hljs-comment">// 取敏感词的第一个字符</span><br>        <span class="hljs-type">char</span> <span class="hljs-variable">first</span> <span class="hljs-operator">=</span> target[targetOffset];<br>        <span class="hljs-type">int</span> <span class="hljs-variable">max</span> <span class="hljs-operator">=</span> sourceOffset + (sourceCount - targetCount);<br><br>        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> sourceOffset + fromIndex; i &lt;= max; i++) &#123;<br>            <span class="hljs-comment">/* Look for first character. */</span><br>	    	<span class="hljs-comment">// 从输入文本中找到匹配敏感词第一个字符的字符</span><br>            <span class="hljs-keyword">if</span> (source[i] != first) &#123;<br>                <span class="hljs-keyword">while</span> (++i &lt;= max &amp;&amp; source[i] != first);<br>            &#125;<br><br>            <span class="hljs-comment">/* Found first character, now look at the rest of v2 */</span><br>	    	<span class="hljs-comment">// 匹配到了第一个字符，继续向后匹配</span><br>            <span class="hljs-keyword">if</span> (i &lt;= max) &#123;<br>                <span class="hljs-type">int</span> <span class="hljs-variable">j</span> <span class="hljs-operator">=</span> i + <span class="hljs-number">1</span>;<br>                <span class="hljs-type">int</span> <span class="hljs-variable">end</span> <span class="hljs-operator">=</span> j + targetCount - <span class="hljs-number">1</span>;<br>                <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">k</span> <span class="hljs-operator">=</span> targetOffset + <span class="hljs-number">1</span>; j &lt; end &amp;&amp;<br>		    		<span class="hljs-comment">// 输入文本中的下一个字符是否与敏感词中的第二个字符相等，是则继续匹配</span><br>		    		<span class="hljs-comment">// 否则终止匹配，从文本的下一个字符开始重新匹配</span><br>                     source[j] == target[k]; j++, k++);<br>              	<br>              	<span class="hljs-comment">// j == end 说明上面这个循环走完了，即文本中完整的匹配到了敏感词，返回匹配的第一个字符处的index，代表成功</span><br>                <span class="hljs-keyword">if</span> (j == end) &#123;<br>                    <span class="hljs-comment">/* Found whole string. */</span><br>                    <span class="hljs-keyword">return</span> i - sourceOffset;<br>                &#125;<br>            &#125;<br>        &#125;<br>        <span class="hljs-keyword">return</span> -<span class="hljs-number">1</span>;<br>    &#125;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-comment">/**</span>
+<span class="hljs-comment"> * source：来源串（输入的文本），target：模式串（敏感词）.</span>
+<span class="hljs-comment"> */</span>
+<span class="hljs-keyword">static</span> <span class="hljs-type">int</span> <span class="hljs-title function_">indexOf</span><span class="hljs-params">(<span class="hljs-type">char</span>[] source, <span class="hljs-type">int</span> sourceOffset, <span class="hljs-type">int</span> sourceCount,</span>
+<span class="hljs-params">            <span class="hljs-type">char</span>[] target, <span class="hljs-type">int</span> targetOffset, <span class="hljs-type">int</span> targetCount,</span>
+<span class="hljs-params">            <span class="hljs-type">int</span> fromIndex)</span> &#123;
+        <span class="hljs-keyword">if</span> (fromIndex &gt;= sourceCount) &#123;
+            <span class="hljs-keyword">return</span> (targetCount == <span class="hljs-number">0</span> ? sourceCount : -<span class="hljs-number">1</span>);
+        &#125;
+        <span class="hljs-keyword">if</span> (fromIndex &lt; <span class="hljs-number">0</span>) &#123;
+            fromIndex = <span class="hljs-number">0</span>;
+        &#125;
+        <span class="hljs-keyword">if</span> (targetCount == <span class="hljs-number">0</span>) &#123;
+            <span class="hljs-keyword">return</span> fromIndex;
+        &#125;
+		<span class="hljs-comment">// 取敏感词的第一个字符</span>
+        <span class="hljs-type">char</span> <span class="hljs-variable">first</span> <span class="hljs-operator">=</span> target[targetOffset];
+        <span class="hljs-type">int</span> <span class="hljs-variable">max</span> <span class="hljs-operator">=</span> sourceOffset + (sourceCount - targetCount);
+
+        <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">i</span> <span class="hljs-operator">=</span> sourceOffset + fromIndex; i &lt;= max; i++) &#123;
+            <span class="hljs-comment">/* Look for first character. */</span>
+	    	<span class="hljs-comment">// 从输入文本中找到匹配敏感词第一个字符的字符</span>
+            <span class="hljs-keyword">if</span> (source[i] != first) &#123;
+                <span class="hljs-keyword">while</span> (++i &lt;= max &amp;&amp; source[i] != first);
+            &#125;
+
+            <span class="hljs-comment">/* Found first character, now look at the rest of v2 */</span>
+	    	<span class="hljs-comment">// 匹配到了第一个字符，继续向后匹配</span>
+            <span class="hljs-keyword">if</span> (i &lt;= max) &#123;
+                <span class="hljs-type">int</span> <span class="hljs-variable">j</span> <span class="hljs-operator">=</span> i + <span class="hljs-number">1</span>;
+                <span class="hljs-type">int</span> <span class="hljs-variable">end</span> <span class="hljs-operator">=</span> j + targetCount - <span class="hljs-number">1</span>;
+                <span class="hljs-keyword">for</span> (<span class="hljs-type">int</span> <span class="hljs-variable">k</span> <span class="hljs-operator">=</span> targetOffset + <span class="hljs-number">1</span>; j &lt; end &amp;&amp;
+		    		<span class="hljs-comment">// 输入文本中的下一个字符是否与敏感词中的第二个字符相等，是则继续匹配</span>
+		    		<span class="hljs-comment">// 否则终止匹配，从文本的下一个字符开始重新匹配</span>
+                     source[j] == target[k]; j++, k++);
+              	
+              	<span class="hljs-comment">// j == end 说明上面这个循环走完了，即文本中完整的匹配到了敏感词，返回匹配的第一个字符处的index，代表成功</span>
+                <span class="hljs-keyword">if</span> (j == end) &#123;
+                    <span class="hljs-comment">/* Found whole string. */</span>
+                    <span class="hljs-keyword">return</span> i - sourceOffset;
+                &#125;
+            &#125;
+        &#125;
+        <span class="hljs-keyword">return</span> -<span class="hljs-number">1</span>;
+    &#125;</code></pre></div>
 <p>记source的长度为N，target的长度为M，该算法在最坏的情况下，单个敏感词匹配需要的比较次数为M
 * (N - M + 1)，表示target在source的最后一段才匹配到，即时间复杂度为O(M *
 N)，而要检测整个敏感词库（词库总数记为S）复杂度就变为<strong>O(S * M *
@@ -507,6 +555,19 @@ M)</strong>，效率相对高了许多。当然，这是以空间换来的，不
 
 
 
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('mermaid' in window) {
+        mermaid.init();
+      }
+    });
+  });
+</script>
 
 
 

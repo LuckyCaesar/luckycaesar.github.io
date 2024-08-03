@@ -70,6 +70,10 @@
 
 
 
+  
+<link rel="stylesheet" href="/css/custom.css">
+
+
 
   <script id="fluid-configs">
     var Fluid = window.Fluid || {};
@@ -319,7 +323,17 @@ Consistency，数据一致性，实例之间的数据保持一致，一台实例
 <h3 id="解决">解决</h3>
 <p>Nacos集群在如上所述的理论支持下，就算Leader宕机，那么也应该是可以继续访问的。这点从我们能正常登录Nacos管理平台且能从控制台的节点列表看到有一台节点处于<code>DOWN</code>的状态而其它都是<code>UP</code>得以验证。那么问题可能就不是出在服务端了，应该是客户端的问题，虽然把DOWN掉的Nacos节点重启后，客户端的访问就正常了。最后，经过和运维的一番排查，发现是<u><strong>yml配置文件中连接Nacos的地址是集群内部访问域名地址，并不是对外的VIP（Virtual
 IP Address）地址</strong></u>。</p>
-<figure class="highlight yaml"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs yaml"><span class="hljs-attr">spring:</span><br>  <span class="hljs-attr">cloud:</span><br>    <span class="hljs-attr">nacos:</span><br>      <span class="hljs-attr">config:</span><br>        <span class="hljs-attr">namespace:</span> <span class="hljs-string">dev</span><br>        <span class="hljs-comment"># 下面这个</span><br>        <span class="hljs-attr">server-addr:</span> <span class="hljs-string">nacos-hs.nacos.svc.cluster.local:8848</span><br>        <span class="hljs-attr">file-extension:</span> <span class="hljs-string">yml</span><br>        <span class="hljs-attr">shared-configs:</span><br>          <span class="hljs-bullet">-</span> <span class="hljs-string">config-port.yml</span><br>          <span class="hljs-bullet">-</span> <span class="hljs-string">config-actuator.yml</span><br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs yaml"><span class="hljs-attr">spring:</span>
+  <span class="hljs-attr">cloud:</span>
+    <span class="hljs-attr">nacos:</span>
+      <span class="hljs-attr">config:</span>
+        <span class="hljs-attr">namespace:</span> <span class="hljs-string">dev</span>
+        <span class="hljs-comment"># 下面这个</span>
+        <span class="hljs-attr">server-addr:</span> <span class="hljs-string">nacos-hs.nacos.svc.cluster.local:8848</span>
+        <span class="hljs-attr">file-extension:</span> <span class="hljs-string">yml</span>
+        <span class="hljs-attr">shared-configs:</span>
+          <span class="hljs-bullet">-</span> <span class="hljs-string">config-port.yml</span>
+          <span class="hljs-bullet">-</span> <span class="hljs-string">config-actuator.yml</span></code></pre></div>
 <p>这里就涉及到Nacos的寻址，采用虚拟IP（VIP）的方式。集群模式下，<strong>客户端连接时要使用这个VIP地址，当某个节点不可用时会自动转发到其它可用节点</strong>。本质上是依靠TCP/IP的ARP协议，详细了解学习可以戳这里☞<a
 target="_blank" rel="noopener" href="https://developer.aliyun.com/article/598792">微服务架构中基于DNS的服务发现</a>。</p>
 <p>这样一来就说的通了，客户端用拿到的IP地址（Java中DNS解析到IP后会缓存下来）一直尝试去连接DOWN掉的Nacos节点，肯定是一直失败，这也造成了一种Nacos集群不可用的假象。后来更新配置文件后，验证也没有问题了。Bingo!</p>
@@ -334,7 +348,14 @@ target="_blank" rel="noopener" href="https://developer.aliyun.com/article/598792
 <li>其它：SpringCloud Stream + RocketMQ，Redis，MySQL等等</li>
 </ul>
 <p>从报的错误提示”服务不可用“来搜索，发现是网关里面找不到正确的服务实例而报出来的。</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@RestController</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">FallbackController</span> &#123;<br><br>    <span class="hljs-meta">@RequestMapping(&quot;/fallback/common&quot;)</span><br>    <span class="hljs-keyword">public</span> Result&lt;Object&gt; <span class="hljs-title function_">fallbackCommon</span><span class="hljs-params">()</span> &#123;<br>        <span class="hljs-keyword">return</span> Result.failed(<span class="hljs-string">&quot;服务不可用，请稍后再试！&quot;</span>);<br>    &#125;<br>&#125;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-meta">@RestController</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">FallbackController</span> &#123;
+
+    <span class="hljs-meta">@RequestMapping(&quot;/fallback/common&quot;)</span>
+    <span class="hljs-keyword">public</span> Result&lt;Object&gt; <span class="hljs-title function_">fallbackCommon</span><span class="hljs-params">()</span> &#123;
+        <span class="hljs-keyword">return</span> Result.failed(<span class="hljs-string">&quot;服务不可用，请稍后再试！&quot;</span>);
+    &#125;
+&#125;</code></pre></div>
 <p>会触发这个fallback的提示，是因为对应的路由下的服务实例不可用。所以，对上面所述的情况做下总结：</p>
 <ul>
 <li>服务实例频繁上下线，且实例中有真正的dev容器，也有开发自己的机器；</li>
@@ -518,6 +539,19 @@ target="_blank" rel="noopener" href="https://developer.aliyun.com/article/598792
 
 
 
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('mermaid' in window) {
+        mermaid.init();
+      }
+    });
+  });
+</script>
 
 
 

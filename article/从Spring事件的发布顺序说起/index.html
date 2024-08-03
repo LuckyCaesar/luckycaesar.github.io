@@ -23,15 +23,15 @@
 <meta property="og:site_name" content="三味书屋">
 <meta property="og:description" content="最近在解决一个有趣的issue时，利用到了Spring中生命周期事件的发布顺序。主要就是根据不同事件的发布顺序不同，在SpringBoot应用启动的某些阶段触发框架的动态优化逻辑，替换一些bean，并且替换后的bean也能正常监听后续阶段发布的事件并执行替换后的逻辑。 说起这些启动时的生命周期事件，我们都耳熟能详。在研究Spring刷新或者SpringBoot启动流程的源码时都能看到它们的身影，">
 <meta property="og:locale" content="zh_CN">
-<meta property="og:image" content="https://luckycaesar.github.io/img/220368ab-event.jpeg">
+<meta property="og:image" content="https://luckycaesar.github.io/img/f0a7032e67d09-spring.jpeg">
 <meta property="article:published_time" content="2023-07-30T08:00:00.000Z">
-<meta property="article:modified_time" content="2023-08-05T03:56:29.296Z">
+<meta property="article:modified_time" content="2024-08-03T06:31:43.730Z">
 <meta property="article:author" content="LuckyCaesar">
 <meta property="article:tag" content="Spring">
 <meta property="article:tag" content="SpringBoot">
 <meta property="article:tag" content="Event">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:image" content="https://luckycaesar.github.io/img/220368ab-event.jpeg">
+<meta name="twitter:image" content="https://luckycaesar.github.io/img/f0a7032e67d09-spring.jpeg">
   
   
     <meta name="referrer" content="no-referrer-when-downgrade">
@@ -69,6 +69,10 @@
     <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
   
 
+
+
+  
+<link rel="stylesheet" href="/css/custom.css">
 
 
 
@@ -409,14 +413,209 @@ exception on startup.</p>
 <h3
 id="abstractapplicationcontextrefresh">AbstractApplicationContext#refresh</h3>
 <p>Spring启动刷新上下文的核心方法，都很熟悉。步骤分明，注释清晰，优雅的代码：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">refresh</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> BeansException, IllegalStateException &#123;<br>    <span class="hljs-keyword">synchronized</span> (<span class="hljs-built_in">this</span>.startupShutdownMonitor) &#123;<br>        <span class="hljs-type">StartupStep</span> <span class="hljs-variable">contextRefresh</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">this</span>.applicationStartup.start(<span class="hljs-string">&quot;spring.context.refresh&quot;</span>);<br><br>        <span class="hljs-comment">// Prepare this context for refreshing.</span><br>        <span class="hljs-comment">// 记录刷新开始时间、初始化PropertySources、记录刷新之前注册的监听器（如果有）</span><br>        prepareRefresh();<br><br>        <span class="hljs-comment">// Tell the subclass to refresh the internal bean factory.</span><br>        <span class="hljs-comment">// 获取实例化的BeanFactory。默认的实现是 DefaultListableBeanFactory</span><br>        <span class="hljs-type">ConfigurableListableBeanFactory</span> <span class="hljs-variable">beanFactory</span> <span class="hljs-operator">=</span> obtainFreshBeanFactory();<br><br>        <span class="hljs-comment">// Prepare the bean factory for use in this context.</span><br>        <span class="hljs-comment">// 向BeanFactory中填充属性/配置/组件等等</span><br>        <span class="hljs-comment">// 如ClassLoader、某些post-processors、bean的表达式解析器（StandardBeanExpressionResolver）、environment beans</span><br>        prepareBeanFactory(beanFactory);<br><br>        <span class="hljs-keyword">try</span> &#123;<br>            <span class="hljs-comment">// Allows post-processing of the bean factory in context subclasses.</span><br>            <span class="hljs-comment">// BeanFactory初始化完成后，执行一些固定的后置处理。</span><br>            <span class="hljs-comment">// 这里用最常见的Web应用来说明：</span><br>            <span class="hljs-comment">// Web应用在此处会向BeanFactory中添加一些Servlet相关类的依赖解析，以便于处理它们的自动注入。</span><br>            <span class="hljs-comment">// 因为像ServletRequest和HttpSession是动态变化的，并不是单例bean，这里Spring是利用ObjectFactory来实现的</span><br>            <span class="hljs-comment">// 也就是说实际上注入的ServletRequest是一个对象工厂，每次取HttpServletRequest时是调用的此ObjectFactory来从请求上下文取值</span><br>            postProcessBeanFactory(beanFactory);<br><br>            <span class="hljs-type">StartupStep</span> <span class="hljs-variable">beanPostProcess</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">this</span>.applicationStartup.start(<span class="hljs-string">&quot;spring.context.beans.post-process&quot;</span>);<br>            <span class="hljs-comment">// Invoke factory processors registered as beans in the context.</span><br>            <span class="hljs-comment">// 执行为BeanFactory准备的后置处理器</span><br>            invokeBeanFactoryPostProcessors(beanFactory);<br><br>            <span class="hljs-comment">// Register bean processors that intercept bean creation.</span><br>            <span class="hljs-comment">// 注册为bean准备的后置处理器</span><br>            registerBeanPostProcessors(beanFactory);<br>            beanPostProcess.end();<br><br>            <span class="hljs-comment">// Initialize message source for this context.</span><br>            <span class="hljs-comment">// 初始化MessageSource，国际化的标准实现就是利用MessageSource，还有就是像javax Validation的自定义消息也可以用它实现</span><br>            initMessageSource();<br><br>            <span class="hljs-comment">// Initialize event multicaster for this context.</span><br>            <span class="hljs-comment">// 初始化事件多播器，默认SimpleApplicationEventMulticaster</span><br>            initApplicationEventMulticaster();<br><br>            <span class="hljs-comment">// Initialize other special beans in specific context subclasses.</span><br>            <span class="hljs-comment">// 默认空，子类重写，初始化子context独有的类</span><br>            <span class="hljs-comment">// SpringBoot中的ServletWebServerApplicationContext就会重写它，用来初始化内置的Tomcat或其它WebServer</span><br>            onRefresh();<br><br>            <span class="hljs-comment">// Check for listener beans and register them.</span><br>            <span class="hljs-comment">// 把事件监听器注册到EventMulticaster中去，且在此时会发布在EventMulticaster初始化之前的事件</span><br>            registerListeners();<br><br>            <span class="hljs-comment">// Instantiate all remaining (non-lazy-init) singletons.</span><br>            <span class="hljs-comment">// 主要是初始化我们通常所说的单例bean</span><br>            finishBeanFactoryInitialization(beanFactory);<br><br>            <span class="hljs-comment">// Last step: publish corresponding event.</span><br>            <span class="hljs-comment">// 最后结束的时候发布了ContextRefreshedEvent事件</span><br>            finishRefresh();<br>        &#125;<br>        <span class="hljs-keyword">catch</span> (BeansException ex) &#123;<br>            <span class="hljs-keyword">if</span> (logger.isWarnEnabled()) &#123;<br>                logger.warn(<span class="hljs-string">&quot;Exception encountered during context initialization - &quot;</span> +<br>                            <span class="hljs-string">&quot;cancelling refresh attempt: &quot;</span> + ex);<br>            &#125;<br><br>            <span class="hljs-comment">// Destroy already created singletons to avoid dangling resources.</span><br>            <span class="hljs-comment">// 销毁单例bean，移除内存中的单例bean并回调bean的`destroy()`方法</span><br>            destroyBeans();<br><br>            <span class="hljs-comment">// Reset &#x27;active&#x27; flag.</span><br>            cancelRefresh(ex);<br><br>            <span class="hljs-comment">// Propagate exception to caller.</span><br>            <span class="hljs-keyword">throw</span> ex;<br>        &#125;<br>        <span class="hljs-keyword">finally</span> &#123;<br>            <span class="hljs-comment">// Reset common introspection caches in Spring&#x27;s core, since we</span><br>            <span class="hljs-comment">// might not ever need metadata for singleton beans anymore...</span><br>            resetCommonCaches();<br>            contextRefresh.end();<br>        &#125;<br>    &#125;<br>&#125;<br>...<br><span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">finishRefresh</span><span class="hljs-params">()</span> &#123;<br>    <span class="hljs-comment">// Clear context-level resource caches (such as ASM metadata from scanning).</span><br>    clearResourceCaches();<br><br>    <span class="hljs-comment">// Initialize lifecycle processor for this context.</span><br>    initLifecycleProcessor();<br><br>    <span class="hljs-comment">// Propagate refresh to lifecycle processor first.</span><br>    <span class="hljs-comment">// 在初始化上面的LifecycleProcessor后，走的逻辑跟显式调用`start`方法的逻辑一样。当然start的bean就不一定一样了，且不会发布任何事件</span><br>    getLifecycleProcessor().onRefresh();<br><br>    <span class="hljs-comment">// Publish the final event.</span><br>    publishEvent(<span class="hljs-keyword">new</span> <span class="hljs-title class_">ContextRefreshedEvent</span>(<span class="hljs-built_in">this</span>));<br>&#125;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">refresh</span><span class="hljs-params">()</span> <span class="hljs-keyword">throws</span> BeansException, IllegalStateException &#123;
+    <span class="hljs-keyword">synchronized</span> (<span class="hljs-built_in">this</span>.startupShutdownMonitor) &#123;
+        <span class="hljs-type">StartupStep</span> <span class="hljs-variable">contextRefresh</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">this</span>.applicationStartup.start(<span class="hljs-string">&quot;spring.context.refresh&quot;</span>);
+
+        <span class="hljs-comment">// Prepare this context for refreshing.</span>
+        <span class="hljs-comment">// 记录刷新开始时间、初始化PropertySources、记录刷新之前注册的监听器（如果有）</span>
+        prepareRefresh();
+
+        <span class="hljs-comment">// Tell the subclass to refresh the internal bean factory.</span>
+        <span class="hljs-comment">// 获取实例化的BeanFactory。默认的实现是 DefaultListableBeanFactory</span>
+        <span class="hljs-type">ConfigurableListableBeanFactory</span> <span class="hljs-variable">beanFactory</span> <span class="hljs-operator">=</span> obtainFreshBeanFactory();
+
+        <span class="hljs-comment">// Prepare the bean factory for use in this context.</span>
+        <span class="hljs-comment">// 向BeanFactory中填充属性/配置/组件等等</span>
+        <span class="hljs-comment">// 如ClassLoader、某些post-processors、bean的表达式解析器（StandardBeanExpressionResolver）、environment beans</span>
+        prepareBeanFactory(beanFactory);
+
+        <span class="hljs-keyword">try</span> &#123;
+            <span class="hljs-comment">// Allows post-processing of the bean factory in context subclasses.</span>
+            <span class="hljs-comment">// BeanFactory初始化完成后，执行一些固定的后置处理。</span>
+            <span class="hljs-comment">// 这里用最常见的Web应用来说明：</span>
+            <span class="hljs-comment">// Web应用在此处会向BeanFactory中添加一些Servlet相关类的依赖解析，以便于处理它们的自动注入。</span>
+            <span class="hljs-comment">// 因为像ServletRequest和HttpSession是动态变化的，并不是单例bean，这里Spring是利用ObjectFactory来实现的</span>
+            <span class="hljs-comment">// 也就是说实际上注入的ServletRequest是一个对象工厂，每次取HttpServletRequest时是调用的此ObjectFactory来从请求上下文取值</span>
+            postProcessBeanFactory(beanFactory);
+
+            <span class="hljs-type">StartupStep</span> <span class="hljs-variable">beanPostProcess</span> <span class="hljs-operator">=</span> <span class="hljs-built_in">this</span>.applicationStartup.start(<span class="hljs-string">&quot;spring.context.beans.post-process&quot;</span>);
+            <span class="hljs-comment">// Invoke factory processors registered as beans in the context.</span>
+            <span class="hljs-comment">// 执行为BeanFactory准备的后置处理器</span>
+            invokeBeanFactoryPostProcessors(beanFactory);
+
+            <span class="hljs-comment">// Register bean processors that intercept bean creation.</span>
+            <span class="hljs-comment">// 注册为bean准备的后置处理器</span>
+            registerBeanPostProcessors(beanFactory);
+            beanPostProcess.end();
+
+            <span class="hljs-comment">// Initialize message source for this context.</span>
+            <span class="hljs-comment">// 初始化MessageSource，国际化的标准实现就是利用MessageSource，还有就是像javax Validation的自定义消息也可以用它实现</span>
+            initMessageSource();
+
+            <span class="hljs-comment">// Initialize event multicaster for this context.</span>
+            <span class="hljs-comment">// 初始化事件多播器，默认SimpleApplicationEventMulticaster</span>
+            initApplicationEventMulticaster();
+
+            <span class="hljs-comment">// Initialize other special beans in specific context subclasses.</span>
+            <span class="hljs-comment">// 默认空，子类重写，初始化子context独有的类</span>
+            <span class="hljs-comment">// SpringBoot中的ServletWebServerApplicationContext就会重写它，用来初始化内置的Tomcat或其它WebServer</span>
+            onRefresh();
+
+            <span class="hljs-comment">// Check for listener beans and register them.</span>
+            <span class="hljs-comment">// 把事件监听器注册到EventMulticaster中去，且在此时会发布在EventMulticaster初始化之前的事件</span>
+            registerListeners();
+
+            <span class="hljs-comment">// Instantiate all remaining (non-lazy-init) singletons.</span>
+            <span class="hljs-comment">// 主要是初始化我们通常所说的单例bean</span>
+            finishBeanFactoryInitialization(beanFactory);
+
+            <span class="hljs-comment">// Last step: publish corresponding event.</span>
+            <span class="hljs-comment">// 最后结束的时候发布了ContextRefreshedEvent事件</span>
+            finishRefresh();
+        &#125;
+        <span class="hljs-keyword">catch</span> (BeansException ex) &#123;
+            <span class="hljs-keyword">if</span> (logger.isWarnEnabled()) &#123;
+                logger.warn(<span class="hljs-string">&quot;Exception encountered during context initialization - &quot;</span> +
+                            <span class="hljs-string">&quot;cancelling refresh attempt: &quot;</span> + ex);
+            &#125;
+
+            <span class="hljs-comment">// Destroy already created singletons to avoid dangling resources.</span>
+            <span class="hljs-comment">// 销毁单例bean，移除内存中的单例bean并回调bean的`destroy()`方法</span>
+            destroyBeans();
+
+            <span class="hljs-comment">// Reset &#x27;active&#x27; flag.</span>
+            cancelRefresh(ex);
+
+            <span class="hljs-comment">// Propagate exception to caller.</span>
+            <span class="hljs-keyword">throw</span> ex;
+        &#125;
+        <span class="hljs-keyword">finally</span> &#123;
+            <span class="hljs-comment">// Reset common introspection caches in Spring&#x27;s core, since we</span>
+            <span class="hljs-comment">// might not ever need metadata for singleton beans anymore...</span>
+            resetCommonCaches();
+            contextRefresh.end();
+        &#125;
+    &#125;
+&#125;
+...
+<span class="hljs-keyword">protected</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">finishRefresh</span><span class="hljs-params">()</span> &#123;
+    <span class="hljs-comment">// Clear context-level resource caches (such as ASM metadata from scanning).</span>
+    clearResourceCaches();
+
+    <span class="hljs-comment">// Initialize lifecycle processor for this context.</span>
+    initLifecycleProcessor();
+
+    <span class="hljs-comment">// Propagate refresh to lifecycle processor first.</span>
+    <span class="hljs-comment">// 在初始化上面的LifecycleProcessor后，走的逻辑跟显式调用`start`方法的逻辑一样。当然start的bean就不一定一样了，且不会发布任何事件</span>
+    getLifecycleProcessor().onRefresh();
+
+    <span class="hljs-comment">// Publish the final event.</span>
+    publishEvent(<span class="hljs-keyword">new</span> <span class="hljs-title class_">ContextRefreshedEvent</span>(<span class="hljs-built_in">this</span>));
+&#125;</code></pre></div>
 <h3
 id="abstractapplicationcontextstart">AbstractApplicationContext#start</h3>
 <p>显式调用的<code>start()</code>和<code>stop()</code>方法，可以看到会发布<code>ContextStartedEvent</code>和<code>ContextStoppedEvent</code>：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-meta">@Override</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">start</span><span class="hljs-params">()</span> &#123;<br>    getLifecycleProcessor().start();<br>    publishEvent(<span class="hljs-keyword">new</span> <span class="hljs-title class_">ContextStartedEvent</span>(<span class="hljs-built_in">this</span>));<br>&#125;<br><br><span class="hljs-meta">@Override</span><br><span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">stop</span><span class="hljs-params">()</span> &#123;<br>    getLifecycleProcessor().stop();<br>    publishEvent(<span class="hljs-keyword">new</span> <span class="hljs-title class_">ContextStoppedEvent</span>(<span class="hljs-built_in">this</span>));<br>&#125;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-meta">@Override</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">start</span><span class="hljs-params">()</span> &#123;
+    getLifecycleProcessor().start();
+    publishEvent(<span class="hljs-keyword">new</span> <span class="hljs-title class_">ContextStartedEvent</span>(<span class="hljs-built_in">this</span>));
+&#125;
+
+<span class="hljs-meta">@Override</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">stop</span><span class="hljs-params">()</span> &#123;
+    getLifecycleProcessor().stop();
+    publishEvent(<span class="hljs-keyword">new</span> <span class="hljs-title class_">ContextStoppedEvent</span>(<span class="hljs-built_in">this</span>));
+&#125;</code></pre></div>
 <h3 id="springapplicationrun">SpringApplication#run</h3>
 <p>SpringBoot的应用启动核心流程如下：</p>
-<figure class="highlight java"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br></pre></td><td class="code"><pre><code class="hljs java"><span class="hljs-keyword">public</span> ConfigurableApplicationContext <span class="hljs-title function_">run</span><span class="hljs-params">(String... args)</span> &#123;<br>    <span class="hljs-type">long</span> <span class="hljs-variable">startTime</span> <span class="hljs-operator">=</span> System.nanoTime();<br>    <span class="hljs-comment">// 创建一个BootstrapContext：引导上下文，在ApplicationContext真正刷新完成前可用</span><br>    <span class="hljs-type">DefaultBootstrapContext</span> <span class="hljs-variable">bootstrapContext</span> <span class="hljs-operator">=</span> createBootstrapContext();<br>    <span class="hljs-type">ConfigurableApplicationContext</span> <span class="hljs-variable">context</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;<br>    <span class="hljs-comment">// 声明当前应用使用headless模式：表示应用处于服务器模式下，无法调用外接设备，如显示器、鼠标等，主要是针对awt的使用场景。</span><br>   	<span class="hljs-comment">// SpringBoot当然默认是非交互式、非可视化的服务器应用</span><br>    configureHeadlessProperty();<br>    <span class="hljs-comment">// 注册SpringApplicationRunListener</span><br>    <span class="hljs-comment">// 加载应用本身的监听器（主要是EventPublishingRunListener，生命周期相关的事件由它来发布）</span><br>    <span class="hljs-comment">// 以及一些扩展的hookListener，用于自定义监听某些启动阶段</span><br>    <span class="hljs-type">SpringApplicationRunListeners</span> <span class="hljs-variable">listeners</span> <span class="hljs-operator">=</span> getRunListeners(args);<br>    <br>    <span class="hljs-comment">// 发布 ApplicationStartingEvent</span><br>    listeners.starting(bootstrapContext, <span class="hljs-built_in">this</span>.mainApplicationClass);<br>    <br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-type">ApplicationArguments</span> <span class="hljs-variable">applicationArguments</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">DefaultApplicationArguments</span>(args);<br>        <br>        <span class="hljs-comment">// environment的加载准备，会发布 ApplicationEnvironmentPreparedEvent</span><br>        <span class="hljs-type">ConfigurableEnvironment</span> <span class="hljs-variable">environment</span> <span class="hljs-operator">=</span> prepareEnvironment(listeners, bootstrapContext, applicationArguments);<br>        <br>        <span class="hljs-comment">// 打印banner信息</span><br>        <span class="hljs-type">Banner</span> <span class="hljs-variable">printedBanner</span> <span class="hljs-operator">=</span> printBanner(environment);<br>        <span class="hljs-comment">// 根据当前应用类型（Servlet、Reactive）创建一个 ConfigurableApplicationContext</span><br>        context = createApplicationContext();<br>        context.setApplicationStartup(<span class="hljs-built_in">this</span>.applicationStartup);<br>        <br>        <span class="hljs-comment">// 刷新应用上下文前的准备工作：</span><br>        <span class="hljs-comment">// 1.注册environment（避免重复加载）、应用上下文的后置处理、执行应用上下文刷新前的initializer</span><br>        <span class="hljs-comment">// 2.发布 ApplicationContextInitializedEvent</span><br>        <span class="hljs-comment">// 3.关闭BootstrapContext：这里会发布一个BootstrapContextClosedEvent，监听它能拿到BootstrapContext和ApplicationContext。如果需要做一些bean的迁移可以在此处实现</span><br>        <span class="hljs-comment">// 4.向BeanFactory中添加一些配置属性，往ApplicationContext中添加一些BeanFactory的后置处理</span><br>        <span class="hljs-comment">// 5.核心步骤，加载BeanDefinition</span><br>        <span class="hljs-comment">// 6.加载完毕后，发布 ApplicationPreparedEvent</span><br>        prepareContext(bootstrapContext, context, environment, listeners, applicationArguments, printedBanner);<br>        <br>        <span class="hljs-comment">// 调用Spring的`AbstractApplicationContext#refresh()`方法，刷新上下文</span><br>        refreshContext(context);<br>        <span class="hljs-comment">// 默认空实现，预留的钩子</span><br>        afterRefresh(context, applicationArguments);<br>        <span class="hljs-type">Duration</span> <span class="hljs-variable">timeTakenToStartup</span> <span class="hljs-operator">=</span> Duration.ofNanos(System.nanoTime() - startTime);<br>        <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>.logStartupInfo) &#123;<br>            <span class="hljs-keyword">new</span> <span class="hljs-title class_">StartupInfoLogger</span>(<span class="hljs-built_in">this</span>.mainApplicationClass).logStarted(getApplicationLog(), timeTakenToStartup);<br>        &#125;<br>        <br>        <span class="hljs-comment">// 发布 ApplicationStartedEvent和AvailabilityChangeEvent(LivenessState.CORRECT)</span><br>        listeners.started(context, timeTakenToStartup);<br>        <span class="hljs-comment">// 调用ApplicationRunner和CommandLineRunner的实现</span><br>        <span class="hljs-comment">// 譬如seata-server的启动就是一个SpringBoot应用，实现了CommandLineRunner来触发调用Server.start</span><br>        callRunners(context, applicationArguments);<br>    &#125;<br>    <span class="hljs-keyword">catch</span> (Throwable ex) &#123;<br>        <span class="hljs-keyword">if</span> (ex <span class="hljs-keyword">instanceof</span> AbandonedRunException) &#123;<br>            <span class="hljs-keyword">throw</span> ex;<br>        &#125;<br>        <span class="hljs-comment">// 失败后会发布 ApplicationFailedEvent</span><br>        handleRunFailure(context, ex, listeners);<br>        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalStateException</span>(ex);<br>    &#125;<br>    <span class="hljs-keyword">try</span> &#123;<br>        <span class="hljs-keyword">if</span> (context.isRunning()) &#123;<br>            <span class="hljs-type">Duration</span> <span class="hljs-variable">timeTakenToReady</span> <span class="hljs-operator">=</span> Duration.ofNanos(System.nanoTime() - startTime);<br>            <span class="hljs-comment">// 发布 AvailabilityChangeEvent(ReadinessState.ACCEPTING_TRAFFIC)</span><br>            listeners.ready(context, timeTakenToReady);<br>        &#125;<br>    &#125;<br>    <span class="hljs-keyword">catch</span> (Throwable ex) &#123;<br>        <span class="hljs-keyword">if</span> (ex <span class="hljs-keyword">instanceof</span> AbandonedRunException) &#123;<br>            <span class="hljs-keyword">throw</span> ex;<br>        &#125;<br>        <span class="hljs-comment">// 失败后会发布 ApplicationFailedEvent</span><br>        handleRunFailure(context, ex, <span class="hljs-literal">null</span>);<br>        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalStateException</span>(ex);<br>    &#125;<br>    <span class="hljs-keyword">return</span> context;<br>&#125;<br><br>...<br><br><span class="hljs-keyword">private</span> DefaultBootstrapContext <span class="hljs-title function_">createBootstrapContext</span><span class="hljs-params">()</span> &#123;<br>    <span class="hljs-comment">// SpringBoot中的另一个IOC容器，在刷新应用容器之前，可以通过它来创建一些组件实例，通过BootstrapRegistryInitializer接口来实现</span><br>    <span class="hljs-comment">// 譬如说SpringCloud的ConfigServer会在此时注册一些组件</span><br>    <span class="hljs-type">DefaultBootstrapContext</span> <span class="hljs-variable">bootstrapContext</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">DefaultBootstrapContext</span>();<br>    <span class="hljs-built_in">this</span>.bootstrapRegistryInitializers.forEach((initializer) -&gt; initializer.initialize(bootstrapContext));<br>    <span class="hljs-keyword">return</span> bootstrapContext;<br>&#125;<br></code></pre></td></tr></table></figure>
+<div class="code-wrapper"><pre><code class="hljs java"><span class="hljs-keyword">public</span> ConfigurableApplicationContext <span class="hljs-title function_">run</span><span class="hljs-params">(String... args)</span> &#123;
+    <span class="hljs-type">long</span> <span class="hljs-variable">startTime</span> <span class="hljs-operator">=</span> System.nanoTime();
+    <span class="hljs-comment">// 创建一个BootstrapContext：引导上下文，在ApplicationContext真正刷新完成前可用</span>
+    <span class="hljs-type">DefaultBootstrapContext</span> <span class="hljs-variable">bootstrapContext</span> <span class="hljs-operator">=</span> createBootstrapContext();
+    <span class="hljs-type">ConfigurableApplicationContext</span> <span class="hljs-variable">context</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+    <span class="hljs-comment">// 声明当前应用使用headless模式：表示应用处于服务器模式下，无法调用外接设备，如显示器、鼠标等，主要是针对awt的使用场景。</span>
+   	<span class="hljs-comment">// SpringBoot当然默认是非交互式、非可视化的服务器应用</span>
+    configureHeadlessProperty();
+    <span class="hljs-comment">// 注册SpringApplicationRunListener</span>
+    <span class="hljs-comment">// 加载应用本身的监听器（主要是EventPublishingRunListener，生命周期相关的事件由它来发布）</span>
+    <span class="hljs-comment">// 以及一些扩展的hookListener，用于自定义监听某些启动阶段</span>
+    <span class="hljs-type">SpringApplicationRunListeners</span> <span class="hljs-variable">listeners</span> <span class="hljs-operator">=</span> getRunListeners(args);
+    
+    <span class="hljs-comment">// 发布 ApplicationStartingEvent</span>
+    listeners.starting(bootstrapContext, <span class="hljs-built_in">this</span>.mainApplicationClass);
+    
+    <span class="hljs-keyword">try</span> &#123;
+        <span class="hljs-type">ApplicationArguments</span> <span class="hljs-variable">applicationArguments</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">DefaultApplicationArguments</span>(args);
+        
+        <span class="hljs-comment">// environment的加载准备，会发布 ApplicationEnvironmentPreparedEvent</span>
+        <span class="hljs-type">ConfigurableEnvironment</span> <span class="hljs-variable">environment</span> <span class="hljs-operator">=</span> prepareEnvironment(listeners, bootstrapContext, applicationArguments);
+        
+        <span class="hljs-comment">// 打印banner信息</span>
+        <span class="hljs-type">Banner</span> <span class="hljs-variable">printedBanner</span> <span class="hljs-operator">=</span> printBanner(environment);
+        <span class="hljs-comment">// 根据当前应用类型（Servlet、Reactive）创建一个 ConfigurableApplicationContext</span>
+        context = createApplicationContext();
+        context.setApplicationStartup(<span class="hljs-built_in">this</span>.applicationStartup);
+        
+        <span class="hljs-comment">// 刷新应用上下文前的准备工作：</span>
+        <span class="hljs-comment">// 1.注册environment（避免重复加载）、应用上下文的后置处理、执行应用上下文刷新前的initializer</span>
+        <span class="hljs-comment">// 2.发布 ApplicationContextInitializedEvent</span>
+        <span class="hljs-comment">// 3.关闭BootstrapContext：这里会发布一个BootstrapContextClosedEvent，监听它能拿到BootstrapContext和ApplicationContext。如果需要做一些bean的迁移可以在此处实现</span>
+        <span class="hljs-comment">// 4.向BeanFactory中添加一些配置属性，往ApplicationContext中添加一些BeanFactory的后置处理</span>
+        <span class="hljs-comment">// 5.核心步骤，加载BeanDefinition</span>
+        <span class="hljs-comment">// 6.加载完毕后，发布 ApplicationPreparedEvent</span>
+        prepareContext(bootstrapContext, context, environment, listeners, applicationArguments, printedBanner);
+        
+        <span class="hljs-comment">// 调用Spring的`AbstractApplicationContext#refresh()`方法，刷新上下文</span>
+        refreshContext(context);
+        <span class="hljs-comment">// 默认空实现，预留的钩子</span>
+        afterRefresh(context, applicationArguments);
+        <span class="hljs-type">Duration</span> <span class="hljs-variable">timeTakenToStartup</span> <span class="hljs-operator">=</span> Duration.ofNanos(System.nanoTime() - startTime);
+        <span class="hljs-keyword">if</span> (<span class="hljs-built_in">this</span>.logStartupInfo) &#123;
+            <span class="hljs-keyword">new</span> <span class="hljs-title class_">StartupInfoLogger</span>(<span class="hljs-built_in">this</span>.mainApplicationClass).logStarted(getApplicationLog(), timeTakenToStartup);
+        &#125;
+        
+        <span class="hljs-comment">// 发布 ApplicationStartedEvent和AvailabilityChangeEvent(LivenessState.CORRECT)</span>
+        listeners.started(context, timeTakenToStartup);
+        <span class="hljs-comment">// 调用ApplicationRunner和CommandLineRunner的实现</span>
+        <span class="hljs-comment">// 譬如seata-server的启动就是一个SpringBoot应用，实现了CommandLineRunner来触发调用Server.start</span>
+        callRunners(context, applicationArguments);
+    &#125;
+    <span class="hljs-keyword">catch</span> (Throwable ex) &#123;
+        <span class="hljs-keyword">if</span> (ex <span class="hljs-keyword">instanceof</span> AbandonedRunException) &#123;
+            <span class="hljs-keyword">throw</span> ex;
+        &#125;
+        <span class="hljs-comment">// 失败后会发布 ApplicationFailedEvent</span>
+        handleRunFailure(context, ex, listeners);
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalStateException</span>(ex);
+    &#125;
+    <span class="hljs-keyword">try</span> &#123;
+        <span class="hljs-keyword">if</span> (context.isRunning()) &#123;
+            <span class="hljs-type">Duration</span> <span class="hljs-variable">timeTakenToReady</span> <span class="hljs-operator">=</span> Duration.ofNanos(System.nanoTime() - startTime);
+            <span class="hljs-comment">// 发布 AvailabilityChangeEvent(ReadinessState.ACCEPTING_TRAFFIC)</span>
+            listeners.ready(context, timeTakenToReady);
+        &#125;
+    &#125;
+    <span class="hljs-keyword">catch</span> (Throwable ex) &#123;
+        <span class="hljs-keyword">if</span> (ex <span class="hljs-keyword">instanceof</span> AbandonedRunException) &#123;
+            <span class="hljs-keyword">throw</span> ex;
+        &#125;
+        <span class="hljs-comment">// 失败后会发布 ApplicationFailedEvent</span>
+        handleRunFailure(context, ex, <span class="hljs-literal">null</span>);
+        <span class="hljs-keyword">throw</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">IllegalStateException</span>(ex);
+    &#125;
+    <span class="hljs-keyword">return</span> context;
+&#125;
+
+...
+
+<span class="hljs-keyword">private</span> DefaultBootstrapContext <span class="hljs-title function_">createBootstrapContext</span><span class="hljs-params">()</span> &#123;
+    <span class="hljs-comment">// SpringBoot中的另一个IOC容器，在刷新应用容器之前，可以通过它来创建一些组件实例，通过BootstrapRegistryInitializer接口来实现</span>
+    <span class="hljs-comment">// 譬如说SpringCloud的ConfigServer会在此时注册一些组件</span>
+    <span class="hljs-type">DefaultBootstrapContext</span> <span class="hljs-variable">bootstrapContext</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">DefaultBootstrapContext</span>();
+    <span class="hljs-built_in">this</span>.bootstrapRegistryInitializers.forEach((initializer) -&gt; initializer.initialize(bootstrapContext));
+    <span class="hljs-keyword">return</span> bootstrapContext;
+&#125;</code></pre></div>
 <h2 id="小结">小结</h2>
 <p>在整理完事件顺序和阅读完源码之后，Spring及SpringBoot的启动流程就一目了然了。流程的各个关键阶段都发布了对应的事件来方便做监听和扩展。而且在梳理整个流程的过程中，也会发现一些其它很优秀、很巧妙的设计，比如：</p>
 <ul>
@@ -569,6 +768,19 @@ href="https://luckycaesar.github.io/article/%E4%BC%98%E9%9B%85%E5%9C%B0%E5%AE%9E
 
 
 
+
+
+  <script>
+  Fluid.utils.createScript('https://lib.baomitu.com/mermaid/8.14.0/mermaid.min.js', function() {
+    mermaid.initialize({"theme":"default"});
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('mermaid' in window) {
+        mermaid.init();
+      }
+    });
+  });
+</script>
 
 
 
