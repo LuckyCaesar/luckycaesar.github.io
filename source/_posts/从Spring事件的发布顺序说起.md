@@ -1,7 +1,7 @@
 ---
 title: 从Spring事件的发布顺序说起
 tags: [Spring, SpringBoot, Event]
-index_img: /img/220368ab-event.jpeg
+index_img: /img/f0a7032e67d09-spring.jpeg
 date: 2023-07-30 16:00:00
 ---
 
