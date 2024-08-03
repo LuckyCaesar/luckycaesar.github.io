@@ -18,14 +18,14 @@
   
     <meta name="description" content="本文翻译自：Going inside Java’s Project Loom and virtual threads  来看虚拟线程如何将Java带回到绿色线程[1]的时代，即Java线程不再等同于操作系统线程 先来谈谈Loom项目（以下简称Loom），它目前正在探索Java语言的新特性、新API，以及更轻量的运行时并发 - 包含了对虚拟线程的新构思。 Java是第一个把线程融入到">
 <meta property="og:type" content="article">
-<meta property="og:title" content="走进Java中的Loom和虚拟线程">
+<meta property="og:title" content="（译）走进Java中的Loom和虚拟线程">
 <meta property="og:url" content="https://luckycaesar.github.io/article/%E8%B5%B0%E8%BF%9BJava%E4%B8%AD%E7%9A%84Loom%E5%92%8C%E8%99%9A%E6%8B%9F%E7%BA%BF%E7%A8%8B/index.html">
 <meta property="og:site_name" content="三味书屋">
 <meta property="og:description" content="本文翻译自：Going inside Java’s Project Loom and virtual threads  来看虚拟线程如何将Java带回到绿色线程[1]的时代，即Java线程不再等同于操作系统线程 先来谈谈Loom项目（以下简称Loom），它目前正在探索Java语言的新特性、新API，以及更轻量的运行时并发 - 包含了对虚拟线程的新构思。 Java是第一个把线程融入到">
 <meta property="og:locale" content="zh_CN">
 <meta property="og:image" content="https://luckycaesar.github.io/img/project-loom-image.png">
 <meta property="article:published_time" content="2023-12-09T17:00:00.000Z">
-<meta property="article:modified_time" content="2024-05-26T14:09:59.270Z">
+<meta property="article:modified_time" content="2024-08-03T13:06:49.148Z">
 <meta property="article:author" content="LuckyCaesar">
 <meta property="article:tag" content="协程">
 <meta property="article:tag" content="虚拟线程">
@@ -36,7 +36,7 @@
     <meta name="referrer" content="no-referrer-when-downgrade">
   
   
-  <title>走进Java中的Loom和虚拟线程 - 三味书屋</title>
+  <title>（译）走进Java中的Loom和虚拟线程 - 三味书屋</title>
 
   <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
 
@@ -193,7 +193,7 @@
       <div class="banner-text text-center fade-in-up">
         <div class="h2">
           
-            <span id="subtitle" data-typed-text="走进Java中的Loom和虚拟线程"></span>
+            <span id="subtitle" data-typed-text="（译）走进Java中的Loom和虚拟线程"></span>
           
         </div>
 
@@ -274,7 +274,7 @@
         <div id="board">
           <article class="post-content mx-auto">
             <!-- SEO header -->
-            <h1 style="display: none">走进Java中的Loom和虚拟线程</h1>
+            <h1 style="display: none">（译）走进Java中的Loom和虚拟线程</h1>
             
             
               <div class="markdown-body">
@@ -627,7 +627,7 @@ target="_blank" rel="noopener" href="https://openjdk.org/jeps/444">Virtual Threa
 
   <div class="license-box my-3">
     <div class="license-title">
-      <div>走进Java中的Loom和虚拟线程</div>
+      <div>（译）走进Java中的Loom和虚拟线程</div>
       <div>https://luckycaesar.github.io/article/走进Java中的Loom和虚拟线程/</div>
     </div>
     <div class="license-meta">

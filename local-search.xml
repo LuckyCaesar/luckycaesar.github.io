@@ -80,7 +80,7 @@
   
   
   <entry>
-    <title>Loom - Java虚拟机中的纤程和续体</title>
+    <title>（译）Loom - Java虚拟机中的纤程和续体</title>
     <link href="/article/Loom%20-%20Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E4%B8%AD%E7%9A%84%E7%BA%A4%E7%A8%8B%E5%92%8C%E7%BB%AD%E4%BD%93/"/>
     <url>/article/Loom%20-%20Java%E8%99%9A%E6%8B%9F%E6%9C%BA%E4%B8%AD%E7%9A%84%E7%BA%A4%E7%A8%8B%E5%92%8C%E7%BB%AD%E4%BD%93/</url>
     
@@ -132,7 +132,7 @@
   
   
   <entry>
-    <title>走进Java中的Loom和虚拟线程</title>
+    <title>（译）走进Java中的Loom和虚拟线程</title>
     <link href="/article/%E8%B5%B0%E8%BF%9BJava%E4%B8%AD%E7%9A%84Loom%E5%92%8C%E8%99%9A%E6%8B%9F%E7%BA%BF%E7%A8%8B/"/>
     <url>/article/%E8%B5%B0%E8%BF%9BJava%E4%B8%AD%E7%9A%84Loom%E5%92%8C%E8%99%9A%E6%8B%9F%E7%BA%BF%E7%A8%8B/</url>
     
@@ -241,7 +241,7 @@
   
   
   <entry>
-    <title>函数式编程增强库Vavr初探（二）</title>
+    <title>（译）函数式编程增强库Vavr初探（二）</title>
     <link href="/article/%E5%87%BD%E6%95%B0%E5%BC%8F%E7%BC%96%E7%A8%8B%E5%A2%9E%E5%BC%BA%E5%BA%93Vavr%E5%88%9D%E6%8E%A2%EF%BC%88%E4%BA%8C%EF%BC%89/"/>
     <url>/article/%E5%87%BD%E6%95%B0%E5%BC%8F%E7%BC%96%E7%A8%8B%E5%A2%9E%E5%BC%BA%E5%BA%93Vavr%E5%88%9D%E6%8E%A2%EF%BC%88%E4%BA%8C%EF%BC%89/</url>
     
@@ -262,7 +262,7 @@
   
   
   <entry>
-    <title>函数式编程增强库Vavr初探（一）</title>
+    <title>（译）函数式编程增强库Vavr初探（一）</title>
     <link href="/article/%E5%87%BD%E6%95%B0%E5%BC%8F%E7%BC%96%E7%A8%8B%E5%A2%9E%E5%BC%BA%E5%BA%93vavr%E5%88%9D%E6%8E%A2%EF%BC%88%E4%B8%80%EF%BC%89/"/>
     <url>/article/%E5%87%BD%E6%95%B0%E5%BC%8F%E7%BC%96%E7%A8%8B%E5%A2%9E%E5%BC%BA%E5%BA%93vavr%E5%88%9D%E6%8E%A2%EF%BC%88%E4%B8%80%EF%BC%89/</url>
     
@@ -417,7 +417,7 @@
   
   
   <entry>
-    <title>RedLock，红锁？</title>
+    <title>（译）RedLock，红锁？</title>
     <link href="/article/RedLock%EF%BC%8C%E7%BA%A2%E9%94%81%EF%BC%9F/"/>
     <url>/article/RedLock%EF%BC%8C%E7%BA%A2%E9%94%81%EF%BC%9F/</url>
     
@@ -438,7 +438,7 @@
   
   
   <entry>
-    <title>什么时候使用并行流</title>
+    <title>（译）什么时候使用并行流</title>
     <link href="/article/%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E4%BD%BF%E7%94%A8%E5%B9%B6%E8%A1%8C%E6%B5%81/"/>
     <url>/article/%E4%BB%80%E4%B9%88%E6%97%B6%E5%80%99%E4%BD%BF%E7%94%A8%E5%B9%B6%E8%A1%8C%E6%B5%81/</url>
     
