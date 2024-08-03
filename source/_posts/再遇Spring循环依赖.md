@@ -1,7 +1,7 @@
 ---
 title: 再遇Spring循环依赖
 tags: [Spring, 循环依赖, 动态代理]
-index_img: /img/f0a7032e67d09-spring.jpeg
+index_img: /img/6fef5349f73c5-spring.png
 date: 2023-03-12 13:00:00
 ---
 
