@@ -14,7 +14,9 @@
     
     <tags>
       
-      <tag>数据库连接池，HikariCP</tag>
+      <tag>数据库连接池</tag>
+      
+      <tag>HikariCP</tag>
       
     </tags>
     
@@ -33,7 +35,11 @@
     
     <tags>
       
-      <tag>算法，频数统计，Count-Min Sketch</tag>
+      <tag>算法</tag>
+      
+      <tag>频数统计</tag>
+      
+      <tag>Count-Min Sketch</tag>
       
     </tags>
     
@@ -52,7 +58,11 @@
     
     <tags>
       
-      <tag>算法，一致性Hash，Hash环</tag>
+      <tag>算法</tag>
+      
+      <tag>一致性Hash</tag>
+      
+      <tag>Hash环</tag>
       
     </tags>
     
@@ -71,7 +81,11 @@
     
     <tags>
       
-      <tag>算法，算术表达式，Dijkstra双栈</tag>
+      <tag>算法</tag>
+      
+      <tag>算术表达式</tag>
+      
+      <tag>Dijkstra双栈</tag>
       
     </tags>
     
@@ -186,9 +200,9 @@
     
     <tags>
       
-      <tag>后台</tag>
-      
       <tag>性能优化</tag>
+      
+      <tag>后台</tag>
       
     </tags>
     
@@ -316,7 +330,9 @@
     
     <tags>
       
-      <tag>算法，DFA</tag>
+      <tag>算法</tag>
+      
+      <tag>DFA</tag>
       
       <tag>状态机</tag>
       
@@ -340,8 +356,6 @@
     <tags>
       
       <tag>性能优化</tag>
-      
-      <tag>性能测试</tag>
       
     </tags>
     
@@ -451,8 +465,6 @@
       <tag>Java8</tag>
       
       <tag>ParallelStream</tag>
-      
-      <tag>DougLea</tag>
       
     </tags>
     
