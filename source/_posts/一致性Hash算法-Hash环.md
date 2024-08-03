@@ -1,6 +1,6 @@
 ---
 title: 一致性Hash算法-Hash环
-tags: [算法，一致性Hash，Hash环]
+tags: [算法, 一致性Hash, Hash环]
 index_img: /img/hash-ring.jpg
 date: 2024-05-28 16:00:00
 ---

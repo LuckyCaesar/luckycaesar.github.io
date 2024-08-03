@@ -1,6 +1,6 @@
 ---
 title: HikariCP探秘
-tags: [数据库连接池，HikariCP]
+tags: [数据库连接池, HikariCP]
 index_img: /img/hikaricp_14042412.png
 date: 2024-08-03 22:00:00
 ---
